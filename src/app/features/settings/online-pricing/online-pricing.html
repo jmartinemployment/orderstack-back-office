@@ -1,0 +1,160 @@
+<div class="online-pricing">
+  @if (showSaveSuccess()) {
+    <div class="alert alert-success d-flex align-items-center mb-3">
+      <span>Online pricing settings saved successfully.</span>
+    </div>
+  }
+
+  @if (!isManagerOrAbove()) {
+    <div class="text-muted small mb-3">Only managers and owners can modify pricing settings.</div>
+  }
+
+  <!-- Enable Toggle -->
+  <div class="panel mb-3">
+    <div class="panel-title">Online Price Adjustments</div>
+    <div class="form-check form-switch mb-2">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="pricingEnabled"
+        [checked]="enabled()"
+        (change)="onEnabledToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="pricingEnabled">Enable online price adjustments</label>
+    </div>
+    @if (!enabled()) {
+      <p class="text-muted small mb-0">Online menu prices match in-store prices.</p>
+    }
+  </div>
+
+  @if (enabled()) {
+    <!-- Price Adjustment -->
+    <div class="panel mb-3">
+      <div class="panel-title">Price Adjustment</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="adjustmentType">Adjustment Type</label>
+          <select
+            class="form-select"
+            id="adjustmentType"
+            [value]="adjustmentType()"
+            (change)="onAdjustmentType($event)"
+            [disabled]="!isManagerOrAbove()">
+            <option value="percentage">Percentage</option>
+            <option value="flat">Flat Fee per Item</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="adjustmentAmount">Adjustment Amount</label>
+          @if (adjustmentType() === 'percentage') {
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                id="adjustmentAmount"
+                [value]="adjustmentAmount()"
+                (input)="onAdjustmentAmount($event)"
+                min="0"
+                max="50"
+                step="0.5"
+                [disabled]="!isManagerOrAbove()">
+              <span class="input-group-text">%</span>
+            </div>
+          } @else {
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                type="number"
+                class="form-control"
+                id="adjustmentAmount"
+                [value]="adjustmentAmount()"
+                (input)="onAdjustmentAmount($event)"
+                min="0"
+                step="0.25"
+                [disabled]="!isManagerOrAbove()">
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Fee -->
+    <div class="panel mb-3">
+      <div class="panel-title">Delivery Fee</div>
+      <div class="row">
+        <div class="col-md-6">
+          <label class="form-label" for="deliveryFee">Flat Delivery Fee</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              class="form-control"
+              id="deliveryFee"
+              [value]="deliveryFee()"
+              (input)="onDeliveryFee($event)"
+              min="0"
+              step="0.50"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Visibility -->
+    <div class="panel mb-3">
+      <div class="panel-title">Customer Visibility</div>
+      <div class="form-check form-switch mb-2">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="visibilityToggle"
+          [checked]="showAdjustmentToCustomer()"
+          (change)="onVisibilityToggle($event)"
+          [disabled]="!isManagerOrAbove()">
+        <label class="form-check-label" for="visibilityToggle">Show fee as line item to customer</label>
+      </div>
+      @if (showAdjustmentToCustomer()) {
+        <p class="text-muted small mb-0">Customer sees "Online ordering fee" as separate line.</p>
+      } @else {
+        <p class="text-muted small mb-0">Fee baked into item prices — customer sees adjusted prices only.</p>
+      }
+    </div>
+
+    <!-- Price Preview -->
+    <div class="panel mb-3">
+      <div class="panel-title">Price Preview</div>
+      <div class="d-flex flex-wrap gap-3">
+        <div class="kpi-card">
+          <span class="kpi-label">Base Price</span>
+          <span class="kpi-value">${{ previewBasePrice.toFixed(2) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Online Price</span>
+          <span class="kpi-value">${{ previewOnlinePrice().toFixed(2) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Delivery Fee</span>
+          <span class="kpi-value">${{ deliveryFee().toFixed(2) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Customer Pays</span>
+          <span class="kpi-value">${{ previewTotal().toFixed(2) }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Action bar -->
+  @if (hasUnsavedChanges() && isManagerOrAbove()) {
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          Saving...
+        } @else {
+          Save Changes
+        }
+      </button>
+      <button class="btn btn-outline-light" (click)="discard()" [disabled]="isSaving()">Discard</button>
+    </div>
+  }
+</div>

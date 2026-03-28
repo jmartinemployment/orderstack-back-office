@@ -1,0 +1,109 @@
+<div class="milestones-page">
+  <!-- Header -->
+  <div class="milestones-header">
+    <h1 class="milestones-title">Milestone Payments</h1>
+    <p class="milestones-subtitle">Track payment schedules across all active jobs</p>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-item">
+      <span class="kpi-label">Total Outstanding</span>
+      <span class="kpi-value">{{ totalOutstanding() / 100 | currency:'USD' }}</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Due This Week</span>
+      <span class="kpi-value">{{ dueThisWeek() }}</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Overdue</span>
+      <span class="kpi-value kpi-overdue">{{ overdueCount() }}</span>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Collected This Month</span>
+      <span class="kpi-value">{{ collectedThisMonth() / 100 | currency:'USD' }}</span>
+    </div>
+  </div>
+
+  <!-- Filter Pills -->
+  <div class="filter-pills">
+    <button type="button" class="pill" [class.active]="_filter() === 'all'" (click)="setFilter('all')">All</button>
+    <button type="button" class="pill" [class.active]="_filter() === 'due_soon'" (click)="setFilter('due_soon')">Due Soon</button>
+    <button type="button" class="pill" [class.active]="_filter() === 'overdue'" (click)="setFilter('overdue')">Overdue</button>
+    <button type="button" class="pill" [class.active]="_filter() === 'unpaid'" (click)="setFilter('unpaid')">Unpaid</button>
+    <button type="button" class="pill" [class.active]="_filter() === 'paid'" (click)="setFilter('paid')">Paid</button>
+  </div>
+
+  @if (flatMilestones().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-cash-stack"></i>
+      </div>
+      <h3>No milestones found</h3>
+      <p>No milestone payments match the current filter.</p>
+    </div>
+  } @else {
+    <!-- Milestones Table -->
+    <div class="milestones-table-wrap">
+      <table class="milestones-table">
+        <thead>
+          <tr>
+            <th scope="col">Job</th>
+            <th scope="col">Client</th>
+            <th scope="col">Milestone</th>
+            <th scope="col" class="text-end">Amount</th>
+            <th scope="col">Due Date</th>
+            <th scope="col">Status</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of flatMilestones(); track m.id) {
+            <tr>
+              <td>
+                <button type="button" class="link-btn" (click)="viewJob(m.jobId)">{{ m.jobTitle }}</button>
+              </td>
+              <td>{{ m.clientName }}</td>
+              <td>{{ m.label }}</td>
+              <td class="text-end">{{ m.amountCents / 100 | currency:'USD' }}</td>
+              <td>
+                @if (m.dueDate) {
+                  {{ m.dueDate | date:'mediumDate':'UTC' }}
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td>
+                <span class="status-badge {{ getStatusBadge(m).cssClass }}">
+                  {{ getStatusBadge(m).label }}
+                </span>
+                @if (m.paidAt) {
+                  <span class="paid-date">{{ m.paidAt | date:'shortDate' }}</span>
+                }
+              </td>
+              <td>
+                @if (m.paidAt) {
+                  <button type="button" class="btn-mark-paid" disabled>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span class="visually-hidden">Already paid</span>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-mark-paid btn-mark-active"
+                    [disabled]="_markingId() === m.id"
+                    (click)="markPaid(m.jobId, m.id)">
+                    @if (_markingId() === m.id) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      <i class="bi bi-check-circle"></i>
+                    }
+                    <span class="visually-hidden">Mark as paid</span>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

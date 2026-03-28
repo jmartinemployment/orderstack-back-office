@@ -1,0 +1,183 @@
+<div class="pos-login">
+
+  <!-- Idle: Team Member Avatar Grid -->
+  @if (state() === 'idle') {
+    <div class="login-screen">
+      <div class="login-header">
+        <div class="brand">
+          <i class="bi bi-stack"></i>
+          <span>OrderStack</span>
+        </div>
+        <h1>Who's Working?</h1>
+        <p>Tap your name to sign in</p>
+      </div>
+
+      @if (isLocked()) {
+        <div class="lockout-banner">
+          <i class="bi bi-lock-fill"></i>
+          Locked — try again in {{ lockoutSecondsRemaining() }}s
+        </div>
+      }
+
+      @if (error()) {
+        <div class="error-msg">{{ error() }}</div>
+      }
+
+      <div class="avatar-grid">
+        @for (member of activeTeamMembers(); track member.id) {
+          <button class="avatar-card" [disabled]="isLocked()" (click)="selectMember(member)">
+            <div class="avatar-circle" [style.background-color]="getAvatarColor(member.displayName)">
+              @if (member.avatarUrl) {
+                <img [src]="member.avatarUrl" [alt]="member.displayName" class="avatar-img">
+              } @else {
+                {{ getInitials(member.displayName) }}
+              }
+            </div>
+            <span class="avatar-name">{{ member.displayName }}</span>
+            @if (member.jobs.length > 0) {
+              <span class="avatar-role">{{ member.jobs[0].jobTitle }}</span>
+            }
+          </button>
+        } @empty {
+          <div class="empty-grid">
+            <i class="bi bi-person-plus"></i>
+            <p>No team members configured.</p>
+            <p class="text-muted">Add team members in Settings > Staff.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Entering Passcode -->
+  @if (state() === 'entering-passcode') {
+    <div class="passcode-screen">
+      <button class="btn-back" (click)="backToGrid()">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+
+      <div class="passcode-header">
+        <div class="selected-avatar" [style.background-color]="getAvatarColor(selectedMember()!.displayName)">
+          {{ getInitials(selectedMember()!.displayName) }}
+        </div>
+        <h2>{{ selectedMember()!.displayName }}</h2>
+        <p>Enter your PIN</p>
+      </div>
+
+      <div class="passcode-dots">
+        @for (filled of passcodeDots(); track $index) {
+          <span class="dot" [class.filled]="filled"></span>
+        }
+      </div>
+
+      @if (error()) {
+        <div class="error-msg">{{ error() }}</div>
+      }
+
+      @if (isValidating()) {
+        <div class="validating-msg">Verifying...</div>
+      }
+
+      <div class="keypad">
+        @for (digit of ['1','2','3','4','5','6','7','8','9','','0','⌫']; track $index) {
+          @if (digit === '') {
+            <div class="keypad-spacer"></div>
+          } @else if (digit === '⌫') {
+            <button class="keypad-btn keypad-back" (click)="onBackspace()">
+              <i class="bi bi-backspace"></i>
+            </button>
+          } @else {
+            <button class="keypad-btn" (click)="onDigit(digit)" [disabled]="isValidating()">{{ digit }}</button>
+          }
+        }
+      </div>
+
+      <button class="btn-clear" (click)="onClear()">Clear</button>
+    </div>
+  }
+
+  <!-- Clock-In Prompt -->
+  @if (state() === 'clock-in-prompt') {
+    <div class="clockin-screen">
+      <div class="clockin-header">
+        <div class="selected-avatar lg" [style.background-color]="getAvatarColor(selectedMember()!.displayName)">
+          {{ getInitials(selectedMember()!.displayName) }}
+        </div>
+        <h2>{{ selectedMember()!.displayName }}</h2>
+        <p>You're not clocked in yet</p>
+      </div>
+
+      <!-- Schedule enforcement warning -->
+      @if (scheduleWarning()) {
+        <div class="schedule-warning">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div class="schedule-warning-text">{{ scheduleWarning() }}</div>
+        </div>
+      }
+
+      <!-- Manager override for schedule enforcement -->
+      @if (showManagerOverride()) {
+        <div class="manager-override">
+          <span class="form-label">Manager Override — Enter a manager PIN to proceed</span>
+          <div class="override-input-row">
+            <input
+              type="password"
+              class="override-pin-input"
+              placeholder="Manager PIN"
+              maxlength="6"
+              aria-label="Manager override PIN"
+              [value]="managerOverridePin()"
+              (input)="setManagerOverridePin($any($event.target).value)">
+            <button
+              class="btn-override-submit"
+              [disabled]="managerOverridePin().length < 4 || isClockingIn()"
+              (click)="submitManagerOverride()">
+              @if (isClockingIn()) {
+                <span class="spinner"></span>
+              } @else {
+                Override
+              }
+            </button>
+          </div>
+          <button class="btn-override-cancel" (click)="cancelManagerOverride()">Cancel</button>
+        </div>
+      }
+
+      @if (needsJobSelection()) {
+        <div class="job-selector">
+          <span class="form-label">Select your role for this shift:</span>
+          <div class="job-options">
+            @for (job of memberJobs(); track job.id) {
+              <button
+                class="job-btn"
+                [class.selected]="selectedJobTitle() === job.jobTitle"
+                (click)="selectJob(job.jobTitle)">
+                <span class="job-title">{{ job.jobTitle }}</span>
+                <span class="job-rate">${{ (job.hourlyRate / 100).toFixed(2) }}/hr</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (error()) {
+        <div class="error-msg">{{ error() }}</div>
+      }
+
+      @if (!showManagerOverride()) {
+        <div class="clockin-actions">
+          <button
+            class="btn-clockin"
+            [disabled]="isClockingIn() || (needsJobSelection() && !selectedJobTitle())"
+            (click)="clockInAndProceed()">
+            @if (isClockingIn()) {
+              <span class="spinner"></span> Clocking In...
+            } @else {
+              <i class="bi bi-clock-fill"></i> Clock In & Start
+            }
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,1466 @@
+.online-portal {
+  background: var(--os-bg);
+  color: var(--os-text-primary);
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.auth-required {
+  background: var(--os-bg);
+  color: var(--os-text-primary);
+  min-height: 60vh;
+}
+
+// Header
+.portal-header {
+  background: var(--os-bg-card);
+  border-bottom: 1px solid var(--os-border);
+  padding: 1rem 1rem 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.portal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--os-text-primary);
+}
+
+.change-location-btn {
+  background: none;
+  border: 1px solid var(--os-border);
+  border-radius: 2rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--os-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(0, 106, 255, 0.04);
+    border-color: var(--os-primary);
+  }
+}
+
+.cart-btn {
+  background: var(--os-primary);
+  color: #fff;
+  border: none;
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.cart-count {
+  background: #fff;
+  color: var(--os-primary);
+  border-radius: 50%;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+// Step Indicator
+.steps {
+  padding-bottom: 0.5rem;
+}
+
+.step-dot {
+  width: 2rem;
+  height: 0.25rem;
+  border-radius: 0.125rem;
+  background: var(--os-border);
+  transition: background 0.3s;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+
+  &.active {
+    background: var(--os-primary);
+  }
+}
+
+// --- Location Selector (Phase 2.5) ---
+
+.location-step {
+  padding-bottom: 2rem;
+}
+
+.location-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.location-subheading {
+  font-size: 0.85rem;
+  color: var(--os-text-muted);
+  margin-bottom: 1rem;
+}
+
+.find-nearest-btn {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--os-primary);
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(0, 106, 255, 0.04);
+    border-color: var(--os-primary);
+  }
+}
+
+.location-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.location-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.location-card-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.location-logo {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.location-logo-placeholder {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  background: var(--os-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--os-text-muted);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.location-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.location-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--os-text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.location-address {
+  font-size: 0.8rem;
+  color: var(--os-text-muted);
+  line-height: 1.3;
+}
+
+.location-phone {
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+  margin-top: 0.1rem;
+}
+
+.location-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.location-distance {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--os-text-secondary);
+
+  i { margin-right: 0.15rem; }
+}
+
+.location-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2rem;
+  letter-spacing: 0.03em;
+
+  &.open {
+    background: rgba(0, 166, 126, 0.08);
+    color: var(--os-success);
+  }
+
+  &.closed {
+    background: rgba(229, 62, 62, 0.08);
+    color: var(--os-danger);
+  }
+}
+
+.location-wait {
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+}
+
+.location-next-open {
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  font-style: italic;
+}
+
+// --- Business Hours Closed Banner (Phase 3) ---
+
+.closed-banner {
+  background: rgba(245, 166, 35, 0.06);
+  border: 1px solid rgba(245, 166, 35, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+}
+
+.closed-banner-icon {
+  font-size: 1.5rem;
+  color: var(--os-warning);
+}
+
+.closed-banner-text {
+  font-size: 0.9rem;
+  color: var(--os-text-primary);
+
+  strong {
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+}
+
+.closed-reason {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--os-text-secondary);
+  font-style: italic;
+}
+
+.closed-next-open {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--os-primary);
+  font-weight: 600;
+}
+
+.closed-banner-note {
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+}
+
+// --- Share Button (Phase 3) ---
+
+.share-btn {
+  background: none;
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+
+  &:hover {
+    color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+
+  .bi-check-lg {
+    color: var(--os-success);
+  }
+}
+
+// Search
+.search-input {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  border-radius: 2rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+
+  &:focus {
+    background: var(--os-bg-card);
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 2px rgba(0, 106, 255, 0.15);
+    color: var(--os-text-primary);
+  }
+}
+
+// Category Pills
+.category-pills {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pill {
+  background: var(--os-bg-card);
+  color: var(--os-text-secondary);
+  border: 1px solid var(--os-border);
+  border-radius: 2rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--os-bg);
+  }
+
+  &.active {
+    background: var(--os-primary);
+    color: #fff;
+    border-color: var(--os-primary);
+  }
+}
+
+// Menu List
+.menu-list {
+  padding: 0 1rem 6rem;
+}
+
+.menu-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--os-border);
+}
+
+.menu-item-image {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--os-radius);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-weight: 600;
+  color: var(--os-text-primary);
+  font-size: 0.95rem;
+}
+
+.item-desc {
+  color: var(--os-text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-price {
+  color: var(--os-text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.item-dietary {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.dietary-tag {
+  background: var(--os-bg);
+  color: var(--os-text-muted);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+// Allergen filter
+.allergen-filter {
+  .filter-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+.allergen-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.allergen-pill {
+  background: var(--os-bg);
+  color: var(--os-text-muted);
+  border: 1px solid var(--os-border);
+  border-radius: 1rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { background: var(--os-border); }
+  &.active {
+    background: rgba(229, 62, 62, 0.08);
+    border-color: rgba(229, 62, 62, 0.3);
+    color: var(--os-danger);
+  }
+}
+
+// Allergen icons on items
+.item-allergens {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.allergen-icon {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+
+  &.severity-contains { background: rgba(229, 62, 62, 0.08); color: var(--os-danger); }
+  &.severity-may_contain { background: rgba(245, 166, 35, 0.1); color: var(--os-warning); }
+  &.severity-facility { background: var(--os-bg); color: var(--os-text-muted); }
+}
+
+// Availability
+.item-availability {
+  font-size: 0.7rem;
+  color: var(--os-warning);
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+
+.menu-item.unavailable {
+  opacity: 0.5;
+}
+
+.unavailable-label {
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+// Nutrition panel
+.nutrition-panel {
+  background: var(--os-bg);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.nutrition-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--os-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.nutrition-serving {
+  font-size: 0.65rem;
+  color: var(--os-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.nutrition-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.nutrition-item {
+  font-size: 0.7rem;
+  color: var(--os-text-secondary);
+
+  strong {
+    color: var(--os-text-primary);
+  }
+}
+
+.item-action {
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+// Buttons
+.add-btn {
+  background: var(--os-bg-card);
+  color: var(--os-primary);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--os-bg);
+    border-color: var(--os-primary);
+  }
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-btn {
+  background: var(--os-bg-card);
+  color: var(--os-primary);
+  border: 1px solid var(--os-border);
+  border-radius: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--os-bg);
+  }
+}
+
+.qty-value {
+  font-weight: 600;
+  color: var(--os-text-primary);
+  min-width: 1.25rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+// Floating Cart Bar
+.floating-cart {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: var(--os-primary);
+  color: #fff;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  z-index: 50;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--os-primary-hover);
+  }
+}
+
+// Cart View
+.cart-view {
+  padding-bottom: 1rem;
+}
+
+.cart-items {
+  padding: 0 1rem;
+}
+
+.cart-item {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.cart-item-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.cart-item-name {
+  font-weight: 600;
+  color: var(--os-text-primary);
+  font-size: 0.9rem;
+}
+
+.cart-item-price {
+  color: var(--os-text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.cart-item-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--os-danger);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Cart Summary
+.cart-summary {
+  margin: 1rem;
+  padding: 1rem;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+  color: var(--os-text-secondary);
+
+  &.total {
+    border-top: 1px solid var(--os-border);
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--os-text-primary);
+  }
+}
+
+// Info View
+.info-view {
+  padding-bottom: 2rem;
+
+  .form-label {
+    color: var(--os-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.3rem;
+  }
+
+  .form-control {
+    background: var(--os-bg-card);
+    border: 1px solid var(--os-border);
+    color: var(--os-text-primary);
+    font-size: 0.9rem;
+
+    &::placeholder {
+      color: var(--os-text-muted);
+    }
+
+    &:focus {
+      background: var(--os-bg-card);
+      border-color: var(--os-primary);
+      box-shadow: 0 0 0 2px rgba(0, 106, 255, 0.15);
+      color: var(--os-text-primary);
+    }
+  }
+}
+
+.order-type-toggle {
+  .btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem;
+  }
+}
+
+// Order Summary
+.order-summary {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+
+  h5 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  hr {
+    border-color: var(--os-border);
+    margin: 0.5rem 0;
+  }
+}
+
+// Confirm View
+.confirm-view {
+  padding-bottom: 3rem;
+}
+
+.confirm-icon {
+  width: 4rem;
+  height: 4rem;
+  background: var(--os-success);
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.ready-time-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 106, 255, 0.06);
+  border: 1px solid rgba(0, 106, 255, 0.15);
+  border-radius: 10px;
+  color: var(--os-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+// Order Tracking
+.tracking-section {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.tracking-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.tracking-badge {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.tracking-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0.45rem;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: var(--os-border);
+  }
+}
+
+.tracking-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+  position: relative;
+  z-index: 1;
+
+  .step-indicator {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: var(--os-border);
+    border: 2px solid var(--os-border);
+    transition: all 0.3s;
+  }
+
+  &.active {
+    color: var(--os-success);
+
+    .step-indicator {
+      background: var(--os-success);
+      border-color: var(--os-success);
+    }
+  }
+}
+
+.curbside-tracking {
+  text-align: center;
+}
+
+.arrival-confirmed {
+  padding: 0.75rem;
+  background: rgba(0, 166, 126, 0.06);
+  border-radius: 0.5rem;
+
+  .badge {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+.form-text {
+  font-size: 0.75rem;
+  color: var(--os-text-muted) !important;
+}
+
+// Bootstrap overrides
+.btn-primary {
+  background: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover {
+    background: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    background: var(--os-primary);
+    border-color: var(--os-primary);
+    opacity: 0.5;
+  }
+}
+
+.btn-outline-light {
+  font-size: 0.8rem;
+}
+
+.text-muted {
+  color: var(--os-text-muted) !important;
+}
+
+.text-warning {
+  color: var(--os-warning) !important;
+}
+
+.text-light {
+  color: var(--os-text-secondary) !important;
+}
+
+.alert-danger {
+  background: rgba(229, 62, 62, 0.08);
+  border-color: rgba(229, 62, 62, 0.2);
+  color: var(--os-danger);
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+// Loyalty section
+.loyalty-section {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+
+  .tier-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    color: #000;
+    letter-spacing: 0.05em;
+  }
+
+  .redeem-input {
+    max-width: 80px;
+  }
+
+  .rewards-list {
+    .btn {
+      font-size: 0.8rem;
+      padding: 0.35rem 0.5rem;
+    }
+  }
+}
+
+.loyalty-earned-badge {
+  display: inline-block;
+  background: rgba(0, 166, 126, 0.08);
+  color: var(--os-success);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 2rem;
+}
+
+.text-success {
+  color: var(--os-success) !important;
+}
+
+// Tableside mode
+.round-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(0, 106, 255, 0.08);
+  color: var(--os-primary);
+  padding: 0.15rem 0.5rem;
+  border-radius: 2rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.tableside-badge {
+  background: rgba(0, 106, 255, 0.06);
+  color: var(--os-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  i { margin-right: 0.25rem; }
+}
+
+.tableside-actions {
+  .btn {
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+  }
+}
+
+// Tip selection
+.tip-section {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.tip-preset-btn {
+  background: var(--os-bg);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-secondary);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--os-border);
+  }
+
+  &.active {
+    background: var(--os-primary);
+    border-color: var(--os-primary);
+    color: #fff;
+  }
+}
+
+.custom-tip-input {
+  .tip-prefix {
+    color: var(--os-text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .form-control {
+    max-width: 100px;
+  }
+}
+
+.tip-amount {
+  color: var(--os-primary);
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.tip-clear {
+  color: var(--os-text-muted);
+  font-size: 0.75rem;
+  padding: 0;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--os-danger);
+  }
+}
+
+// Gift card section
+.gift-card-section {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--os-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.gift-card-found {
+  background: rgba(0, 106, 255, 0.04);
+  border: 1px solid rgba(0, 106, 255, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+
+  .gc-balance {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--os-primary);
+  }
+}
+
+.gift-card-applied {
+  background: rgba(0, 166, 126, 0.06);
+  border: 1px solid rgba(0, 166, 126, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--os-success);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+// --- Phase 2: Upsell (Step 6) ---
+
+.upsell-view {
+  padding-bottom: 2rem;
+}
+
+.upsell-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.upsell-card {
+  flex: 0 0 200px;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.upsell-image {
+  height: 100px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--os-bg);
+}
+
+.upsell-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--os-text-muted);
+  font-size: 1.5rem;
+}
+
+.upsell-info {
+  padding: 0.5rem 0.75rem;
+  flex: 1;
+}
+
+.upsell-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--os-text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.upsell-reason {
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
+}
+
+.upsell-price {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--os-primary);
+}
+
+.upsell-add-btn {
+  background: var(--os-primary);
+  color: #fff;
+  border: none;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--os-primary-hover);
+  }
+}
+
+// --- Phase 2: Saved Addresses (Step 7) ---
+
+.saved-addresses-section {
+  .form-label {
+    color: var(--os-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.saved-address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.saved-address-btn {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+
+  &.active {
+    border-color: var(--os-primary);
+    background: rgba(0, 106, 255, 0.04);
+  }
+}
+
+.saved-addr-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  i {
+    color: var(--os-primary);
+  }
+}
+
+.saved-addr-text {
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+  margin-top: 0.15rem;
+  padding-left: 1.3rem;
+}
+
+.default-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(0, 166, 126, 0.08);
+  color: var(--os-success);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+  letter-spacing: 0.03em;
+}
+
+.save-address-toggle {
+  label {
+    font-size: 0.85rem;
+    color: var(--os-text-secondary);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      accent-color: var(--os-primary);
+    }
+  }
+}
+
+// --- Phase 2: Order Again (Step 8) ---
+
+.order-again-section {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.order-again-toggle {
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--os-bg);
+  }
+}
+
+.recent-orders-list {
+  padding: 0 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recent-order-card {
+  background: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary);
+    background: rgba(0, 106, 255, 0.02);
+  }
+}
+
+.recent-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.recent-order-date {
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+  font-weight: 600;
+}
+
+.recent-order-total {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+.recent-order-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.recent-item-name {
+  font-size: 0.7rem;
+  color: var(--os-text-secondary);
+  background: var(--os-bg-card);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+}
+
+.recent-item-more {
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  font-style: italic;
+}
+
+.recent-order-action {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--os-primary);
+  margin-top: 0.35rem;
+}
+
+// --- Phase 2: Age Verification (Step 9) ---
+
+.age-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--os-warning);
+  background: rgba(245, 166, 35, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+  margin-top: 0.25rem;
+}
+
+.age-notice {
+  background: rgba(245, 166, 35, 0.06);
+  border: 1px solid rgba(245, 166, 35, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--os-warning);
+  font-weight: 500;
+}
+
+.age-gate {
+  background: var(--os-bg-card);
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.age-gate-icon {
+  font-size: 2rem;
+  color: var(--os-warning);
+  margin-bottom: 0.5rem;
+}
+
+.age-gate-text {
+  font-size: 0.85rem;
+  color: var(--os-text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+// Age verification modal
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.age-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--os-bg-card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  z-index: 1001;
+  max-width: 400px;
+  width: calc(100% - 2rem);
+  text-align: center;
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 0.85rem;
+    color: var(--os-text-secondary);
+    margin-bottom: 1rem;
+  }
+}
+
+.age-modal-icon {
+  font-size: 2.5rem;
+  color: var(--os-warning);
+  margin-bottom: 0.75rem;
+}

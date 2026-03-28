@@ -1,0 +1,184 @@
+.station-settings {
+  color: var(--os-text-primary);
+}
+
+.station-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.station-card {
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: var(--os-bg-card);
+
+  &.inactive {
+    opacity: 0.5;
+  }
+}
+
+.color-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bg-expo-tag {
+  background-color: #c75200;
+  color: #fff;
+  font-size: 0.65rem;
+}
+
+// Modal styles
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal-dialog-centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  width: 90%;
+  max-width: 480px;
+
+  &.modal-lg {
+    max-width: 640px;
+  }
+}
+
+.modal-content {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--os-border);
+}
+
+.modal-body {
+  padding: 1rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--os-border);
+}
+
+// Form styles
+.form-control {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 106, 255, 0.15);
+  }
+}
+
+.form-control-color {
+  width: 48px;
+  height: 38px;
+  padding: 0.25rem;
+}
+
+.form-check-input {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+.form-check-label {
+  color: var(--os-text-primary);
+  cursor: pointer;
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-size: 0.875rem;
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+// Category assignment grid
+.category-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, 1fr);
+  max-height: 400px;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.category-check {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  color: var(--os-text-primary);
+
+  .form-check-label {
+    color: var(--os-text-primary);
+    font-weight: 400;
+    opacity: 1;
+  }
+
+  .form-check-input:disabled ~ .form-check-label {
+    color: var(--os-text-primary);
+    opacity: 1;
+  }
+
+  &.assigned-elsewhere {
+    .assigned-to-label {
+      color: var(--os-text-secondary);
+    }
+  }
+}
+
+.empty-state {
+  color: var(--bs-secondary-color, #6c757d);
+}

@@ -1,0 +1,28 @@
+.auto-gratuity-settings {
+  max-width: 600px;
+}
+
+.section-title {
+  color: var(--os-text, #1f2937);
+  font-weight: 600;
+}
+
+.preview-box {
+  background-color: rgba(0, 106, 255, 0.04);
+  border: 1px solid rgba(0, 106, 255, 0.15);
+  border-radius: var(--os-radius, 8px);
+  padding: 0.75rem 1rem;
+}
+
+.preview-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--os-text-secondary, #6b7280);
+  margin-bottom: 0.25rem;
+}
+
+.preview-text {
+  color: var(--os-primary, #006aff);
+  font-weight: 500;
+}

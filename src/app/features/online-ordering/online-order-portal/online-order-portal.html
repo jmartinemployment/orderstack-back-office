@@ -1,0 +1,1005 @@
+<div class="online-portal">
+  <!-- Header -->
+  <div class="portal-header">
+    <div class="d-flex justify-content-between align-items-center">
+      @if (isTableside()) {
+        <h1 class="portal-title">
+          <i class="bi bi-qr-code-scan me-2"></i>Table {{ table() }}
+          @if (orderRound() > 1) {
+            <span class="round-badge">Round {{ orderRound() }}</span>
+          }
+        </h1>
+      } @else {
+        <div class="d-flex align-items-center gap-2">
+          <h1 class="portal-title">Order Online</h1>
+          @if (isMultiLocation() && selectedLocationId() && step() !== 'location') {
+            <button type="button" class="change-location-btn" (click)="changeLocation()">
+              <i class="bi bi-geo-alt"></i> Change
+            </button>
+          }
+        </div>
+      }
+      @if (step() !== 'confirm' && step() !== 'location') {
+        <button type="button" class="cart-btn" (click)="goToCart()" [disabled]="cartItemCount() === 0">
+          Cart
+          @if (cartItemCount() > 0) {
+            <span class="cart-count">{{ cartItemCount() }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Step Indicator -->
+    @if (!orderConfirmed()) {
+      <div class="steps d-flex gap-1 mt-2">
+        @if (isMultiLocation()) {
+          <button type="button" class="step-dot" aria-label="Go to location selection" [class.active]="step() === 'location'" (click)="changeLocation()"></button>
+        }
+        <button type="button" class="step-dot" aria-label="Go to menu" [class.active]="step() === 'menu'" (click)="setStep('menu')"></button>
+        <button type="button" class="step-dot" aria-label="Go to cart" [class.active]="step() === 'cart'" (click)="setStep('cart')"></button>
+        <button type="button" class="step-dot" aria-label="Go to checkout" [class.active]="step() === 'info'" (click)="setStep('info')"></button>
+      </div>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mx-3 mt-2">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- LOCATION STEP (Multi-Location) -->
+  @if (step() === 'location') {
+    <div class="location-step px-3 pt-3">
+      <h2 class="location-heading">Choose a Location</h2>
+      <p class="location-subheading">Select a location to start your order</p>
+
+      <button type="button" class="find-nearest-btn mb-3" (click)="findNearest()">
+        <i class="bi bi-crosshair me-2"></i>Find Nearest Location
+      </button>
+
+      @if (isLoadingLocations()) {
+        <div class="d-flex justify-content-center p-5">
+          <os-loading-spinner message="Loading locations..." />
+        </div>
+      } @else {
+        <div class="location-list">
+          @for (loc of onlineLocations(); track loc.id) {
+            <button type="button" class="location-card" (click)="selectLocation(loc)">
+              <div class="location-card-header">
+                @if (loc.logo) {
+                  <img [src]="loc.logo" [alt]="loc.name" class="location-logo" />
+                } @else {
+                  <div class="location-logo-placeholder">
+                    <i class="bi bi-shop"></i>
+                  </div>
+                }
+                <div class="location-card-info">
+                  <div class="location-name">{{ loc.name }}</div>
+                  <div class="location-address">{{ loc.address }}</div>
+                  @if (loc.phone) {
+                    <div class="location-phone">{{ loc.phone }}</div>
+                  }
+                </div>
+              </div>
+              <div class="location-card-meta">
+                @if (loc.distanceMiles !== null) {
+                  <span class="location-distance">
+                    <i class="bi bi-geo-alt"></i> {{ loc.distanceMiles | number:'1.1-1' }} mi
+                  </span>
+                }
+                @if (loc.isOpen) {
+                  <span class="location-status open">Open</span>
+                  @if (loc.currentWaitMinutes !== null) {
+                    <span class="location-wait">~{{ loc.currentWaitMinutes }} min</span>
+                  }
+                } @else {
+                  <span class="location-status closed">Closed</span>
+                  @if (loc.nextOpenTime) {
+                    <span class="location-next-open">Opens {{ loc.nextOpenTime }}</span>
+                  }
+                }
+              </div>
+            </button>
+          } @empty {
+            <div class="text-center p-4">
+              <p class="text-muted">No locations available</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Business Hours Closed Banner -->
+  @if (isCurrentlyClosed() && step() !== 'location' && step() !== 'confirm') {
+    <div class="closed-banner mx-3 mt-2">
+      <div class="closed-banner-icon"><i class="bi bi-clock"></i></div>
+      <div class="closed-banner-text">
+        <strong>We're currently closed</strong>
+        @if (businessHoursCheck(); as check) {
+          @if (check.specialHoursReason) {
+            <span class="closed-reason">{{ check.specialHoursReason }}</span>
+          }
+        }
+        @if (getNextOpenLabel()) {
+          <span class="closed-next-open">{{ getNextOpenLabel() }}</span>
+        }
+      </div>
+      <div class="closed-banner-note">You can still browse the menu</div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading menu..." />
+    </div>
+  } @else if (step() !== 'location') {
+    <!-- MENU STEP -->
+    @if (step() === 'menu') {
+      <!-- Search -->
+      <div class="px-3 pt-3">
+        <input
+          type="text"
+          class="form-control search-input"
+          placeholder="Search menu..."
+          aria-label="Search menu"
+          [value]="searchTerm()"
+          (input)="onSearch($event)"
+        />
+      </div>
+
+      <!-- Category Pills -->
+      <div class="category-pills">
+        <button
+          type="button"
+          class="pill"
+          [class.active]="!selectedCategory()"
+          (click)="selectCategory(null)"
+        >All</button>
+        @for (cat of categories(); track cat.id) {
+          <button
+            type="button"
+            class="pill"
+            [class.active]="selectedCategory() === cat.id"
+            (click)="selectCategory(cat.id)"
+          >{{ cat.name }}</button>
+        }
+      </div>
+
+      <!-- Allergen Filter -->
+      <div class="allergen-filter px-3 pb-2">
+        <div class="filter-label">Exclude allergens:</div>
+        <div class="allergen-pills">
+          @for (type of allAllergenTypes; track type) {
+            <button
+              type="button"
+              class="allergen-pill"
+              [class.active]="isAllergenExcluded(type)"
+              (click)="toggleAllergenFilter(type)"
+            >{{ getAllergenLabel(type) }}</button>
+          }
+        </div>
+      </div>
+
+      <!-- Menu Items -->
+      <div class="menu-list">
+        @for (item of filteredItems(); track item.id) {
+          <div class="menu-item" [class.unavailable]="!isItemAvailable(item)">
+            @if (item.imageUrl || item.image) {
+              <img [src]="item.thumbnailUrl || item.imageUrl || item.image" [alt]="item.name"
+                class="menu-item-image" loading="lazy" />
+            }
+            <button type="button" class="item-info" (click)="toggleItemExpanded(item.id)" (keydown.enter)="toggleItemExpanded(item.id)" tabindex="0">
+              <div class="item-name">{{ item.name }}</div>
+              @if (item.description) {
+                <div class="item-desc">{{ item.description }}</div>
+              }
+              <div class="item-price">{{ item.price | currency }}</div>
+              @if (!isItemAvailable(item)) {
+                <div class="item-availability">Available during {{ getAvailabilityLabel(item) }}</div>
+              }
+              @if (item.dietary && item.dietary.length > 0) {
+                <div class="item-dietary">
+                  @for (d of item.dietary; track d) {
+                    <span class="dietary-tag">{{ d }}</span>
+                  }
+                </div>
+              }
+              @if (getItemAllergens(item).length > 0) {
+                <div class="item-allergens">
+                  @for (a of getItemAllergens(item); track a.type) {
+                    <span class="allergen-icon" [class]="'severity-' + a.severity" [title]="getAllergenLabel(a.type) + ' (' + a.severity + ')'">
+                      {{ getAllergenLabel(a.type) }}
+                    </span>
+                  }
+                </div>
+              }
+              <!-- Age verification badge -->
+              @if (item.requiresAgeVerification) {
+                <div class="age-badge">
+                  <i class="bi bi-shield-check"></i> {{ item.minimumAge ?? 21 }}+
+                </div>
+              }
+              <!-- Expandable nutrition panel -->
+              @if (isItemExpanded(item.id) && item.nutritionFacts) {
+                <div class="nutrition-panel">
+                  <div class="nutrition-title">Nutrition Facts</div>
+                  @if (item.nutritionFacts.servingSize) {
+                    <div class="nutrition-serving">Serving: {{ item.nutritionFacts.servingSize }}</div>
+                  }
+                  <div class="nutrition-grid">
+                    @if (item.nutritionFacts.calories !== null) {
+                      <span class="nutrition-item"><strong>{{ item.nutritionFacts.calories }}</strong> cal</span>
+                    }
+                    @if (item.nutritionFacts.totalFat !== null) {
+                      <span class="nutrition-item">Fat {{ item.nutritionFacts.totalFat }}g</span>
+                    }
+                    @if (item.nutritionFacts.protein !== null) {
+                      <span class="nutrition-item">Protein {{ item.nutritionFacts.protein }}g</span>
+                    }
+                    @if (item.nutritionFacts.totalCarbs !== null) {
+                      <span class="nutrition-item">Carbs {{ item.nutritionFacts.totalCarbs }}g</span>
+                    }
+                    @if (item.nutritionFacts.sodium !== null) {
+                      <span class="nutrition-item">Sodium {{ item.nutritionFacts.sodium }}mg</span>
+                    }
+                  </div>
+                </div>
+              }
+            </button>
+            <div class="item-action">
+              @if (!isItemAvailable(item)) {
+                <span class="unavailable-label">Unavailable</span>
+              } @else if (getItemQuantity(item.id) > 0) {
+                <div class="qty-control">
+                  <button type="button" class="qty-btn" aria-label="Decrease quantity" (click)="decrementItem(item.id)">-</button>
+                  <span class="qty-value">{{ getItemQuantity(item.id) }}</span>
+                  <button type="button" class="qty-btn" aria-label="Increase quantity" (click)="incrementItem(item.id)">+</button>
+                </div>
+              } @else {
+                <div class="d-flex align-items-center gap-1">
+                  <button type="button" class="add-btn" (click)="addToCart(item)">Add</button>
+                  <button type="button" class="share-btn" aria-label="Share item" (click)="shareItem(item); $event.stopPropagation()">
+                    @if (isItemCopied(item.id)) {
+                      <i class="bi bi-check-lg"></i>
+                    } @else {
+                      <i class="bi bi-share"></i>
+                    }
+                    <span class="visually-hidden">Share item</span>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="text-center p-4">
+            <p class="text-muted">No items found</p>
+          </div>
+        }
+      </div>
+
+      <!-- Floating Cart Bar -->
+      @if (cartItemCount() > 0) {
+        <button type="button" class="floating-cart" (click)="goToCart()" (keydown.enter)="goToCart()" tabindex="0">
+          <span>View Cart ({{ cartItemCount() }} items)</span>
+          <span class="fw-bold">{{ cartTotal() | currency }}</span>
+        </button>
+      }
+    }
+
+    <!-- CART STEP -->
+    @if (step() === 'cart') {
+      <div class="cart-view">
+        <div class="px-3 pt-3 d-flex justify-content-between align-items-center mb-3">
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="setStep('menu')">Back to Menu</button>
+          <h3 class="h5 mb-0">Your Cart</h3>
+        </div>
+
+        @if (cartItemCount() === 0) {
+          <div class="text-center p-5">
+            <p class="text-muted">Your cart is empty</p>
+            <button type="button" class="btn btn-primary btn-sm" (click)="setStep('menu')">Browse Menu</button>
+          </div>
+        } @else {
+          <div class="cart-items">
+            @for (item of cartItems(); track item.id) {
+              <div class="cart-item">
+                <div class="cart-item-info">
+                  <span class="cart-item-name">{{ item.menuItem.name }}</span>
+                  <span class="cart-item-price">{{ item.totalPrice | currency }}</span>
+                </div>
+                <div class="cart-item-controls">
+                  <div class="qty-control">
+                    <button type="button" class="qty-btn" aria-label="Decrease quantity" (click)="decrementItem(item.menuItem.id)">-</button>
+                    <span class="qty-value">{{ item.quantity }}</span>
+                    <button type="button" class="qty-btn" aria-label="Increase quantity" (click)="incrementItem(item.menuItem.id)">+</button>
+                  </div>
+                  <button type="button" class="remove-btn" (click)="removeFromCart(item.id)">Remove</button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Age Verification Notice -->
+          @if (cartRequiresAgeVerification() && !ageVerified()) {
+            <div class="age-notice mx-3 mb-3">
+              <i class="bi bi-shield-exclamation me-2"></i>
+              Your cart contains age-restricted items. Verification required at checkout.
+            </div>
+          }
+
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>{{ cartSubtotal() | currency }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Tax</span>
+              <span>{{ cartTax() | currency }}</span>
+            </div>
+            @if (loyaltyDiscount() > 0) {
+              <div class="summary-row text-success">
+                <span>Loyalty Discount</span>
+                <span>-{{ loyaltyDiscount() | currency }}</span>
+              </div>
+            }
+            @if (giftCardDiscount() > 0) {
+              <div class="summary-row text-success">
+                <span>Gift Card</span>
+                <span>-{{ giftCardDiscount() | currency }}</span>
+              </div>
+            }
+            @if (surchargeAmount() > 0) {
+              <div class="summary-row">
+                <span>Card Surcharge</span>
+                <span>{{ surchargeAmount() | currency }}</span>
+              </div>
+            }
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>{{ totalAfterGiftCard() | currency }}</span>
+            </div>
+          </div>
+
+          <div class="px-3 pb-3">
+            <button
+              type="button"
+              class="btn btn-primary w-100"
+              [disabled]="isCurrentlyClosed()"
+              (click)="goToInfo()"
+            >
+              @if (isCurrentlyClosed()) {
+                Restaurant Currently Closed
+              } @else {
+                Continue to Checkout
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- UPSELL INTERSTITIAL -->
+    @if (showUpsell() && !upsellDismissed()) {
+      <div class="upsell-view px-3 pt-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="h5 mb-0">You might also like</h3>
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="dismissUpsell()">No Thanks</button>
+        </div>
+
+        @if (isLoadingUpsell()) {
+          <div class="d-flex justify-content-center p-4">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            <span class="text-muted small">Finding suggestions...</span>
+          </div>
+        } @else if (upsellSuggestions().length > 0) {
+          <div class="upsell-scroll">
+            @for (suggestion of upsellSuggestions(); track suggestion.item.id) {
+              <div class="upsell-card">
+                @if (suggestion.item.image) {
+                  <div class="upsell-image" [style.background-image]="'url(' + suggestion.item.image + ')'"></div>
+                } @else {
+                  <div class="upsell-image upsell-placeholder">
+                    <i class="bi bi-cup-hot"></i>
+                  </div>
+                }
+                <div class="upsell-info">
+                  <div class="upsell-name">{{ suggestion.item.name }}</div>
+                  <div class="upsell-reason">{{ suggestion.reason }}</div>
+                  <div class="upsell-price">{{ suggestion.item.price | currency }}</div>
+                </div>
+                <button type="button" class="upsell-add-btn" (click)="addUpsellItem(suggestion)">
+                  <i class="bi bi-plus"></i> Add
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="mt-3 pb-3">
+          <button type="button" class="btn btn-primary w-100" (click)="dismissUpsell()">
+            Continue to Checkout
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- INFO STEP -->
+    @if (step() === 'info' && (upsellDismissed() || !showUpsell())) {
+      <div class="info-view px-3 pt-3">
+        <button type="button" class="btn btn-sm btn-outline-light mb-3" (click)="setStep('cart')">Back to Cart</button>
+
+        <!-- Order Type (hidden in tableside mode) -->
+        @if (!isTableside()) {
+          <div class="mb-3">
+            <p class="form-label" id="oop-order-type-label">Order Type</p>
+            <fieldset aria-labelledby="oop-order-type-label"><legend class="visually-hidden">Order Type</legend>
+              <div class="order-type-toggle d-flex gap-2 flex-wrap">
+              <button
+                type="button"
+                class="btn flex-fill"
+                [class.btn-primary]="orderType() === 'pickup'"
+                [class.btn-outline-light]="orderType() !== 'pickup'"
+                (click)="setOrderType('pickup')"
+              >Pickup</button>
+              <button
+                type="button"
+                class="btn flex-fill"
+                [class.btn-primary]="orderType() === 'delivery'"
+                [class.btn-outline-light]="orderType() !== 'delivery'"
+                (click)="setOrderType('delivery')"
+              >Delivery</button>
+              <button
+                type="button"
+                class="btn flex-fill"
+                [class.btn-primary]="orderType() === 'curbside'"
+                [class.btn-outline-light]="orderType() !== 'curbside'"
+                (click)="setOrderType('curbside')"
+              >Curbside</button>
+              <button
+                type="button"
+                class="btn flex-fill"
+                [class.btn-primary]="orderType() === 'dine-in'"
+                [class.btn-outline-light]="orderType() !== 'dine-in'"
+                (click)="setOrderType('dine-in')"
+              >Dine-In</button>
+              </div>
+            </fieldset>
+          </div>
+        } @else {
+          <div class="tableside-badge mb-3">
+            <i class="bi bi-geo-alt-fill"></i> Dine-In — Table {{ table() }}
+          </div>
+        }
+
+        <!-- Customer Info (optional in tableside mode) -->
+        @if (!isTableside()) {
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label" for="oop-first-name">First Name *</label>
+              <input id="oop-first-name" type="text" class="form-control" [value]="customerFirstName()" (input)="onFieldInput('firstName', $event)" placeholder="First name" />
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="oop-last-name">Last Name *</label>
+              <input id="oop-last-name" type="text" class="form-control" [value]="customerLastName()" (input)="onFieldInput('lastName', $event)" placeholder="Last name" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="oop-phone">Phone *</label>
+            <input id="oop-phone" type="tel" class="form-control" [value]="customerPhone()" (input)="onFieldInput('phone', $event)" placeholder="(555) 123-4567" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="oop-email">Email</label>
+            <input id="oop-email" type="email" class="form-control" [value]="customerEmail()" (input)="onFieldInput('email', $event)" placeholder="you@email.com" />
+          </div>
+        } @else {
+          <div class="mb-3">
+            <label class="form-label" for="oop-phone-loyalty">Phone (for loyalty rewards)</label>
+            <input id="oop-phone-loyalty" type="tel" class="form-control" [value]="customerPhone()" (input)="onFieldInput('phone', $event)" placeholder="(555) 123-4567" />
+          </div>
+        }
+
+        <!-- Order Again (Step 8) — shown after phone lookup identifies customer -->
+        @if (recentOrders().length > 0) {
+          <div class="order-again-section mb-3">
+            <button type="button" class="order-again-toggle" (click)="toggleRecentOrders()">
+              <span><i class="bi bi-clock-history me-2"></i>Order Again</span>
+              <i class="bi" [class.bi-chevron-down]="!showRecentOrders()" [class.bi-chevron-up]="showRecentOrders()"></i>
+            </button>
+            @if (showRecentOrders()) {
+              <div class="recent-orders-list">
+                @for (order of recentOrders(); track order.guid) {
+                  <button type="button" class="recent-order-card" (click)="reorderFromPast(order)" (keydown.enter)="reorderFromPast(order)" tabindex="0">
+                    <div class="recent-order-header">
+                      <span class="recent-order-date">{{ order.timestamps.createdDate | date:'MMM d' }}</span>
+                      <span class="recent-order-total">{{ order.totalAmount | currency }}</span>
+                    </div>
+                    <div class="recent-order-items">
+                      @for (sel of getOrderSelections(order).slice(0, 3); track sel.menuItemGuid) {
+                        <span class="recent-item-name">{{ sel.quantity }}x {{ sel.menuItemName }}</span>
+                      }
+                      @if (getOrderSelections(order).length > 3) {
+                        <span class="recent-item-more">+{{ getOrderSelections(order).length - 3 }} more</span>
+                      }
+                    </div>
+                    <div class="recent-order-action">
+                      <i class="bi bi-plus-circle me-1"></i> Add to Cart
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        } @else if (isLoadingRecentOrders()) {
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="spinner-border spinner-border-sm"></span>
+            <span class="text-muted small">Loading past orders...</span>
+          </div>
+        }
+
+        <!-- Delivery Address -->
+        @if (orderType() === 'delivery') {
+          <!-- Saved Addresses (Step 7) -->
+          @if (savedAddresses().length > 0) {
+            <div class="saved-addresses-section mb-3">
+              <p class="form-label" id="oop-delivery-address-label">Delivery Address</p>
+              <fieldset class="saved-address-list" aria-labelledby="oop-delivery-address-label"><legend class="visually-hidden">Delivery Address</legend>
+                @for (addr of savedAddresses(); track addr.id) {
+                  <button
+                    type="button"
+                    class="saved-address-btn"
+                    [class.active]="selectedAddressId() === addr.id"
+                    (click)="selectSavedAddress(addr)"
+                  >
+                    <div class="saved-addr-label">
+                      <i class="bi" [class.bi-house-fill]="addr.label === 'Home'" [class.bi-building]="addr.label === 'Work'" [class.bi-geo-alt-fill]="addr.label !== 'Home' && addr.label !== 'Work'"></i>
+                      {{ addr.label }}
+                      @if (addr.isDefault) {
+                        <span class="default-badge">Default</span>
+                      }
+                    </div>
+                    <div class="saved-addr-text">{{ addr.address }}, {{ addr.city }}</div>
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="saved-address-btn"
+                  [class.active]="!selectedAddressId()"
+                  (click)="clearSelectedAddress()"
+                >
+                  <div class="saved-addr-label"><i class="bi bi-plus-circle"></i> New Address</div>
+                </button>
+              </fieldset>
+            </div>
+          }
+
+          @if (!selectedAddressId()) {
+            <div class="mb-3">
+              @if (savedAddresses().length === 0) {
+                <label class="form-label" for="oop-address">Street Address *</label>
+              }
+              <input id="oop-address" type="text" class="form-control" [value]="deliveryAddress()" (input)="onFieldInput('address', $event)" placeholder="123 Main St" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="oop-address2">Apt / Suite</label>
+              <input id="oop-address2" type="text" class="form-control" [value]="deliveryAddress2()" (input)="onFieldInput('address2', $event)" placeholder="Apt 4B" />
+            </div>
+            <div class="row mb-3">
+              <div class="col-5">
+                <label class="form-label" for="oop-city">City *</label>
+                <input id="oop-city" type="text" class="form-control" [value]="deliveryCity()" (input)="onFieldInput('city', $event)" placeholder="City" />
+              </div>
+              <div class="col-3">
+                <label class="form-label" for="oop-state">State *</label>
+                <input id="oop-state" type="text" class="form-control" [value]="deliveryStateUS()" (input)="onFieldInput('stateUS', $event)" placeholder="FL" maxlength="2" />
+              </div>
+              <div class="col-4">
+                <label class="form-label" for="oop-zip">ZIP *</label>
+                <input id="oop-zip" type="text" class="form-control" [value]="deliveryZip()" (input)="onFieldInput('zip', $event)" placeholder="33301" maxlength="10" />
+              </div>
+            </div>
+
+            <!-- Save address checkbox (only when customer is identified) -->
+            @if (identifiedCustomerId()) {
+              <div class="save-address-toggle mb-3">
+                <label class="d-flex align-items-center gap-2">
+                  <input type="checkbox" [checked]="saveNewAddress()" (change)="toggleSaveNewAddress()" />
+                  <span>Save this address</span>
+                </label>
+                @if (saveNewAddress()) {
+                  <div class="mt-2">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      aria-label="Address label"
+                      [value]="newAddressLabel()"
+                      (input)="onFieldInput('addressLabel', $event)"
+                      placeholder="Label (Home, Work, etc.)"
+                      style="max-width: 200px;"
+                    />
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <div class="mb-3">
+            <label class="form-label" for="oop-delivery-notes">Delivery Notes</label>
+            <input id="oop-delivery-notes" type="text" class="form-control" [value]="deliveryNotes()" (input)="onFieldInput('deliveryNotes', $event)" placeholder="Gate code, building entrance, etc." />
+          </div>
+        }
+
+        @if (orderType() === 'curbside') {
+          <div class="mb-3">
+            <label class="form-label" for="oop-vehicle">Vehicle Description *</label>
+            <input id="oop-vehicle" type="text" class="form-control" [value]="vehicleDescription()" (input)="onFieldInput('vehicle', $event)" placeholder="Red Toyota Camry" />
+            <small class="form-text text-muted">Help us find you — color, make, and model</small>
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="oop-instructions">Special Instructions</label>
+          <textarea id="oop-instructions" class="form-control" rows="2" [value]="specialInstructions()" (input)="onFieldInput('instructions', $event)" placeholder="Any special requests..."></textarea>
+        </div>
+
+        <!-- Loyalty Program -->
+        @if (loyaltyEnabled()) {
+          <fieldset class="loyalty-section mb-3" aria-label="Loyalty Program"><legend class="visually-hidden">Loyalty Program</legend>
+            <p class="form-label">Loyalty Program</p>
+            @if (isLookingUpLoyalty()) {
+              <div class="d-flex align-items-center gap-2">
+                <span class="spinner-border spinner-border-sm"></span>
+                <span class="text-muted small">Looking up loyalty account...</span>
+              </div>
+            }
+            @if (loyaltyProfile(); as profile) {
+              <div class="loyalty-profile">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="tier-badge" [style.background-color]="tierColor()">
+                    {{ tierLabel() }}
+                  </span>
+                  <span class="fw-semibold">{{ profile.points }} pts</span>
+                </div>
+                <div class="small text-muted mb-2">
+                  Earn ~{{ estimatedPointsEarned() }} points on this order
+                </div>
+                <div class="redeem-section">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="small text-muted">Redeem:</span>
+                    <input
+                      type="number"
+                      class="form-control form-control-sm redeem-input"
+                      aria-label="Points to redeem"
+                      [value]="pointsToRedeem()"
+                      (input)="onPointsToRedeemInput($event)"
+                      min="0"
+                      [max]="profile.points"
+                    />
+                    <span class="small text-muted">of {{ profile.points }}</span>
+                    @if (pointsToRedeem() > 0) {
+                      <button type="button" class="btn btn-sm btn-outline-light" (click)="clearRedemption()">Clear</button>
+                    }
+                  </div>
+                  @if (loyaltyDiscount() > 0) {
+                    <div class="small text-success">
+                      -{{ loyaltyDiscount() | currency }} discount applied
+                    </div>
+                  }
+                </div>
+                @if (availableRewards().length > 0) {
+                  <div class="rewards-list mt-2">
+                    <div class="small fw-semibold mb-1 text-muted">Available Rewards</div>
+                    @for (reward of availableRewards(); track reward.id) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-light w-100 text-start mb-1 d-flex justify-content-between"
+                        (click)="redeemReward(reward)"
+                      >
+                        <span>{{ reward.name }}</span>
+                        <span class="text-muted">{{ reward.pointsCost }} pts</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            } @else if (!isLookingUpLoyalty()) {
+              <div class="small text-muted">
+                @if (loyaltyLookupDone()) {
+                  No loyalty account found for this phone
+                } @else {
+                  Enter your phone number above to check loyalty rewards
+                }
+              </div>
+            }
+          </fieldset>
+        }
+
+        <!-- Gift Card -->
+        <div class="gift-card-section mb-3">
+          <div class="section-title">Gift Card</div>
+          <div class="d-flex gap-2 mb-2">
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Enter gift card code"
+              aria-label="Gift card code"
+              [value]="giftCardCode()"
+              (input)="onGiftCardCodeInput($event)"
+            />
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-light"
+              [disabled]="!giftCardCode() || isCheckingGiftCard()"
+              (click)="lookupGiftCard()"
+            >
+              @if (isCheckingGiftCard()) {
+                <span class="spinner-border spinner-border-sm"></span>
+              } @else {
+                Check
+              }
+            </button>
+          </div>
+          @if (giftCardBalance(); as gc) {
+            @if (gc.status === 'active' && gc.currentBalance > 0) {
+              <div class="gift-card-found">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="small text-muted">Balance</span>
+                  <span class="gc-balance">{{ gc.currentBalance | currency }}</span>
+                </div>
+                @if (!giftCardApplied()) {
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">Apply:</span>
+                    <span class="small text-muted">$</span>
+                    <input
+                      type="number"
+                      class="form-control form-control-sm"
+                      style="max-width: 80px;"
+                      aria-label="Gift card amount to apply"
+                      [value]="giftCardAmount()"
+                      (input)="onGiftCardAmountInput($event)"
+                      min="0"
+                      step="0.01"
+                    />
+                    <button type="button" class="btn btn-sm btn-primary" (click)="applyGiftCard()">Apply</button>
+                  </div>
+                } @else {
+                  <div class="gift-card-applied d-flex justify-content-between align-items-center">
+                    <span>-{{ giftCardDiscount() | currency }} applied</span>
+                    <button type="button" class="btn btn-sm btn-outline-light" (click)="clearGiftCard()">Remove</button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="small text-muted">
+                @if (gc.status !== 'active') {
+                  This gift card is {{ gc.status }}
+                } @else {
+                  This gift card has no remaining balance
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Tip Selection -->
+        <fieldset class="tip-section mb-3" aria-label="Add a Tip"><legend class="visually-hidden">Add a Tip</legend>
+          <p class="form-label">Add a Tip</p>
+          <div class="tip-presets d-flex gap-2 mb-2">
+            @for (preset of tipPresets; track preset.percent) {
+              <button
+                type="button"
+                class="tip-preset-btn flex-fill"
+                [class.active]="selectedTipPreset() === preset.percent"
+                (click)="selectTipPreset(preset.percent)"
+              >{{ preset.label }}</button>
+            }
+            <button
+              type="button"
+              class="tip-preset-btn flex-fill"
+              [class.active]="isCustomTip()"
+              (click)="enableCustomTip()"
+            >Custom</button>
+          </div>
+          @if (isCustomTip()) {
+            <div class="custom-tip-input d-flex align-items-center gap-2">
+              <span class="tip-prefix">$</span>
+              <input
+                type="number"
+                class="form-control form-control-sm"
+                min="0"
+                step="0.01"
+                aria-label="Custom tip amount"
+                [value]="customTipAmount()"
+                (input)="onCustomTipInput($event)"
+                placeholder="0.00"
+              />
+            </div>
+          }
+          @if (tipAmount() > 0) {
+            <div class="tip-amount small">
+              Tip: {{ tipAmount() | currency }}
+              <button type="button" class="btn btn-sm btn-link tip-clear" (click)="clearTip()">Remove</button>
+            </div>
+          }
+        </fieldset>
+
+        <!-- Order Summary -->
+        <div class="order-summary mb-3">
+          <h5>Order Summary</h5>
+          @for (item of cartItems(); track item.id) {
+            <div class="d-flex justify-content-between small mb-1">
+              <span>{{ item.quantity }}x {{ item.menuItem.name }}</span>
+              <span>{{ item.totalPrice | currency }}</span>
+            </div>
+          }
+          @if (loyaltyDiscount() > 0) {
+            <div class="d-flex justify-content-between small text-success mb-1">
+              <span>Loyalty Discount</span>
+              <span>-{{ loyaltyDiscount() | currency }}</span>
+            </div>
+          }
+          @if (giftCardDiscount() > 0) {
+            <div class="d-flex justify-content-between small text-success mb-1">
+              <span>Gift Card</span>
+              <span>-{{ giftCardDiscount() | currency }}</span>
+            </div>
+          }
+          @if (tipAmount() > 0) {
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Tip</span>
+              <span>{{ tipAmount() | currency }}</span>
+            </div>
+          }
+          @if (surchargeAmount() > 0) {
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Card Surcharge</span>
+              <span>{{ surchargeAmount() | currency }}</span>
+            </div>
+          }
+          <hr />
+          <div class="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span>{{ totalAfterGiftCard() | currency }}</span>
+          </div>
+        </div>
+
+        <!-- Age Verification Gate -->
+        @if (cartRequiresAgeVerification() && !ageVerified()) {
+          <div class="age-gate mb-3">
+            <div class="age-gate-icon"><i class="bi bi-shield-check"></i></div>
+            <div class="age-gate-text">
+              Your order includes age-restricted items. Please verify your age to continue.
+            </div>
+            <button type="button" class="btn btn-warning w-100" (click)="openAgeVerification()">
+              Verify Age
+            </button>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="btn btn-primary w-100 mb-3"
+          [disabled]="!canSubmit() || isSubmitting()"
+          (click)="submitOrder()"
+        >
+          @if (isSubmitting()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Placing Order...
+          } @else {
+            Place Order - {{ totalAfterGiftCard() | currency }}
+          }
+        </button>
+      </div>
+    }
+
+    <!-- AGE VERIFICATION MODAL -->
+    @if (showAgeVerification()) {
+      <button type="button" class="modal-backdrop" (click)="cancelAgeVerification()" (keydown.enter)="cancelAgeVerification()"></button>
+      <div class="age-modal">
+        <div class="age-modal-icon"><i class="bi bi-shield-check"></i></div>
+        <h3>Age Verification</h3>
+        <p>Your order contains items that require age verification. Are you 21 or older?</p>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-light flex-fill" (click)="cancelAgeVerification()">No, I'm Under 21</button>
+          <button type="button" class="btn btn-primary flex-fill" (click)="confirmAge()">Yes, I'm 21+</button>
+        </div>
+      </div>
+    }
+
+    <!-- CONFIRM STEP -->
+    @if (step() === 'confirm' && orderConfirmed()) {
+      <div class="confirm-view text-center px-3 pt-5">
+        <div class="confirm-icon mb-3">&#10003;</div>
+        <h3>Order Confirmed!</h3>
+        <p class="text-muted">Order #{{ orderNumber() }}</p>
+        @if (earnedPointsMessage()) {
+          <div class="loyalty-earned-badge mb-2">{{ earnedPointsMessage() }}</div>
+        }
+        <p>
+          @if (orderType() === 'pickup') {
+            We'll have your order ready for pickup soon.
+          } @else if (orderType() === 'delivery') {
+            Your delivery is being prepared!
+          } @else if (orderType() === 'curbside') {
+            We'll bring your order to your vehicle when it's ready.
+          } @else {
+            Your order has been placed. Please take a seat.
+          }
+        </p>
+        @if (estimatedReadyMinutes() > 0) {
+          <div class="ready-time-badge">
+            <i class="bi bi-clock me-1"></i>
+            Estimated ready in ~{{ estimatedReadyMinutes() }} minutes
+          </div>
+        }
+
+        <!-- Order Tracking -->
+        @if (submittedOrder(); as tracked) {
+          <div class="tracking-section mt-4 text-start">
+            <h5 class="tracking-title">Order Status</h5>
+            <div class="tracking-status">
+              <span class="badge tracking-badge" [class.bg-warning]="tracked.guestOrderStatus === 'RECEIVED'"
+                [class.bg-info]="tracked.guestOrderStatus === 'IN_PREPARATION'"
+                [class.bg-success]="tracked.guestOrderStatus === 'READY_FOR_PICKUP' || tracked.guestOrderStatus === 'CLOSED'">
+                @switch (tracked.guestOrderStatus) {
+                  @case ('RECEIVED') { Order Received }
+                  @case ('IN_PREPARATION') { Being Prepared }
+                  @case ('READY_FOR_PICKUP') { Ready! }
+                  @case ('CLOSED') { Complete }
+                  @default { {{ tracked.guestOrderStatus }} }
+                }
+              </span>
+            </div>
+
+            @if (tracked.deliveryInfo) {
+              <div class="delivery-tracking mt-3">
+                <div class="tracking-steps">
+                  <div class="tracking-step" [class.active]="true">
+                    <span class="step-indicator"></span>
+                    <span>Preparing</span>
+                  </div>
+                  <div class="tracking-step" [class.active]="tracked.deliveryInfo.deliveryState === 'OUT_FOR_DELIVERY' || tracked.deliveryInfo.deliveryState === 'DELIVERED'">
+                    <span class="step-indicator"></span>
+                    <span>Out for Delivery</span>
+                  </div>
+                  <div class="tracking-step" [class.active]="tracked.deliveryInfo.deliveryState === 'DELIVERED'">
+                    <span class="step-indicator"></span>
+                    <span>Delivered</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (tracked.curbsideInfo) {
+              <div class="curbside-tracking mt-3">
+                @if (!tracked.curbsideInfo.arrivalNotified) {
+                  <p class="small text-muted mb-2">When you arrive, let us know:</p>
+                  <button type="button" class="btn btn-warning w-100" (click)="notifyArrival()">
+                    I've Arrived
+                  </button>
+                } @else {
+                  <div class="arrival-confirmed">
+                    <span class="badge bg-success">Staff notified — bringing your order out!</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (isTableside()) {
+          <div class="tableside-actions mt-4 d-flex flex-column gap-2">
+            <button type="button" class="btn btn-primary w-100" (click)="orderMore()">
+              <i class="bi bi-plus-circle me-2"></i>Order More
+            </button>
+          </div>
+        } @else {
+          <button type="button" class="btn btn-primary mt-4" (click)="startNewOrder()">
+            Order Again
+          </button>
+        }
+      </div>
+    }
+  }
+</div>

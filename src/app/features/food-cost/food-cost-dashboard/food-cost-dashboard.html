@@ -1,0 +1,797 @@
+<div class="food-cost-dashboard px-2">
+  <header class="dashboard-header">
+    <div class="header-title">
+      <i class="bi bi-receipt-cutoff"></i>
+      <h1>Food Cost Management</h1>
+    </div>
+    <div class="header-kpis">
+      @if (foodCostSummary()) {
+        <div class="kpi-card">
+          <span class="kpi-value" [class]="getFoodCostClass(foodCostSummary()!.foodCostPercent)">
+            {{ foodCostSummary()!.foodCostPercent | number:'1.1-1' }}%
+          </span>
+          <span class="kpi-label">Actual Food Cost</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-value">
+            {{ foodCostSummary()!.theoreticalFoodCostPercent | number:'1.1-1' }}%
+          </span>
+          <span class="kpi-label">Theoretical</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-value" [class]="getVarianceClass(foodCostSummary()!.variancePercent)">
+            {{ foodCostSummary()!.variancePercent > 0 ? '+' : '' }}{{ foodCostSummary()!.variancePercent | number:'1.1-1' }}%
+          </span>
+          <span class="kpi-label">Variance</span>
+        </div>
+      }
+      <div class="kpi-card">
+        <span class="kpi-value">{{ pendingInvoiceCount() }}</span>
+        <span class="kpi-label">Pending Invoices</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-value">{{ recipeCount() }}</span>
+        <span class="kpi-label">Recipes</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Error banner -->
+  @if (error()) {
+    <button type="button" class="error-banner" (click)="dismissError()">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{ error() }}
+      <i class="bi bi-x"></i>
+    </button>
+  }
+
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab() === 'invoices'" (click)="setTab('invoices')">
+      <i class="bi bi-file-earmark-text"></i> Invoices
+      @if (pendingInvoiceCount() > 0) {
+        <span class="badge">{{ pendingInvoiceCount() }}</span>
+      }
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'vendors'" (click)="setTab('vendors')">
+      <i class="bi bi-truck"></i> Vendors
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'recipes'" (click)="setTab('recipes')">
+      <i class="bi bi-journal-text"></i> Recipes
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'purchase-orders'" (click)="setTab('purchase-orders')">
+      <i class="bi bi-cart3"></i> Purchase Orders
+      @if (draftPOCount() > 0) {
+        <span class="badge">{{ draftPOCount() }}</span>
+      }
+    </button>
+  </nav>
+
+  @if (isLoading()) {
+    <div class="loading-msg">Loading data...</div>
+  }
+
+  <!-- ═══ INVOICES TAB ═══ -->
+  @if (activeTab() === 'invoices') {
+    <div class="tab-content">
+      <div class="section-header">
+        <div class="section-title">
+          <h3>Purchase Invoices</h3>
+          <div class="filter-pills">
+            <button class="pill" [class.active]="invoiceStatusFilter() === 'all'" (click)="setInvoiceFilter('all')">All</button>
+            <button class="pill" [class.active]="invoiceStatusFilter() === 'pending_review'" (click)="setInvoiceFilter('pending_review')">Pending</button>
+            <button class="pill" [class.active]="invoiceStatusFilter() === 'approved'" (click)="setInvoiceFilter('approved')">Approved</button>
+            <button class="pill" [class.active]="invoiceStatusFilter() === 'paid'" (click)="setInvoiceFilter('paid')">Paid</button>
+          </div>
+        </div>
+        <div class="section-actions">
+          <label class="btn-upload" [class.uploading]="isUploading()">
+            <i class="bi bi-cloud-upload"></i>
+            @if (isUploading()) { Scanning... } @else { OCR Upload }
+            <input type="file" accept="image/*,.pdf" (change)="onFileSelected($event)" hidden aria-label="Upload invoice image or PDF">
+          </label>
+          <button class="btn-add" (click)="openInvoiceForm()">
+            <i class="bi bi-plus-lg"></i> Manual Entry
+          </button>
+        </div>
+      </div>
+
+      <!-- Invoice list -->
+      <div class="invoice-list">
+        @for (inv of filteredInvoices(); track inv.id) {
+          <button type="button" class="invoice-card" [class.selected]="selectedInvoice()?.id === inv.id" (click)="selectInvoice(inv)">
+            <div class="invoice-card-header">
+              <span class="invoice-number">#{{ inv.invoiceNumber }}</span>
+              <span class="invoice-status {{ getStatusClass(inv.status) }}">{{ getStatusLabel(inv.status) }}</span>
+            </div>
+            <div class="invoice-card-body">
+              <span class="invoice-vendor">{{ inv.vendorName ?? getVendorName(inv.vendorId) }}</span>
+              <span class="invoice-date">{{ inv.invoiceDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="invoice-card-footer">
+              <span class="invoice-total">{{ inv.totalAmount | currency }}</span>
+              <span class="invoice-items">{{ inv.lineItems.length }} items</span>
+            </div>
+            @if (selectedInvoice()?.id === inv.id) {
+              <div class="invoice-detail">
+                <table class="line-items-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Qty</th>
+                      <th>Unit</th>
+                      <th>Unit Cost</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of inv.lineItems; track item.id) {
+                      <tr>
+                        <td>{{ item.ingredientName }}</td>
+                        <td>{{ item.quantity | number:'1.0-2' }}</td>
+                        <td>{{ item.unit }}</td>
+                        <td>{{ item.unitCost | currency }}</td>
+                        <td>{{ item.totalCost | currency }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                @if (inv.ocrProcessedAt) {
+                  <div class="ocr-badge">
+                    <i class="bi bi-robot"></i> OCR processed {{ inv.ocrProcessedAt | date:'short' }}
+                  </div>
+                }
+                <div class="invoice-actions">
+                  @if (inv.status === 'pending_review') {
+                    <button class="btn-approve" (click)="approveInvoice(inv.id); $event.stopPropagation()">
+                      <i class="bi bi-check-lg"></i> Approve
+                    </button>
+                  }
+                  @if (inv.status === 'approved') {
+                    <button class="btn-paid" (click)="markPaid(inv.id); $event.stopPropagation()">
+                      <i class="bi bi-cash-coin"></i> Mark Paid
+                    </button>
+                  }
+                  <button class="btn-delete" (click)="deleteInvoice(inv.id); $event.stopPropagation()">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          </button>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-file-earmark-plus"></i>
+            <p>No invoices yet</p>
+            <p class="empty-hint">Upload a photo or PDF to scan with AI, or enter manually</p>
+          </div>
+        }
+      </div>
+
+      <!-- Invoice totals -->
+      @if (invoices().length > 0) {
+        <div class="invoice-summary">
+          <div class="summary-item">
+            <span>Total Invoice Value</span>
+            <span class="summary-value">{{ totalInvoiceValue() | currency }}</span>
+          </div>
+          <div class="summary-item">
+            <span>Unpaid</span>
+            <span class="summary-value unpaid">{{ unpaidInvoiceValue() | currency }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══ VENDORS TAB ═══ -->
+  @if (activeTab() === 'vendors') {
+    <div class="tab-content">
+      <div class="section-header">
+        <h3>Vendors</h3>
+        <button class="btn-add" (click)="openVendorForm()">
+          <i class="bi bi-plus-lg"></i> Add Vendor
+        </button>
+      </div>
+
+      <div class="vendor-list">
+        @for (vendor of vendors(); track vendor.id) {
+          <div class="vendor-card" [class.inactive]="!vendor.isActive" [class.selected]="selectedVendor()?.id === vendor.id" (click)="selectVendor(vendor)" (keydown.enter)="selectVendor(vendor)">
+            <div class="vendor-card-header">
+              <span class="vendor-name">{{ vendor.name }}</span>
+              <span class="vendor-status-dot" [class.active]="vendor.isActive"></span>
+            </div>
+            <div class="vendor-card-body">
+              @if (vendor.contactName) {
+                <span class="vendor-contact"><i class="bi bi-person"></i> {{ vendor.contactName }}</span>
+              }
+              @if (vendor.phone) {
+                <span class="vendor-phone"><i class="bi bi-telephone"></i> {{ vendor.phone }}</span>
+              }
+              @if (vendor.contactEmail) {
+                <span class="vendor-email"><i class="bi bi-envelope"></i> {{ vendor.contactEmail }}</span>
+              }
+            </div>
+            <div class="vendor-card-footer">
+              <span class="vendor-invoice-count">{{ getVendorInvoices(vendor.id).length }} invoices</span>
+              <div class="vendor-actions">
+                <button class="btn-icon" (click)="openVendorForm(vendor); $event.stopPropagation()">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-icon" (click)="toggleVendorActive(vendor); $event.stopPropagation()">
+                  <i class="bi" [class.bi-toggle-on]="vendor.isActive" [class.bi-toggle-off]="!vendor.isActive"></i>
+                </button>
+                <button class="btn-icon btn-icon-danger" (click)="deleteVendor(vendor); $event.stopPropagation()">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+
+            @if (selectedVendor()?.id === vendor.id) {
+              <div class="vendor-detail">
+                @if (vendor.address) {
+                  <div class="detail-row">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>{{ vendor.address }}</span>
+                  </div>
+                }
+                @if (vendor.notes) {
+                  <div class="detail-row">
+                    <i class="bi bi-sticky"></i>
+                    <span>{{ vendor.notes }}</span>
+                  </div>
+                }
+                <h4>Price History</h4>
+                @if (getVendorPriceHistory(vendor.id).length > 0) {
+                  <table class="price-history-table">
+                    <thead>
+                      <tr>
+                        <th>Ingredient</th>
+                        <th>Unit Cost</th>
+                        <th>Unit</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (entry of getVendorPriceHistory(vendor.id); track $index) {
+                        <tr>
+                          <td>{{ entry.ingredientName }}</td>
+                          <td>{{ entry.unitCost | currency }}</td>
+                          <td>{{ entry.unit }}</td>
+                          <td>{{ entry.invoiceDate | date:'shortDate' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="empty-hint">No price history yet — will populate from invoices</p>
+                }
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-truck"></i>
+            <p>No vendors added yet</p>
+            <p class="empty-hint">Add your suppliers to track pricing and manage invoices</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══ RECIPES TAB ═══ -->
+  @if (activeTab() === 'recipes') {
+    <div class="tab-content">
+      <div class="section-header">
+        <div class="section-title">
+          <h3>Recipe Costing</h3>
+          <input type="text" class="search-input" placeholder="Search recipes..." aria-label="Search recipes" [value]="recipeSearch()" (input)="recipeSearch.set($any($event.target).value)">
+        </div>
+        <button class="btn-add" (click)="openRecipeForm()">
+          <i class="bi bi-plus-lg"></i> New Recipe
+        </button>
+      </div>
+
+      <!-- Food Cost Summary -->
+      @if (foodCostSummary()) {
+        <div class="food-cost-summary-bar">
+          <div class="report-period">
+            <button class="period-btn" [class.active]="reportDays() === 7" (click)="changeReportDays(7)">7d</button>
+            <button class="period-btn" [class.active]="reportDays() === 14" (click)="changeReportDays(14)">14d</button>
+            <button class="period-btn" [class.active]="reportDays() === 30" (click)="changeReportDays(30)">30d</button>
+            <button class="period-btn" [class.active]="reportDays() === 90" (click)="changeReportDays(90)">90d</button>
+          </div>
+          <div class="cost-summary-row">
+            <div class="cost-metric">
+              <span class="metric-label">Revenue</span>
+              <span class="metric-value">{{ foodCostSummary()!.totalRevenue | currency }}</span>
+            </div>
+            <div class="cost-metric">
+              <span class="metric-label">COGS (Actual)</span>
+              <span class="metric-value">{{ foodCostSummary()!.totalCogs | currency }}</span>
+            </div>
+            <div class="cost-metric">
+              <span class="metric-label">COGS (Theoretical)</span>
+              <span class="metric-value">{{ foodCostSummary()!.theoreticalCogs | currency }}</span>
+            </div>
+            <div class="cost-metric">
+              <span class="metric-label">Variance</span>
+              <span class="metric-value" [class]="getVarianceClass(foodCostSummary()!.variancePercent)">
+                {{ foodCostSummary()!.variance | currency }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Price alerts -->
+          @if (foodCostSummary()!.priceAlerts.length > 0) {
+            <div class="price-alerts">
+              <h4><i class="bi bi-exclamation-triangle"></i> Price Alerts</h4>
+              @for (alert of foodCostSummary()!.priceAlerts; track $index) {
+                <div class="price-alert-card" [class]="getPriceChangeClass(alert.changePercent)">
+                  <span class="alert-ingredient">{{ alert.ingredientName }}</span>
+                  <span class="alert-vendor">{{ alert.vendorName }}</span>
+                  <span class="alert-change">
+                    {{ alert.previousCost | currency }} → {{ alert.currentCost | currency }}
+                    ({{ alert.changePercent > 0 ? '+' : '' }}{{ alert.changePercent | number:'1.0-1' }}%)
+                  </span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Top cost items -->
+          @if (foodCostSummary()!.topCostItems.length > 0) {
+            <div class="top-cost-items">
+              <h4>Top Food Cost Items</h4>
+              <table class="cost-items-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Recipe Cost</th>
+                    <th>Menu Price</th>
+                    <th>Food Cost %</th>
+                    <th>Qty Sold</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of foodCostSummary()!.topCostItems; track $index) {
+                    <tr>
+                      <td>{{ item.menuItemName }}</td>
+                      <td>{{ item.recipeCost | currency }}</td>
+                      <td>{{ item.menuPrice | currency }}</td>
+                      <td>
+                        <span class="food-cost-badge" [class]="getFoodCostClass(item.foodCostPercent)">
+                          {{ item.foodCostPercent | number:'1.1-1' }}%
+                        </span>
+                      </td>
+                      <td>{{ item.quantitySold }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Uncosted items alert -->
+      @if (uncostedMenuItems().length > 0) {
+        <div class="uncosted-alert">
+          <i class="bi bi-info-circle"></i>
+          {{ uncostedMenuItems().length }} menu items have no recipe — food cost calculations may be incomplete
+        </div>
+      }
+
+      <!-- Recipe list -->
+      <div class="recipe-list">
+        @for (recipe of filteredRecipes(); track recipe.id) {
+          <div class="recipe-card" [class.selected]="selectedRecipe()?.id === recipe.id" (click)="selectRecipe(recipe)" (keydown.enter)="selectRecipe(recipe)">
+            <div class="recipe-card-header">
+              <span class="recipe-name">{{ recipe.name }}</span>
+              <span class="recipe-menu-item">{{ getMenuItemName(recipe.menuItemId) }}</span>
+            </div>
+            <div class="recipe-card-metrics">
+              <div class="recipe-metric">
+                <span class="metric-label">Cost/Serving</span>
+                <span class="metric-value">{{ recipe.costPerServing ?? 0 | currency }}</span>
+              </div>
+              <div class="recipe-metric">
+                <span class="metric-label">Menu Price</span>
+                <span class="metric-value">{{ getMenuItemPrice(recipe.menuItemId) | currency }}</span>
+              </div>
+              <div class="recipe-metric">
+                <span class="metric-label">Food Cost</span>
+                <span class="metric-value food-cost-badge" [class]="getFoodCostClass(getRecipeFoodCostPercent(recipe))">
+                  {{ getRecipeFoodCostPercent(recipe) | number:'1.1-1' }}%
+                </span>
+              </div>
+              <div class="recipe-metric">
+                <span class="metric-label">Margin</span>
+                <span class="metric-value">{{ getRecipeMargin(recipe) | number:'1.1-1' }}%</span>
+              </div>
+            </div>
+
+            @if (selectedRecipe()?.id === recipe.id) {
+              <div class="recipe-detail">
+                <div class="recipe-yield">
+                  Yield: {{ recipe.yieldQty }} {{ recipe.yieldUnit }}
+                </div>
+                <table class="ingredients-table">
+                  <thead>
+                    <tr>
+                      <th>Ingredient</th>
+                      <th>Qty</th>
+                      <th>Unit</th>
+                      <th>Est. Cost</th>
+                      <th>Actual Cost</th>
+                      <th>Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (ing of recipe.ingredients; track ing.id) {
+                      <tr>
+                        <td>{{ ing.ingredientName }}</td>
+                        <td>{{ ing.quantity | number:'1.0-2' }}</td>
+                        <td>{{ ing.unit }}</td>
+                        <td>{{ ing.estimatedUnitCost | currency }}</td>
+                        <td>
+                          @if (ing.actualUnitCost !== undefined) {
+                            {{ ing.actualUnitCost | currency }}
+                          } @else {
+                            <span class="no-data">—</span>
+                          }
+                        </td>
+                        <td>{{ (ing.quantity * (ing.actualUnitCost ?? ing.estimatedUnitCost)) | currency }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="5">Total Cost</td>
+                      <td>{{ recipe.totalCost ?? 0 | currency }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+                <div class="recipe-actions">
+                  <button class="btn-edit" (click)="openRecipeForm(recipe); $event.stopPropagation()">
+                    <i class="bi bi-pencil"></i> Edit
+                  </button>
+                  <button class="btn-delete" (click)="deleteRecipe(recipe); $event.stopPropagation()">
+                    <i class="bi bi-trash3"></i> Delete
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-journal-text"></i>
+            <p>No recipes yet</p>
+            <p class="empty-hint">Add recipes to track ingredient costs per menu item</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══ PURCHASE ORDERS TAB ═══ -->
+  @if (activeTab() === 'purchase-orders') {
+    <div class="tab-content">
+      <div class="section-header">
+        <div class="section-title">
+          <h3>Purchase Orders</h3>
+          <div class="filter-pills">
+            <button class="pill" [class.active]="poStatusFilter() === 'all'" (click)="setPoStatusFilter('all')">All</button>
+            <button class="pill" [class.active]="poStatusFilter() === 'draft'" (click)="setPoStatusFilter('draft')">Draft</button>
+            <button class="pill" [class.active]="poStatusFilter() === 'submitted'" (click)="setPoStatusFilter('submitted')">Submitted</button>
+            <button class="pill" [class.active]="poStatusFilter() === 'partially_received'" (click)="setPoStatusFilter('partially_received')">Partial</button>
+            <button class="pill" [class.active]="poStatusFilter() === 'received'" (click)="setPoStatusFilter('received')">Received</button>
+          </div>
+        </div>
+        <div class="section-actions">
+          <button class="btn-add" (click)="openPoForm()">
+            <i class="bi bi-plus-lg"></i> New PO
+          </button>
+        </div>
+      </div>
+
+      @if (filteredPurchaseOrders().length > 0) {
+        <div class="data-list">
+          @for (po of filteredPurchaseOrders(); track po.id) {
+            <div class="data-card" [class.selected]="selectedPo()?.id === po.id" (click)="selectPo(po)" (keydown.enter)="selectPo(po)">
+              <div class="data-card-header">
+                <div>
+                  <strong>{{ po.poNumber }}</strong>
+                  <span class="text-muted small ms-2">{{ po.vendorName }}</span>
+                </div>
+                <span class="status-pill" [class]="getPoStatusClass(po.status)">
+                  {{ getPoStatusLabel(po.status) }}
+                </span>
+              </div>
+              <div class="data-card-meta">
+                <span>{{ po.lineItems.length }} item{{ po.lineItems.length !== 1 ? 's' : '' }}</span>
+                <span class="fw-bold">{{ po.total | currency }}</span>
+                <span class="text-muted">{{ po.createdAt | date:'shortDate' }}</span>
+              </div>
+
+              @if (selectedPo()?.id === po.id) {
+                <div class="data-card-detail mt-2">
+                  <table class="detail-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th class="text-end">Qty</th>
+                        <th class="text-end">Unit Cost</th>
+                        <th class="text-end">Received</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (line of po.lineItems; track line.inventoryItemId) {
+                        <tr>
+                          <td>{{ line.itemName }}</td>
+                          <td class="text-end">{{ line.quantity }}</td>
+                          <td class="text-end">{{ line.unitCost | currency }}</td>
+                          <td class="text-end">{{ line.receivedQuantity ?? '-' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  @if (po.notes) {
+                    <p class="text-muted small mt-2 mb-1">{{ po.notes }}</p>
+                  }
+                  <div class="d-flex gap-2 mt-2">
+                    @if (po.status === 'draft') {
+                      <button class="btn-action btn-submit" (click)="submitPo(po.id); $event.stopPropagation()">Submit to Vendor</button>
+                      <button class="btn-action btn-cancel-po" (click)="cancelPo(po.id); $event.stopPropagation()">Cancel</button>
+                    }
+                    @if (po.status === 'submitted' || po.status === 'partially_received') {
+                      <button class="btn-action btn-receive" (click)="openReceiveModal(po); $event.stopPropagation()">Receive</button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="bi bi-cart3"></i>
+          <p>No purchase orders</p>
+          <p class="empty-hint">Create purchase orders to track vendor fulfillment and auto-update inventory</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══ VENDOR FORM MODAL ═══ -->
+  @if (showVendorForm()) {
+    <div class="modal-overlay" (click)="closeVendorForm()" (keydown.enter)="closeVendorForm()" aria-hidden="true">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editingVendor() ? 'Edit' : 'Add' }} Vendor</h3>
+          <button class="btn-close-modal" (click)="closeVendorForm()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="fc-vendor-name">Vendor Name *</label>
+            <input type="text" id="fc-vendor-name" class="form-input" aria-label="Vendor name" [value]="vendorName()" (input)="vendorName.set($any($event.target).value)" placeholder="e.g., Sysco, US Foods">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fc-vendor-contact-name">Contact Name</label>
+              <input type="text" id="fc-vendor-contact-name" class="form-input" aria-label="Contact name" [value]="vendorContactName()" (input)="vendorContactName.set($any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label for="fc-vendor-phone">Phone</label>
+              <input type="tel" id="fc-vendor-phone" class="form-input" aria-label="Vendor phone" [value]="vendorPhone()" (input)="vendorPhone.set($any($event.target).value)">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="fc-vendor-email">Email</label>
+            <input type="email" id="fc-vendor-email" class="form-input" aria-label="Vendor email" [value]="vendorContactEmail()" (input)="vendorContactEmail.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label for="fc-vendor-address">Address</label>
+            <input type="text" id="fc-vendor-address" class="form-input" aria-label="Vendor address" [value]="vendorAddress()" (input)="vendorAddress.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label for="fc-vendor-notes">Notes</label>
+            <textarea id="fc-vendor-notes" class="form-input" rows="2" aria-label="Vendor notes" [value]="vendorNotes()" (input)="vendorNotes.set($any($event.target).value)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeVendorForm()">Cancel</button>
+          <button class="btn-save" [disabled]="!vendorName() || isSavingVendor()" (click)="saveVendor()">
+            @if (isSavingVendor()) { Saving... } @else { Save }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ INVOICE FORM MODAL ═══ -->
+  @if (showInvoiceForm()) {
+    <div class="modal-overlay" (click)="closeInvoiceForm()" (keydown.enter)="closeInvoiceForm()" aria-hidden="true">
+      <div class="modal-content modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Manual Invoice Entry</h3>
+          <button class="btn-close-modal" (click)="closeInvoiceForm()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fc-invoice-vendor">Vendor *</label>
+              <select id="fc-invoice-vendor" class="form-select" (change)="invoiceVendorId.set($any($event.target).value)">
+                <option value="">Select vendor...</option>
+                @for (v of activeVendors(); track v.id) {
+                  <option [value]="v.id">{{ v.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="fc-invoice-number">Invoice # *</label>
+              <input type="text" id="fc-invoice-number" class="form-input" aria-label="Invoice number" [value]="invoiceNumber()" (input)="invoiceNumber.set($any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label for="fc-invoice-date">Date</label>
+              <input type="date" id="fc-invoice-date" class="form-input" aria-label="Invoice date" [value]="invoiceDate()" (input)="invoiceDate.set($any($event.target).value)">
+            </div>
+          </div>
+
+          <h4>Line Items</h4>
+          <table class="line-items-edit-table">
+            <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Unit Cost</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of invoiceLineItems(); track $index) {
+                <tr>
+                  <td><input type="text" class="form-input-sm" aria-label="Ingredient name" [value]="item.ingredientName" (input)="updateLineItem($index, 'ingredientName', $any($event.target).value)"></td>
+                  <td><input type="number" class="form-input-sm num" aria-label="Quantity" [value]="item.quantity" (input)="updateLineItem($index, 'quantity', +$any($event.target).value)" min="0" step="0.01"></td>
+                  <td>
+                    <select class="form-select-sm" [attr.aria-label]="'Unit for line item ' + ($index + 1)" (change)="updateLineItem($index, 'unit', $any($event.target).value)">
+                      @for (u of ['lb','oz','kg','g','ea','cs','gal','qt','pt','dz']; track u) {
+                        <option [value]="u" [selected]="item.unit === u">{{ u }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td><input type="number" class="form-input-sm num" aria-label="Unit cost" [value]="item.unitCost" (input)="updateLineItem($index, 'unitCost', +$any($event.target).value)" min="0" step="0.01"></td>
+                  <td class="line-total">{{ item.totalCost | currency }}</td>
+                  <td><button class="btn-icon btn-icon-danger" (click)="removeInvoiceLineItem($index)"><i class="bi bi-x"></i></button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <button class="btn-add-row" (click)="addInvoiceLineItem()"><i class="bi bi-plus"></i> Add Line</button>
+
+          <div class="invoice-form-total">
+            <span>Invoice Total:</span>
+            <span class="total-value">{{ getInvoiceTotal() | currency }}</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeInvoiceForm()">Cancel</button>
+          <button class="btn-save" [disabled]="!invoiceVendorId() || !invoiceNumber() || isSavingInvoice()" (click)="saveInvoice()">
+            @if (isSavingInvoice()) { Saving... } @else { Save Invoice }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ RECIPE FORM MODAL ═══ -->
+  @if (showRecipeForm()) {
+    <div class="modal-overlay" (click)="closeRecipeForm()" (keydown.enter)="closeRecipeForm()" aria-hidden="true">
+      <div class="modal-content modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editingRecipe() ? 'Edit' : 'New' }} Recipe</h3>
+          <button class="btn-close-modal" (click)="closeRecipeForm()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fc-recipe-menu-item">Menu Item *</label>
+              <select id="fc-recipe-menu-item" class="form-select" [value]="recipeMenuItemId()" (change)="recipeMenuItemId.set($any($event.target).value)">
+                <option value="">Select item...</option>
+                @for (item of menuItems(); track item.id) {
+                  <option [value]="item.id">{{ item.name }} ({{ item.price | currency }})</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="fc-recipe-name">Recipe Name *</label>
+              <input type="text" id="fc-recipe-name" class="form-input" aria-label="Recipe name" [value]="recipeName()" (input)="recipeName.set($any($event.target).value)" placeholder="e.g., Chicken Alfredo">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fc-recipe-yield-qty">Yield Quantity</label>
+              <input type="number" id="fc-recipe-yield-qty" class="form-input" aria-label="Yield quantity" [value]="recipeYieldQty()" (input)="recipeYieldQty.set(+$any($event.target).value)" min="1">
+            </div>
+            <div class="form-group">
+              <label for="fc-recipe-yield-unit">Yield Unit</label>
+              <select id="fc-recipe-yield-unit" class="form-select" [value]="recipeYieldUnit()" (change)="recipeYieldUnit.set($any($event.target).value)">
+                @for (u of ['serving','portion','batch','piece','plate']; track u) {
+                  <option [value]="u">{{ u | titlecase }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <h4>Ingredients</h4>
+          <table class="line-items-edit-table">
+            <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Est. Cost/Unit</th>
+                <th>Line Cost</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ing of recipeIngredients(); track $index) {
+                <tr>
+                  <td><input type="text" class="form-input-sm" aria-label="Ingredient name" [value]="ing.ingredientName" (input)="updateIngredient($index, 'ingredientName', $any($event.target).value)"></td>
+                  <td><input type="number" class="form-input-sm num" aria-label="Ingredient quantity" [value]="ing.quantity" (input)="updateIngredient($index, 'quantity', +$any($event.target).value)" min="0" step="0.01"></td>
+                  <td>
+                    <select class="form-select-sm" [attr.aria-label]="'Unit for ingredient ' + ($index + 1)" (change)="updateIngredient($index, 'unit', $any($event.target).value)">
+                      @for (u of ['oz','lb','g','kg','ea','cup','tbsp','tsp','fl oz','gal','qt','pt','ml','l']; track u) {
+                        <option [value]="u" [selected]="ing.unit === u">{{ u }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td><input type="number" class="form-input-sm num" aria-label="Estimated unit cost" [value]="ing.estimatedUnitCost" (input)="updateIngredient($index, 'estimatedUnitCost', +$any($event.target).value)" min="0" step="0.01"></td>
+                  <td class="line-total">{{ (ing.quantity * ing.estimatedUnitCost) | currency }}</td>
+                  <td><button class="btn-icon btn-icon-danger" (click)="removeRecipeIngredient($index)"><i class="bi bi-x"></i></button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <button class="btn-add-row" (click)="addRecipeIngredient()"><i class="bi bi-plus"></i> Add Ingredient</button>
+
+          <div class="recipe-form-summary">
+            <div class="summary-row">
+              <span>Total Recipe Cost:</span>
+              <span>{{ getRecipeTotalCost() | currency }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Cost per Serving:</span>
+              <span>{{ getRecipeCostPerServing() | currency }}</span>
+            </div>
+            @if (recipeMenuItemId()) {
+              <div class="summary-row">
+                <span>Menu Price:</span>
+                <span>{{ getMenuItemPrice(recipeMenuItemId()) | currency }}</span>
+              </div>
+              @let price = getMenuItemPrice(recipeMenuItemId());
+              @if (price > 0) {
+                <div class="summary-row highlight">
+                  <span>Food Cost %:</span>
+                  <span class="food-cost-badge" [class]="getFoodCostClass((getRecipeCostPerServing() / price) * 100)">
+                    {{ (getRecipeCostPerServing() / price) * 100 | number:'1.1-1' }}%
+                  </span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeRecipeForm()">Cancel</button>
+          <button class="btn-save" [disabled]="!recipeMenuItemId() || !recipeName() || isSavingRecipe()" (click)="saveRecipe()">
+            @if (isSavingRecipe()) { Saving... } @else { Save Recipe }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

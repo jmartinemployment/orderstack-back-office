@@ -1,0 +1,302 @@
+<div class="variation-editor px-2">
+<!-- Page Header -->
+<div class="os-page-header">
+  <div class="header-left">
+    <button class="btn btn-ghost" (click)="goBack()" aria-label="Go back"><i class="bi bi-arrow-left"></i></button>
+    <h1>Variation Editor</h1>
+    @if (selectedItem(); as item) {
+      <span class="item-label">{{ item.name }}</span>
+    }
+  </div>
+  <div class="header-actions">
+    @if (selectedItem()) {
+      <button class="btn btn-outline-secondary btn-sm" (click)="openBulkPrice()">
+        <i class="bi bi-currency-dollar"></i> Bulk Price
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="openGenerate()">
+        <i class="bi bi-grid-3x3-gap"></i> Auto-Generate
+      </button>
+    }
+  </div>
+</div>
+
+<div class="os-page-content">
+
+  @if (!selectedItemId()) {
+    <!-- Item Selector -->
+    <div class="item-selector">
+      <h3>Select an item to edit variations</h3>
+      <p class="text-muted">Choose a product with existing variations or any product to start creating them.</p>
+
+      <div class="item-select-grid">
+        @for (item of items(); track item.id) {
+          <button class="item-select-card" (click)="selectItem(item.id)">
+            <div class="item-select-name">{{ item.name }}</div>
+            <div class="item-select-meta">
+              @if (item.variations.length > 0) {
+                <span class="badge badge-info">{{ item.variations.length }} variations</span>
+              } @else {
+                <span class="badge badge-muted">No variations</span>
+              }
+              <span class="price">${{ item.basePrice | number:'1.2-2' }}</span>
+            </div>
+          </button>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-box-seam"></i>
+            <p>No items in catalog. Add items first.</p>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+
+    <!-- Variation Matrix -->
+    <div class="variation-matrix-wrap">
+      <table class="variation-matrix">
+        <thead>
+          <tr>
+            <th>Variation</th>
+            <th>SKU</th>
+            <th>Barcode</th>
+            <th>Price</th>
+            <th>Cost</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (v of variations(); track v.id) {
+            <tr [class.inactive]="!v.isActive">
+              <!-- Name -->
+              <td class="col-name">
+                <div class="variation-name">{{ v.name }}</div>
+                @if (v.imageUrl) {
+                  <img class="var-thumb" [src]="v.imageUrl" [alt]="v.name" />
+                }
+              </td>
+
+              <!-- SKU -->
+              <td class="col-editable" (click)="startEdit(v.id, 'sku', v.sku)" (keydown.enter)="startEdit(v.id, 'sku', v.sku)">
+                @if (isEditing(v.id, 'sku')) {
+                  <input
+                    type="text"
+                    class="inline-input"
+                    [ngModel]="editValue()"
+                    (ngModelChange)="editValue.set($event)"
+                    (keydown.enter)="saveEdit(v.id)"
+                    (keydown.escape)="cancelEdit()"
+                    (blur)="saveEdit(v.id)"
+                    aria-label="SKU"
+                    autofocus
+                  />
+                } @else {
+                  <span class="cell-value" [class.empty]="!v.sku">{{ v.sku || '—' }}</span>
+                }
+              </td>
+
+              <!-- Barcode -->
+              <td class="col-editable" (click)="startEdit(v.id, 'barcode', v.barcode)" (keydown.enter)="startEdit(v.id, 'barcode', v.barcode)">
+                @if (isEditing(v.id, 'barcode')) {
+                  <div class="inline-input-group">
+                    <input
+                      type="text"
+                      class="inline-input"
+                      [ngModel]="editValue()"
+                      (ngModelChange)="editValue.set($event)"
+                      (keydown.enter)="saveEdit(v.id)"
+                      (keydown.escape)="cancelEdit()"
+                      (blur)="saveEdit(v.id)"
+                      aria-label="Barcode"
+                      autofocus
+                    />
+                  </div>
+                } @else {
+                  <div class="barcode-cell">
+                    <span class="cell-value" [class.empty]="!v.barcode">{{ v.barcode || '—' }}</span>
+                    @if (!v.barcode) {
+                      <button class="btn btn-sm btn-ghost" (click)="autoGenerateBarcode(v.id); $event.stopPropagation()" title="Auto-generate">
+                        <i class="bi bi-upc"></i>
+                      </button>
+                    }
+                  </div>
+                }
+              </td>
+
+              <!-- Price -->
+              <td class="col-editable col-number" (click)="startEdit(v.id, 'price', v.price)" (keydown.enter)="startEdit(v.id, 'price', v.price)">
+                @if (isEditing(v.id, 'price')) {
+                  <input
+                    type="number"
+                    class="inline-input"
+                    [ngModel]="editValue()"
+                    (ngModelChange)="editValue.set($event)"
+                    (keydown.enter)="saveEdit(v.id)"
+                    (keydown.escape)="cancelEdit()"
+                    (blur)="saveEdit(v.id)"
+                    aria-label="Price"
+                    step="0.01"
+                    autofocus
+                  />
+                } @else {
+                  <span class="cell-value">${{ v.price | number:'1.2-2' }}</span>
+                }
+              </td>
+
+              <!-- Cost -->
+              <td class="col-editable col-number" (click)="startEdit(v.id, 'cost', v.cost)" (keydown.enter)="startEdit(v.id, 'cost', v.cost)">
+                @if (isEditing(v.id, 'cost')) {
+                  <input
+                    type="number"
+                    class="inline-input"
+                    [ngModel]="editValue()"
+                    (ngModelChange)="editValue.set($event)"
+                    (keydown.enter)="saveEdit(v.id)"
+                    (keydown.escape)="cancelEdit()"
+                    (blur)="saveEdit(v.id)"
+                    aria-label="Cost"
+                    step="0.01"
+                    autofocus
+                  />
+                } @else {
+                  <span class="cell-value" [class.empty]="v.cost === null">{{ v.cost !== null ? ('$' + (v.cost | number:'1.2-2')) : '—' }}</span>
+                }
+              </td>
+
+              <!-- Stock -->
+              <td class="col-editable col-number" (click)="startEdit(v.id, 'stockQuantity', v.stockQuantity)" (keydown.enter)="startEdit(v.id, 'stockQuantity', v.stockQuantity)">
+                @if (isEditing(v.id, 'stockQuantity')) {
+                  <input
+                    type="number"
+                    class="inline-input"
+                    [ngModel]="editValue()"
+                    (ngModelChange)="editValue.set($event)"
+                    (keydown.enter)="saveEdit(v.id)"
+                    (keydown.escape)="cancelEdit()"
+                    (blur)="saveEdit(v.id)"
+                    aria-label="Stock quantity"
+                    min="0"
+                    autofocus
+                  />
+                } @else {
+                  <span class="cell-value" [class.low-stock]="v.stockQuantity <= v.lowStockThreshold">
+                    {{ v.stockQuantity }}
+                    @if (v.stockQuantity <= v.lowStockThreshold) {
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                    }
+                  </span>
+                }
+              </td>
+
+              <!-- Status -->
+              <td>
+                <button class="status-toggle" [class.active]="v.isActive" (click)="toggleActive(v)">
+                  {{ v.isActive ? 'Active' : 'Inactive' }}
+                </button>
+              </td>
+
+              <!-- Actions -->
+              <td class="col-actions">
+                <button class="btn btn-sm btn-ghost text-danger" (click)="deleteVariation(v.id)" title="Delete">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="empty-row">
+                <div class="empty-state-inline">
+                  <p>No variations yet. Click "Auto-Generate" to create variations from option sets.</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Bulk Price Modal -->
+@if (showBulkPriceModal()) {
+  <div class="modal-overlay" (click)="showBulkPriceModal.set(false)" (keydown.enter)="showBulkPriceModal.set(false)" aria-hidden="true">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Bulk Price Adjustment</h3>
+        <button class="btn-close" (click)="showBulkPriceModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <p class="form-label">Adjustment Type</p>
+          <div class="radio-row">
+            <label class="radio-option" [class.selected]="bulkPriceType() === 'percent'">
+              <input type="radio" name="bulkType" value="percent" [checked]="bulkPriceType() === 'percent'" (change)="bulkPriceType.set('percent')" />
+              Percentage (%)
+            </label>
+            <label class="radio-option" [class.selected]="bulkPriceType() === 'fixed'">
+              <input type="radio" name="bulkType" value="fixed" [checked]="bulkPriceType() === 'fixed'" (change)="bulkPriceType.set('fixed')" />
+              Fixed Amount ($)
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ve-bulk-price-value">{{ bulkPriceType() === 'percent' ? 'Percentage Change' : 'Dollar Change' }}</label>
+          <input id="ve-bulk-price-value" type="number" class="form-control" [ngModel]="bulkPriceValue()" (ngModelChange)="bulkPriceValue.set($event)" step="0.01" />
+          <small class="form-hint">Positive = increase, negative = decrease</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showBulkPriceModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="applyBulkPrice()">Apply to All Variations</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Auto-Generate Modal -->
+@if (showGenerateModal()) {
+  <div class="modal-overlay" (click)="showGenerateModal.set(false)" (keydown.enter)="showGenerateModal.set(false)" aria-hidden="true">
+    <div class="modal-panel modal-lg" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Generate Variations</h3>
+        <button class="btn-close" (click)="showGenerateModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Select option sets to generate a variation for every combination.</p>
+
+        <div class="option-set-select">
+          @for (os of optionSets(); track os.id) {
+            <label class="option-set-checkbox" [class.selected]="selectedOptionSetIds().includes(os.id)">
+              <input type="checkbox" [checked]="selectedOptionSetIds().includes(os.id)" (change)="toggleOptionSet(os.id)" />
+              <div>
+                <strong>{{ os.name }}</strong>
+                <div class="os-values">{{ os.values.join(', ') }}</div>
+              </div>
+            </label>
+          } @empty {
+            <p class="text-muted">No option sets defined. Create option sets first in the Catalog.</p>
+          }
+        </div>
+
+        @if (previewVariations().length > 0) {
+          <div class="generate-preview">
+            <h4>Preview — {{ previewVariations().length }} variations will be created</h4>
+            <div class="preview-chips">
+              @for (v of previewVariations(); track v.name) {
+                <span class="preview-chip">{{ v.name }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showGenerateModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="generateVariations()" [disabled]="previewVariations().length === 0">
+          Generate {{ previewVariations().length }} Variations
+        </button>
+      </div>
+    </div>
+  </div>
+}
+</div>

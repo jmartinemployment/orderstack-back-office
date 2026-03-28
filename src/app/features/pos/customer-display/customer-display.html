@@ -1,0 +1,106 @@
+<div class="customer-display" [class]="'mode-' + mode()">
+
+  <!-- IDLE MODE -->
+  @if (mode() === 'idle') {
+    <div class="idle-screen">
+      @if (currentSlideImage()) {
+        <div class="slideshow">
+          <img [src]="currentSlideImage()" alt="Promotion" class="slideshow-image" />
+        </div>
+      } @else {
+        <div class="logo-screen">
+          <div class="logo-icon">
+            <i class="bi bi-shop"></i>
+          </div>
+          <div class="branding-text">{{ brandingMessage() }}</div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ACTIVE MODE (Order Building) -->
+  @if (mode() === 'active') {
+    <div class="active-screen">
+      <div class="order-header">
+        <h2>Your Order</h2>
+      </div>
+
+      <div class="order-items">
+        @for (item of items(); track item.name) {
+          <div class="order-item">
+            <div class="item-left">
+              <span class="item-qty">{{ item.quantity }}x</span>
+              <span class="item-name">{{ item.name }}</span>
+            </div>
+            <span class="item-price">{{ item.price * item.quantity | currency }}</span>
+          </div>
+        } @empty {
+          <div class="empty-order">
+            <i class="bi bi-cart3"></i>
+            <span>Items will appear here</span>
+          </div>
+        }
+      </div>
+
+      <div class="order-totals">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>{{ subtotal() | currency }}</span>
+        </div>
+        <div class="total-row">
+          <span>Tax</span>
+          <span>{{ tax() | currency }}</span>
+        </div>
+        <div class="total-row total-final">
+          <span>Total</span>
+          <span>{{ total() | currency }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TIP MODE -->
+  @if (mode() === 'tip') {
+    <div class="tip-screen">
+      <h2 class="tip-heading">Add a Tip?</h2>
+      <p class="tip-subheading">Your total: {{ total() | currency }}</p>
+
+      <div class="tip-grid">
+        @for (preset of tipPresets(); track preset) {
+          <button type="button" class="tip-btn" [class.selected]="selectedTip() === preset"
+            (click)="selectTip(preset)">
+            <span class="tip-percent">{{ preset }}%</span>
+            <span class="tip-amount">{{ subtotal() * preset / 100 | currency }}</span>
+          </button>
+        }
+      </div>
+
+      <button type="button" class="no-tip-btn" [class.selected]="selectedTip() === 0"
+        (click)="selectNoTip()">No Tip</button>
+
+      @if (selectedTip() !== null && selectedTip()! > 0) {
+        <div class="tip-summary">
+          <div class="total-row">
+            <span>Tip ({{ selectedTip() }}%)</span>
+            <span>{{ tipAmount() | currency }}</span>
+          </div>
+          <div class="total-row total-final">
+            <span>Grand Total</span>
+            <span>{{ grandTotal() | currency }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- COMPLETE MODE -->
+  @if (mode() === 'complete') {
+    <div class="complete-screen">
+      <div class="complete-icon">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h2 class="complete-heading">Payment Complete</h2>
+      <p class="complete-message">{{ brandingMessage() }}</p>
+    </div>
+  }
+</div>

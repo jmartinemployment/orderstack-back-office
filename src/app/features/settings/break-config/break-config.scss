@@ -1,0 +1,150 @@
+.break-config {
+  color: var(--os-text-primary);
+}
+
+.section {
+  padding-bottom: 1rem;
+
+  h6 {
+    color: var(--os-text-secondary);
+    font-weight: 600;
+  }
+}
+
+.break-type-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.break-type-card {
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--os-bg-card);
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+
+  &.inactive {
+    opacity: 0.5;
+  }
+}
+
+.badge-paid {
+  background-color: var(--os-success);
+  color: #fff;
+}
+
+.badge-unpaid {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.empty-state {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+// Form styles
+.form-control,
+.form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 106, 255, 0.15);
+    background-color: var(--os-bg-card);
+    color: var(--os-text-primary);
+  }
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+}
+
+.form-select option {
+  background-color: var(--os-bg-card);
+  color: var(--os-text-primary);
+}
+
+.form-check-input {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+.form-check-label {
+  color: var(--os-text-primary);
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-size: 0.875rem;
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+}
+
+// Modal
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal-dialog-centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  width: 90%;
+  max-width: 480px;
+}
+
+.modal-content {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--os-border);
+}
+
+.modal-body {
+  padding: 1rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--os-border);
+}

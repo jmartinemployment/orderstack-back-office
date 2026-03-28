@@ -1,0 +1,158 @@
+<div class="online-admin">
+  <header class="page-header">
+    <div class="header-left">
+      <h1>Online Ordering</h1>
+      <p class="header-subtitle">Manage your online ordering menu and settings</p>
+    </div>
+    <div class="header-actions">
+      <div class="toggle-row">
+        <span class="toggle-label">
+          @if (onlinePricingSettings().enabled) {
+            <i class="bi bi-check-circle-fill toggle-icon enabled"></i>
+            Online ordering is live
+          } @else {
+            <i class="bi bi-x-circle-fill toggle-icon disabled"></i>
+            Online ordering is off
+          }
+        </span>
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="onlinePricingSettings().enabled"
+          (click)="toggleOnlineOrdering()"
+          aria-label="Toggle online ordering">
+          <span class="toggle-thumb"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon online">
+        <i class="bi bi-globe"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ onlineItemCount() }}</span>
+        <span class="stat-label">Items online</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon hidden">
+        <i class="bi bi-eye-slash"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ hiddenItemCount() }}</span>
+        <span class="stat-label">Hidden from online</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon categories">
+        <i class="bi bi-grid"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ categories().length }}</span>
+        <span class="stat-label">Categories</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        placeholder="Search items..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchChange($event)" />
+    </div>
+    <div class="category-filter">
+      <button
+        type="button"
+        class="filter-pill"
+        [class.active]="selectedCategoryId() === null"
+        (click)="selectCategory(null)">
+        All
+      </button>
+      @for (cat of categories(); track cat.id) {
+        <button
+          type="button"
+          class="filter-pill"
+          [class.active]="selectedCategoryId() === cat.id"
+          (click)="selectCategory(cat.id)">
+          {{ cat.name }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Items list -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <os-loading-spinner />
+    </div>
+  } @else if (filteredItems().length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-inbox"></i>
+      <h3>No items found</h3>
+      @if (searchQuery()) {
+        <p>Try a different search term</p>
+      } @else {
+        <p>Add items in Menu Management to get started</p>
+      }
+    </div>
+  } @else {
+    <div class="items-table">
+      <div class="table-header">
+        <span class="col-item">Item</span>
+        <span class="col-price">Price</span>
+        <span class="col-status">Online Status</span>
+      </div>
+      @for (item of filteredItems(); track item.id) {
+        <div class="table-row">
+          <div class="col-item">
+            <div class="item-image">
+              @if (getItemImage(item)) {
+                <img [src]="getItemImage(item)" [alt]="item.name" />
+              } @else {
+                <div class="image-placeholder">
+                  <i class="bi bi-image"></i>
+                </div>
+              }
+            </div>
+            <div class="item-details">
+              <span class="item-name">{{ item.name }}</span>
+              @if (item.description) {
+                <span class="item-description">{{ item.description }}</span>
+              }
+            </div>
+          </div>
+          <span class="col-price">{{ item.price | currency:'USD':'symbol':'1.2-2' }}</span>
+          <div class="col-status">
+            @if (isItemOnline(item)) {
+              <span class="status-badge online">
+                <i class="bi bi-check-circle-fill"></i>
+                Online
+              </span>
+            } @else {
+              <span class="status-badge hidden">
+                <i class="bi bi-eye-slash-fill"></i>
+                Hidden
+              </span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Save/action toast -->
+@if (saveMessage()) {
+  <div class="admin-toast">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>{{ saveMessage() }}</span>
+  </div>
+}

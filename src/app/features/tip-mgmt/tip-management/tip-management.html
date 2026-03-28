@@ -1,0 +1,298 @@
+<div class="tip-management px-2">
+  @if (showSaveSuccess()) {
+    <div class="alert alert-success mb-3">Settings saved successfully.</div>
+  }
+
+  @if (!isManagerOrAbove()) {
+    <div class="text-muted small mb-3">Only managers and owners can modify tip settings.</div>
+  }
+
+  <ul class="nav nav-pills mb-3">
+    @for (tab of tabs; track tab.key) {
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab() === tab.key"
+          (click)="setTab(tab.key)">{{ tab.label }}</button>
+      </li>
+    }
+  </ul>
+
+  <!-- REPORTS TAB -->
+  @if (activeTab() === 'reports') {
+    <div class="panel mb-3">
+      <div class="panel-title">Date Range</div>
+      <div class="d-flex gap-2 align-items-end flex-wrap mb-2">
+        <div>
+          <label for="tipReportStartDate" class="form-label">Start</label>
+          <input type="date" class="form-control form-control-sm"
+            id="tipReportStartDate"
+            [value]="startDateStr()" (change)="onStartDateChange($event)">
+        </div>
+        <div>
+          <label for="tipReportEndDate" class="form-label">End</label>
+          <input type="date" class="form-control form-control-sm"
+            id="tipReportEndDate"
+            [value]="endDateStr()" (change)="onEndDateChange($event)">
+        </div>
+        <button class="btn btn-outline-light btn-sm" (click)="setToday()">Today</button>
+        <button class="btn btn-outline-light btn-sm" (click)="setThisWeek()">This Week</button>
+        <button class="btn btn-outline-light btn-sm ms-auto" (click)="downloadCSV()">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+      <div class="col-4">
+        <div class="kpi-card">
+          <div class="kpi-value">${{ report().totalTips.toFixed(2) }}</div>
+          <div class="kpi-label">Total Tips</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="kpi-card">
+          <div class="kpi-value">${{ report().totalSales.toFixed(2) }}</div>
+          <div class="kpi-label">Total Sales</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ report().averageTipPercent }}%</div>
+          <div class="kpi-label">Avg Tip %</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Server Breakdown</div>
+      @if (report().serverSummaries.length === 0) {
+        <p class="text-muted small mb-0">No tip data for this date range.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-sm table-dark mb-0" aria-label="Server tip breakdown">
+            <thead>
+              <tr>
+                <th>Server</th>
+                <th class="text-end">Orders</th>
+                <th class="text-end">Tips</th>
+                <th class="text-end">Sales</th>
+                <th class="text-end">Pool +/-</th>
+                <th class="text-end">Tip-Out Given</th>
+                <th class="text-end">Tip-Out Rcvd</th>
+                <th class="text-end">Net Tips</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (srv of report().serverSummaries; track srv.serverGuid) {
+                <tr>
+                  <td>{{ srv.serverName }}</td>
+                  <td class="text-end">{{ srv.orderCount }}</td>
+                  <td class="text-end">${{ srv.totalTips.toFixed(2) }}</td>
+                  <td class="text-end">${{ srv.totalSales.toFixed(2) }}</td>
+                  <td class="text-end" [class.text-success]="srv.pooledShareIn > 0"
+                    [class.text-danger]="srv.pooledShareIn < 0">
+                    {{ srv.pooledShareIn >= 0 ? '+' : '' }}${{ srv.pooledShareIn.toFixed(2) }}
+                  </td>
+                  <td class="text-end text-danger">${{ srv.tipOutGiven.toFixed(2) }}</td>
+                  <td class="text-end text-success">${{ srv.tipOutReceived.toFixed(2) }}</td>
+                  <td class="text-end fw-bold">${{ srv.netTips.toFixed(2) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- POOL RULES TAB -->
+  @if (activeTab() === 'pool-rules') {
+    <div class="panel mb-3">
+      <div class="panel-title">Tip Pool Rules</div>
+      <p class="text-muted small">Pool rules combine all tips and redistribute based on the chosen method.</p>
+
+      @if (settings().poolRules.length === 0) {
+        <p class="text-muted small mb-3">No pool rules configured.</p>
+      } @else {
+        @for (rule of settings().poolRules; track rule.id) {
+          <div class="rule-card d-flex align-items-center gap-2 mb-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox"
+                [checked]="rule.isActive" (change)="togglePoolRule(rule.id)"
+                [disabled]="!isManagerOrAbove()"
+                [attr.aria-label]="'Toggle pool rule: ' + rule.name">
+            </div>
+            <div class="flex-grow-1">
+              <span class="fw-bold">{{ rule.name }}</span>
+              <span class="badge bg-info ms-2">{{ rule.method }}</span>
+            </div>
+            @if (isManagerOrAbove()) {
+              <button class="btn btn-outline-danger btn-sm" (click)="removePoolRule(rule.id)">Remove</button>
+            }
+          </div>
+        }
+      }
+
+      @if (isManagerOrAbove()) {
+        <div class="add-rule-form mt-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label" for="pool-rule-name">Rule Name</label>
+              <input type="text" class="form-control form-control-sm"
+                id="pool-rule-name"
+                placeholder="e.g., Even Split All Servers"
+                [value]="poolRuleName()" (input)="onPoolRuleNameChange($event)">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="pool-rule-method">Method</label>
+              <select class="form-select form-select-sm"
+                id="pool-rule-method"
+                [value]="poolRuleMethod()" (change)="onPoolRuleMethodChange($event)">
+                <option value="even">Even Split</option>
+                <option value="by_hours">By Hours Worked</option>
+                <option value="by_sales">By Sales Volume</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary btn-sm w-100" (click)="addPoolRule()"
+                [disabled]="!poolRuleName().trim()">Add Rule</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TIP-OUT RULES TAB -->
+  @if (activeTab() === 'tipout-rules') {
+    <div class="panel mb-3">
+      <div class="panel-title">Tip-Out Rules</div>
+      <p class="text-muted small">Tip-out rules transfer a percentage from one role to another (e.g., servers tip out 10% to bar).</p>
+
+      @if (settings().tipOutRules.length === 0) {
+        <p class="text-muted small mb-3">No tip-out rules configured.</p>
+      } @else {
+        @for (rule of settings().tipOutRules; track rule.id) {
+          <div class="rule-card d-flex align-items-center gap-2 mb-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox"
+                [checked]="rule.isActive" (change)="toggleTipOutRule(rule.id)"
+                [disabled]="!isManagerOrAbove()"
+                [attr.aria-label]="'Toggle tip-out rule: ' + rule.name">
+            </div>
+            <div class="flex-grow-1">
+              <span class="fw-bold">{{ rule.name }}</span>
+              <span class="badge bg-warning text-dark ms-2">{{ rule.percentage }}% of {{ rule.method === 'percentage_of_tips' ? 'tips' : 'sales' }}</span>
+              <span class="text-muted small ms-2">{{ rule.sourceRole }} &rarr; {{ rule.targetRole }}</span>
+            </div>
+            @if (isManagerOrAbove()) {
+              <button class="btn btn-outline-danger btn-sm" (click)="removeTipOutRule(rule.id)">Remove</button>
+            }
+          </div>
+        }
+      }
+
+      @if (isManagerOrAbove()) {
+        <div class="add-rule-form mt-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label" for="tipout-rule-name">Rule Name</label>
+              <input type="text" class="form-control form-control-sm"
+                id="tipout-rule-name"
+                placeholder="e.g., Bar Tip-Out"
+                [value]="tipOutRuleName()" (input)="onTipOutRuleNameChange($event)">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="tipout-rule-method">Method</label>
+              <select class="form-select form-select-sm"
+                id="tipout-rule-method"
+                [value]="tipOutRuleMethod()" (change)="onTipOutRuleMethodChange($event)">
+                <option value="percentage_of_tips">% of Tips</option>
+                <option value="percentage_of_sales">% of Sales</option>
+              </select>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label" for="tipout-rule-pct">%</label>
+              <input type="number" class="form-control form-control-sm"
+                id="tipout-rule-pct"
+                [value]="tipOutRulePercentage()" (input)="onTipOutRulePercentageChange($event)"
+                min="1" max="100" step="1">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="tipout-rule-from">From</label>
+              <input type="text" class="form-control form-control-sm"
+                id="tipout-rule-from"
+                placeholder="server" [value]="tipOutRuleSource()" (input)="onTipOutRuleSourceChange($event)">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="tipout-rule-to">To</label>
+              <input type="text" class="form-control form-control-sm"
+                id="tipout-rule-to"
+                placeholder="bartender" [value]="tipOutRuleTarget()" (input)="onTipOutRuleTargetChange($event)">
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary btn-sm w-100" (click)="addTipOutRule()"
+                [disabled]="!tipOutRuleName().trim()">Add Rule</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- COMPLIANCE TAB -->
+  @if (activeTab() === 'compliance') {
+    <div class="panel mb-3">
+      <div class="panel-title">Tip Compliance Check</div>
+      <p class="text-muted small mb-3">
+        Enter hours worked per server to verify minimum wage compliance.
+        Minimum wage: ${{ settings().minimumWage }}/hr | Base hourly rate: ${{ settings().defaultHourlyRate }}/hr
+      </p>
+
+      @if (report().serverSummaries.length === 0) {
+        <p class="text-muted small mb-0">No server data available. Select a date range with closed orders in the Reports tab.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-sm table-dark mb-0" aria-label="Tip compliance check">
+            <thead>
+              <tr>
+                <th>Server</th>
+                <th>Hours Worked</th>
+                <th class="text-end">Net Tips</th>
+                <th class="text-end">Total Comp</th>
+                <th class="text-end">Effective $/hr</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (srv of report().serverSummaries; track srv.serverGuid) {
+                <tr>
+                  <td>{{ srv.serverName }}</td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm compliance-hours"
+                      placeholder="0" min="0" step="0.5"
+                      [attr.aria-label]="'Hours worked for ' + srv.serverName"
+                      (input)="onHoursChange(srv.serverGuid, $event)">
+                  </td>
+                  <td class="text-end">${{ srv.netTips.toFixed(2) }}</td>
+                  @if (complianceMap().get(srv.serverGuid); as check) {
+                    <td class="text-end">${{ check.totalCompensation.toFixed(2) }}</td>
+                    <td class="text-end">${{ check.effectiveHourlyRate.toFixed(2) }}</td>
+                    <td>
+                      @if (check.meetsMinWage) {
+                        <span class="badge bg-success">Compliant</span>
+                      } @else {
+                        <span class="badge bg-danger">Below Min Wage</span>
+                      }
+                    </td>
+                  } @else {
+                    <td class="text-end text-muted">--</td>
+                    <td class="text-end text-muted">--</td>
+                    <td><span class="text-muted small">Enter hours</span></td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

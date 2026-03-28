@@ -1,0 +1,368 @@
+<div class="catering-dashboard px-2">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Catering</h2>
+    <button type="button" class="btn btn-primary" (click)="openNewEvent()">
+      <i class="bi bi-plus-lg me-1"></i> New Job
+    </button>
+  </div>
+
+  @if (!hasJobs() && !cateringService.isLoading()) {
+    <!-- Empty State / Onboarding -->
+    <div class="empty-onboarding text-center py-5">
+      <i class="bi bi-calendar2-heart display-2 text-primary mb-4 d-block"></i>
+      <h4>Welcome to OrderStack Catering</h4>
+      <p class="text-muted mb-4" style="max-width: 480px; margin: 0 auto;">
+        Manage your catering jobs from inquiry to completion. Track proposals, invoices, milestones, and client history.
+      </p>
+      <div class="row g-3 justify-content-center" style="max-width: 700px; margin: 0 auto;">
+        <div class="col-md-4">
+          <div class="card h-100 text-start">
+            <div class="card-body">
+              <div class="text-primary mb-2"><i class="bi bi-1-circle-fill fs-4"></i></div>
+              <h6 class="fw-semibold">Create your first job</h6>
+              <p class="text-muted small mb-2">Add an inquiry or upcoming event to start your pipeline.</p>
+              <button type="button" class="btn btn-sm btn-primary" (click)="openNewEvent()">Create Job</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 text-start">
+            <div class="card-body">
+              <div class="text-primary mb-2"><i class="bi bi-2-circle-fill fs-4"></i></div>
+              <h6 class="fw-semibold">Set up catering menu</h6>
+              <p class="text-muted small mb-2">Add items with per-person or per-tray pricing for packages.</p>
+              <button type="button" class="btn btn-sm btn-primary" (click)="goToMenu()">Set Up Menu</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 text-start">
+            <div class="card-body">
+              <div class="text-primary mb-2"><i class="bi bi-3-circle-fill fs-4"></i></div>
+              <h6 class="fw-semibold">Configure capacity</h6>
+              <p class="text-muted small mb-2">Set max events and headcount per day for conflict alerts.</p>
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="setTab('capacity')">Configure</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Next Event Banner -->
+    @if (nextJob(); as nj) {
+      <div class="next-event-banner d-flex align-items-center gap-3 mb-4 p-3 rounded-3">
+        <i class="bi bi-calendar-event fs-4"></i>
+        <div class="flex-grow-1">
+          <div class="fw-semibold">{{ nj.title }}</div>
+          <div class="small text-muted">
+            @if (nextJobDaysAway() !== null) {
+              @if (nextJobDaysAway() === 0) {
+                Today
+              } @else if (nextJobDaysAway() === 1) {
+                Tomorrow
+              } @else if ((nextJobDaysAway() ?? 0) < 0) {
+                {{ -(nextJobDaysAway() ?? 0) }} {{ (nextJobDaysAway() ?? 0) === -1 ? 'day' : 'days' }} ago
+              } @else {
+                In {{ nextJobDaysAway() }} days
+              }
+              &middot;
+            }
+            {{ nj.headcount }} {{ nj.headcount === 1 ? 'guest' : 'guests' }}
+            @if (nj.totalCents - nj.paidCents > 0) {
+              &middot; {{ formatCents(nj.totalCents - nj.paidCents) }} outstanding
+            }
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="openJobDetail(nj)">View</button>
+      </div>
+    }
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ formatCents(cateringService.totalPipeline()) }}</div>
+          <div class="kpi-label">Pipeline Value</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-value" [class.text-danger]="cateringService.outstandingBalance() > 0">
+            {{ formatCents(cateringService.outstandingBalance()) }}
+          </div>
+          <div class="kpi-label">Outstanding</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ cateringService.eventsThisMonth() }}</div>
+          <div class="kpi-label">This Month</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ formatCents(cateringService.avgJobValue()) }}</div>
+          <div class="kpi-label">Avg Job Value</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+      <div class="flex-grow-1" style="min-width: 200px; max-width: 400px;">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search jobs..."
+          aria-label="Search jobs"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        >
+      </div>
+      <label for="catering-status-filter" class="visually-hidden">Filter by status</label>
+      <select id="catering-status-filter" class="form-select" style="width: auto;" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+        <option value="all">All Statuses</option>
+        @for (s of statusOptions; track s.value) {
+          <option [value]="s.value">{{ s.label }}</option>
+        }
+      </select>
+      @if (hasSelection()) {
+        <div class="d-flex gap-1">
+          <button type="button" class="btn btn-sm btn-success" (click)="bulkComplete()">Complete Selected</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="bulkCancel()">Cancel Selected</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="exportCsv()">
+            <i class="bi bi-download me-1"></i> Export CSV
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-pills catering-tabs mb-4">
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="activeTab() === 'active'" (click)="setTab('active')">
+          Active
+          @if (cateringService.activeEvents().length > 0) {
+            <span class="badge bg-info ms-1">{{ cateringService.activeEvents().length }}</span>
+          }
+        </button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="activeTab() === 'upcoming'" (click)="setTab('upcoming')">
+          Upcoming
+        </button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="activeTab() === 'past'" (click)="setTab('past')">
+          Past
+        </button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="activeTab() === 'calendar'" (click)="setTab('calendar')">
+          Calendar
+        </button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="activeTab() === 'capacity'" (click)="setTab('capacity')">
+          Capacity
+        </button>
+      </li>
+    </ul>
+
+    <!-- Loading -->
+    @if (cateringService.isLoading()) {
+      <div class="text-center py-5">
+        <output class="spinner-border text-primary">
+          <span class="visually-hidden">Loading...</span>
+        </output>
+      </div>
+    } @else {
+      <!-- Status-filtered view (Leads, specific status from sidebar) -->
+      @if (isStatusFiltered()) {
+        <div class="event-list">
+          @if (filteredAllJobs().length === 0) {
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-funnel display-4 text-muted mb-3 d-block"></i>
+              <p class="text-muted mb-3">No jobs with this status</p>
+              <button type="button" class="btn btn-primary" (click)="openNewEvent()">Create Job</button>
+            </div>
+          } @else {
+            @for (event of filteredAllJobs(); track event.id) {
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" [checked]="isSelected(event.id)" (change)="toggleSelect(event.id)" aria-label="Select job">
+                </div>
+                <div class="flex-grow-1" (click)="openJobDetail(event)" (keydown.enter)="openJobDetail(event)" style="cursor: pointer;">
+                  <os-catering-event-card
+                    [event]="event"
+                    (statusAdvanced)="advanceStatus($event)"
+                    (editRequested)="openEditEvent($event)"
+                    (cancelRequested)="cancelEvent($event)"
+                  />
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Active Tab -->
+      @if (!isStatusFiltered() && activeTab() === 'active') {
+        <div class="event-list">
+          @if (filteredActiveJobs().length === 0) {
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-calendar2-event display-4 text-muted mb-3 d-block"></i>
+              <p class="text-muted mb-3">No active jobs{{ searchQuery() ? ' matching your search' : '' }}</p>
+              @if (!searchQuery()) {
+                <button type="button" class="btn btn-primary" (click)="openNewEvent()">Create Job</button>
+              }
+            </div>
+          } @else {
+            @for (event of filteredActiveJobs(); track event.id) {
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" [checked]="isSelected(event.id)" (change)="toggleSelect(event.id)" aria-label="Select job">
+                </div>
+                <div class="flex-grow-1" (click)="openJobDetail(event)" (keydown.enter)="openJobDetail(event)" style="cursor: pointer;">
+                  <os-catering-event-card
+                    [event]="event"
+                    (statusAdvanced)="advanceStatus($event)"
+                    (editRequested)="openEditEvent($event)"
+                    (cancelRequested)="cancelEvent($event)"
+                  />
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Upcoming Tab -->
+      @if (!isStatusFiltered() && activeTab() === 'upcoming') {
+        <div class="event-list">
+          @if (filteredUpcomingJobs().length === 0) {
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-calendar-plus display-4 text-muted mb-3 d-block"></i>
+              <p class="text-muted mb-3">No upcoming jobs</p>
+              <button type="button" class="btn btn-primary" (click)="openNewEvent()">Create Job</button>
+            </div>
+          } @else {
+            @for (event of filteredUpcomingJobs(); track event.id) {
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" [checked]="isSelected(event.id)" (change)="toggleSelect(event.id)" aria-label="Select job">
+                </div>
+                <div class="flex-grow-1" (click)="openJobDetail(event)" (keydown.enter)="openJobDetail(event)" style="cursor: pointer;">
+                  <os-catering-event-card
+                    [event]="event"
+                    (statusAdvanced)="advanceStatus($event)"
+                    (editRequested)="openEditEvent($event)"
+                    (cancelRequested)="cancelEvent($event)"
+                  />
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Past Tab -->
+      @if (!isStatusFiltered() && activeTab() === 'past') {
+        <div class="event-list">
+          @if (filteredPastJobs().length === 0) {
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-clock-history display-4 text-muted mb-3 d-block"></i>
+              <p class="text-muted">No past jobs yet</p>
+            </div>
+          } @else {
+            @for (event of filteredPastJobs(); track event.id) {
+              <div class="flex-grow-1" (click)="openJobDetail(event)" (keydown.enter)="openJobDetail(event)" style="cursor: pointer;">
+                <os-catering-event-card
+                  [event]="event"
+                  (statusAdvanced)="advanceStatus($event)"
+                  (editRequested)="openEditEvent($event)"
+                  (cancelRequested)="cancelEvent($event)"
+                />
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Calendar Tab -->
+      @if (activeTab() === 'calendar') {
+        <os-catering-calendar />
+      }
+
+      <!-- Capacity Tab -->
+      @if (activeTab() === 'capacity') {
+        <div class="capacity-settings">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Capacity Settings</h6>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="cap-max-events">Max Events / Day</label>
+                  <input
+                    id="cap-max-events"
+                    type="number"
+                    class="form-control"
+                    [ngModel]="capMaxEvents()"
+                    (ngModelChange)="capMaxEvents.set($event)"
+                    min="1"
+                  >
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="cap-max-headcount">Max Headcount / Day</label>
+                  <input
+                    id="cap-max-headcount"
+                    type="number"
+                    class="form-control"
+                    [ngModel]="capMaxHeadcount()"
+                    (ngModelChange)="capMaxHeadcount.set($event)"
+                    min="1"
+                  >
+                </div>
+              </div>
+
+              <div class="form-check form-switch mb-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="conflictAlerts"
+                  [ngModel]="capConflictAlerts()"
+                  (ngModelChange)="capConflictAlerts.set($event)"
+                >
+                <label class="form-check-label" for="conflictAlerts">
+                  Enable conflict alerts
+                </label>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="saveCapacity()"
+                [disabled]="capSaving()"
+              >
+                @if (capSaving()) {
+                  <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  }
+
+  <!-- Event Form (Offcanvas) -->
+  <os-catering-event-form
+    [event]="editingEvent()"
+    [visible]="showForm()"
+    (saved)="onFormSaved()"
+    (cancelled)="onFormCancelled()"
+  />
+</div>

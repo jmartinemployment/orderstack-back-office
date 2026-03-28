@@ -1,0 +1,96 @@
+<div class="payment-terminal">
+  <!-- METHOD SELECTION -->
+  @if (isIdle()) {
+    <div class="payment-methods">
+      <h2 class="payment-title">How would you like to pay?</h2>
+      <div class="method-cards">
+        @if (showOnScreen()) {
+          <button type="button" class="method-card" (click)="selectOnScreen()">
+            <div class="method-icon">
+              <i class="bi bi-phone"></i>
+            </div>
+            <span class="method-label">Pay on Screen</span>
+            <span class="method-desc">Use PayPal or Debit/Credit</span>
+          </button>
+        }
+        @if (showCardReader()) {
+          <button type="button" class="method-card" (click)="selectCardReader()">
+            <div class="method-icon">
+              <i class="bi bi-credit-card"></i>
+            </div>
+            <span class="method-label">Tap or Insert Card</span>
+            <span class="method-desc">Use the card reader</span>
+          </button>
+        }
+      </div>
+      <div class="payment-amount">
+        Total: {{ amount() | currency }}
+      </div>
+    </div>
+  }
+
+  <!-- ON-SCREEN PAYMENT (PayPal buttons) -->
+  @if (isScreenPay()) {
+    <div class="screen-pay">
+      <h2 class="payment-title">Complete Payment</h2>
+      <div class="payment-amount">{{ amount() | currency }}</div>
+      <div class="paypal-mount" #paypalContainer></div>
+      <button type="button" class="cancel-btn" (click)="cancel()">
+        <i class="bi bi-arrow-left me-2"></i>Back
+      </button>
+    </div>
+  }
+
+  <!-- CARD READER -->
+  @if (isReaderActive()) {
+    <div class="reader-pay">
+      <h2 class="payment-title">Card Payment</h2>
+      <div class="payment-amount">{{ amount() | currency }}</div>
+      <div class="reader-animation">
+        <i class="bi bi-contactless"></i>
+      </div>
+      <div class="reader-status" #readerStatusContainer>
+        Connecting to card reader...
+      </div>
+      <button type="button" class="cancel-btn" (click)="cancel()">
+        Cancel
+      </button>
+    </div>
+  }
+
+  <!-- PROCESSING -->
+  @if (isProcessing() && !isReaderActive()) {
+    <div class="payment-processing">
+      <output class="spinner-border text-light">
+        <span class="visually-hidden">Processing...</span>
+      </output>
+      <p class="processing-text">Processing payment...</p>
+    </div>
+  }
+
+  <!-- SUCCESS -->
+  @if (isSuccess()) {
+    <div class="payment-success">
+      <div class="success-icon">
+        <i class="bi bi-check-lg"></i>
+      </div>
+      <h2 class="success-title">Payment Approved</h2>
+    </div>
+  }
+
+  <!-- FAILED -->
+  @if (isFailed()) {
+    <div class="payment-failed">
+      <div class="failed-icon">
+        <i class="bi bi-x-lg"></i>
+      </div>
+      <h2 class="failed-title">Payment Failed</h2>
+      @if (error()) {
+        <p class="failed-message">{{ error() }}</p>
+      }
+      <button type="button" class="retry-btn" (click)="retry()">
+        <i class="bi bi-arrow-clockwise me-2"></i>Try Again
+      </button>
+    </div>
+  }
+</div>

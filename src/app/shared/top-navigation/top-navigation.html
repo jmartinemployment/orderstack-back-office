@@ -1,0 +1,11 @@
+<nav class="top-tabs">
+  @for (tab of tabs(); track tab.key) {
+    <button
+      type="button"
+      class="top-tab"
+      [class.active]="activeTab() === tab.key"
+      (click)="tabChange.emit(tab.key)">
+      {{ tab.label }}
+    </button>
+  }
+</nav>

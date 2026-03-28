@@ -1,0 +1,283 @@
+<div class="ai-settings">
+  @if (showSaveSuccess()) {
+    <div class="alert alert-success mb-3">
+      AI settings saved successfully.
+    </div>
+  }
+
+  @if (!isManagerOrAbove()) {
+    <div class="text-muted small mb-3">Only managers and owners can modify AI settings.</div>
+  }
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- AI ADMIN — API Key, Feature Toggles, Usage -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  @if (aiAdminSaveSuccess()) {
+    <div class="alert alert-success mb-3">AI admin settings saved successfully.</div>
+  }
+
+  @if (aiAdminLoading()) {
+    <div class="text-muted small mb-3">Loading AI admin config...</div>
+  }
+
+  <!-- Section 1: API Key Configuration -->
+  <div class="panel mb-3">
+    <div class="panel-title d-flex align-items-center gap-2">
+      Anthropic API Key
+      <span class="status-dot" [class]="keyStatusClass()"></span>
+      <span class="status-label" [class]="keyStatusClass()">{{ keyStatusLabel() }}</span>
+    </div>
+
+    @if (aiAdminConfig(); as config) {
+      @if (config.apiKeyConfigured) {
+        <div class="api-key-display mb-3">
+          <code class="masked-key">{{ maskedKey() }}</code>
+          @if (isOwnerOrAdmin()) {
+            <div class="d-flex gap-2 mt-2">
+              <button class="btn btn-sm btn-outline-light" (click)="openApiKeyModal()" [disabled]="isSaving()">Update Key</button>
+              <button class="btn btn-sm btn-outline-danger" (click)="openDeleteConfirm()" [disabled]="isSaving()">Remove Key</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-muted small mb-2">No API key configured. AI features require an Anthropic API key to function.</p>
+        @if (isOwnerOrAdmin()) {
+          <button class="btn btn-sm btn-primary" (click)="openApiKeyModal()" [disabled]="isSaving()">Set API Key</button>
+        }
+      }
+    } @else {
+      <p class="text-muted small mb-0">Unable to load API key status.</p>
+    }
+
+    <p class="text-muted small mt-2 mb-0">Enter your Anthropic API key for per-restaurant billing. Get one at console.anthropic.com</p>
+  </div>
+
+  <!-- API Key Modal -->
+  @if (showApiKeyModal()) {
+    <div class="modal-backdrop" (click)="closeApiKeyModal()" (keydown.escape)="closeApiKeyModal()" aria-hidden="true">
+      <div class="modal-dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title">{{ aiAdminConfig()?.apiKeyConfigured ? 'Update' : 'Set' }} API Key</span>
+          <button class="btn-close" (click)="closeApiKeyModal()"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label" for="apiKeyInput">Anthropic API Key</label>
+          <input
+            type="password"
+            class="form-control"
+            id="apiKeyInput"
+            placeholder="sk-ant-api03-..."
+            [value]="apiKeyInput()"
+            (input)="onApiKeyInput($event)"
+            autocomplete="off">
+          <p class="text-muted small mt-2 mb-0">The key will be encrypted and stored securely. Only the last 4 characters are visible.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-light btn-sm" (click)="closeApiKeyModal()">Cancel</button>
+          <button class="btn btn-primary btn-sm" (click)="submitApiKey()" [disabled]="apiKeyInput().length < 10 || isSaving()">
+            @if (isSaving()) { Validating... } @else { Save Key }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteConfirm()) {
+    <div class="modal-backdrop" (click)="closeDeleteConfirm()" (keydown.escape)="closeDeleteConfirm()" aria-hidden="true">
+      <div class="modal-dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title">Remove API Key</span>
+          <button class="btn-close" (click)="closeDeleteConfirm()"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to remove the API key? AI features will stop working until a new key is configured.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-light btn-sm" (click)="closeDeleteConfirm()">Cancel</button>
+          <button class="btn btn-danger btn-sm" (click)="confirmDeleteApiKey()" [disabled]="isSaving()">Remove Key</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Section 2: AI Feature Toggles -->
+  <div class="panel mb-3">
+    <div class="panel-title d-flex align-items-center justify-content-between">
+      <span>AI Feature Toggles</span>
+      <span class="text-muted small">{{ enabledFeatureCount() }} of {{ featureCatalog.length }} enabled</span>
+    </div>
+
+    @if (aiAdminConfig(); as config) {
+      @if (isOwnerOrAdmin()) {
+        <div class="d-flex gap-2 mb-3">
+          <button class="btn btn-sm btn-outline-light" (click)="enableAllFeatures()" [disabled]="isSaving()">Enable All</button>
+          <button class="btn btn-sm btn-outline-light" (click)="disableAllFeatures()" [disabled]="isSaving()">Disable All</button>
+        </div>
+      }
+
+      <div class="feature-grid">
+        @for (feature of featureCatalog; track feature.key) {
+          <div class="feature-row">
+            <div class="feature-toggle">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  [id]="'feature-' + feature.key"
+                  [checked]="isFeatureEnabled(feature.key)"
+                  (change)="onFeatureToggle(feature.key, $event)"
+                  [disabled]="!isOwnerOrAdmin() || isSaving()">
+                <label class="form-check-label" [for]="'feature-' + feature.key">{{ feature.label }}</label>
+              </div>
+            </div>
+            <div class="feature-meta">
+              <span class="badge-cost" [class]="getCostTierClass(feature.costTier)">{{ feature.costTier | uppercase }}</span>
+              <span class="text-muted small ms-2">{{ feature.estimatedMonthlyCost }}</span>
+            </div>
+            <div class="feature-description text-muted small">{{ feature.description }}</div>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="text-muted small mb-0">Unable to load feature toggles.</p>
+    }
+  </div>
+
+  <!-- Section 3: Usage Dashboard -->
+  <div class="panel mb-3">
+    <div class="panel-title">AI Usage — Current Month</div>
+
+    @if (usageSummary(); as usage) {
+      <div class="usage-kpi-row mb-3">
+        <div class="usage-kpi">
+          <div class="usage-kpi-value">{{ totalUsageDollars() | currency:'USD':'symbol':'1.2-2' }}</div>
+          <div class="usage-kpi-label">Estimated Cost</div>
+        </div>
+        <div class="usage-kpi">
+          <div class="usage-kpi-value">{{ totalUsageCalls() }}</div>
+          <div class="usage-kpi-label">API Calls</div>
+        </div>
+      </div>
+
+      @if (totalUsageCalls() > 0) {
+        <table class="usage-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="text-end">Calls</th>
+              <th class="text-end">Input Tokens</th>
+              <th class="text-end">Output Tokens</th>
+              <th class="text-end">Est. Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (feature of featureCatalog; track feature.key) {
+              @if (getFeatureUsage(feature.key); as fu) {
+                <tr>
+                  <td>{{ feature.label }}</td>
+                  <td class="text-end">{{ fu.calls }}</td>
+                  <td class="text-end">{{ fu.inputTokens | number }}</td>
+                  <td class="text-end">{{ fu.outputTokens | number }}</td>
+                  <td class="text-end">{{ fu.estimatedCostCents / 100 | currency:'USD':'symbol':'1.2-2' }}</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="text-muted small mb-0">No AI usage recorded this month.</p>
+      }
+    } @else {
+      <p class="text-muted small mb-0">No AI usage recorded this month.</p>
+    }
+  </div>
+
+  <!-- AI Order Approval -->
+  <div class="section-divider mb-4">
+    <span>Order Approval</span>
+  </div>
+
+  <div class="panel mb-3">
+    <div class="panel-title">AI Order Approval</div>
+    <div class="form-check form-switch mb-3">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="approvalToggle"
+        [checked]="approvalEnabled()"
+        (change)="onApprovalToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="approvalToggle">Enable AI Order Approval</label>
+    </div>
+
+    @if (approvalEnabled()) {
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label" for="timeThreshold">Time Threshold</label>
+          <div class="input-group">
+            <input
+              type="number"
+              class="form-control"
+              id="timeThreshold"
+              [value]="timeThresholdHours()"
+              (input)="onTimeThreshold($event)"
+              min="1"
+              max="168"
+              step="1"
+              [disabled]="!isManagerOrAbove()">
+            <span class="input-group-text">hours</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="valueThreshold">Value Threshold</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              class="form-control"
+              id="valueThreshold"
+              [value]="valueThresholdDollars()"
+              (input)="onValueThreshold($event)"
+              min="0"
+              step="10"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="quantityThreshold">Quantity Threshold</label>
+          <div class="input-group">
+            <input
+              type="number"
+              class="form-control"
+              id="quantityThreshold"
+              [value]="quantityThreshold()"
+              (input)="onQuantityThreshold($event)"
+              min="1"
+              step="1"
+              [disabled]="!isManagerOrAbove()">
+            <span class="input-group-text">items</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-muted small mb-0">{{ thresholdDescription() }}</p>
+    } @else {
+      <p class="text-muted small mb-0">All orders will be auto-approved. Catering orders still require manual review.</p>
+    }
+  </div>
+
+  <!-- Action bar (AI Order Approval) -->
+  @if (hasUnsavedChanges() && isManagerOrAbove()) {
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          Saving...
+        } @else {
+          Save Changes
+        }
+      </button>
+      <button class="btn btn-outline-light" (click)="discard()" [disabled]="isSaving()">Discard</button>
+    </div>
+  }
+</div>

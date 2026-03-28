@@ -1,0 +1,810 @@
+<div class="catalog-management px-2">
+<!-- Page Header -->
+<div class="os-page-header">
+  <div class="header-left">
+    <h1>Catalog</h1>
+    <span class="item-count">{{ filteredItems().length }} items</span>
+  </div>
+  <div class="header-actions">
+    @if (activeTab() === 'items') {
+      <button class="btn btn-outline-secondary btn-sm" (click)="exportCsv()">
+        <i class="bi bi-download"></i> Export
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="showImportModal.set(true)">
+        <i class="bi bi-upload"></i> Import
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="openCreateItem()">
+        <i class="bi bi-plus-lg"></i> Add Item
+      </button>
+    }
+    @if (activeTab() === 'categories') {
+      <button class="btn btn-primary btn-sm" (click)="openCreateCategory()">
+        <i class="bi bi-plus-lg"></i> Add Category
+      </button>
+    }
+    @if (activeTab() === 'option-sets') {
+      <button class="btn btn-primary btn-sm" (click)="openCreateOptionSet()">
+        <i class="bi bi-plus-lg"></i> Add Option Set
+      </button>
+    }
+    @if (activeTab() === 'collections') {
+      <button class="btn btn-primary btn-sm" (click)="openCreateCollection()">
+        <i class="bi bi-plus-lg"></i> Add Collection
+      </button>
+    }
+    @if (activeTab() === 'bundles') {
+      <button class="btn btn-primary btn-sm" (click)="openCreateBundle()">
+        <i class="bi bi-plus-lg"></i> Add Bundle
+      </button>
+    }
+  </div>
+</div>
+
+<div class="os-page-content">
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab() === 'items'" (click)="setTab('items')">Items</button>
+    <button class="tab-btn" [class.active]="activeTab() === 'categories'" (click)="setTab('categories')">Categories</button>
+    <button class="tab-btn" [class.active]="activeTab() === 'option-sets'" (click)="setTab('option-sets')">Option Sets</button>
+    <button class="tab-btn" [class.active]="activeTab() === 'collections'" (click)="setTab('collections')">Collections</button>
+    <button class="tab-btn" [class.active]="activeTab() === 'bundles'" (click)="setTab('bundles')">
+      Bundles
+      @if (bundles().length > 0) {
+        <span class="badge-count">{{ bundles().length }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- ==================== ITEMS TAB ==================== -->
+  @if (activeTab() === 'items') {
+    <!-- Search & Filters -->
+    <div class="filter-bar">
+      <div class="search-input">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, SKU, or barcode..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          aria-label="Search by name, SKU, or barcode"
+        />
+      </div>
+      <label class="visually-hidden" for="catalog-category-filter">Category</label>
+      <select id="catalog-category-filter" class="form-select form-select-sm filter-select" [ngModel]="filterCategoryId()" (ngModelChange)="filterCategoryId.set($event)">
+        <option [ngValue]="null">All Categories</option>
+        @for (cat of categories(); track cat.id) {
+          <option [ngValue]="cat.id">{{ cat.name }}</option>
+        }
+      </select>
+      <div class="view-toggle">
+        <button class="btn btn-sm" [class.btn-primary]="viewMode() === 'grid'" [class.btn-outline-secondary]="viewMode() !== 'grid'" (click)="viewMode.set('grid')" aria-label="Grid view">
+          <i class="bi bi-grid-3x3-gap"></i>
+        </button>
+        <button class="btn btn-sm" [class.btn-primary]="viewMode() === 'list'" [class.btn-outline-secondary]="viewMode() !== 'list'" (click)="viewMode.set('list')" aria-label="List view">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    @if (showBulkActions()) {
+      <div class="bulk-actions-bar">
+        <span>{{ selectedItemIds().size }} selected</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="bulkDelete()">
+          <i class="bi bi-trash3"></i> Delete
+        </button>
+        <label for="bulk-move-category" class="visually-hidden">Move to category</label>
+        <select id="bulk-move-category" class="form-select form-select-sm" style="width: auto;" (change)="bulkChangeCategory($any($event.target).value)">
+          <option value="" disabled selected>Move to category...</option>
+          @for (cat of categories(); track cat.id) {
+            <option [value]="cat.id">{{ cat.name }}</option>
+          }
+        </select>
+        <button class="btn btn-sm btn-outline-secondary" (click)="clearSelection()">Clear</button>
+      </div>
+    }
+
+    <!-- Loading -->
+    @if (isLoading()) {
+      <div class="loading-state">
+        <output class="spinner-border spinner-border-sm text-primary" aria-label="Loading catalog"></output>
+        <span>Loading catalog...</span>
+      </div>
+    }
+
+    <!-- Grid View -->
+    @if (viewMode() === 'grid') {
+      <div class="item-grid">
+        @for (item of filteredItems(); track item.id) {
+          <div class="item-card" [class.selected]="selectedItemIds().has(item.id)">
+            <div class="item-card-select">
+              <input type="checkbox" [checked]="selectedItemIds().has(item.id)" (change)="toggleItemSelection(item.id)" aria-label="Select {{ item.name }}" />
+            </div>
+            <button type="button" class="item-card-image" (click)="openEditItem(item)" [attr.aria-label]="'View ' + item.name">
+              @if (item.thumbnailUrl || item.imageUrl) {
+                <img [src]="item.thumbnailUrl ?? item.imageUrl" [alt]="item.name" />
+              } @else {
+                <div class="image-placeholder">
+                  <i class="bi bi-box-seam"></i>
+                </div>
+              }
+            </button>
+            <button type="button" class="item-card-body" (click)="openEditItem(item)" [attr.aria-label]="'Edit ' + item.name">
+              <div class="item-name">{{ item.name }}</div>
+              @if (item.sku) {
+                <div class="item-sku">SKU: {{ item.sku }}</div>
+              }
+              <div class="item-price">${{ item.basePrice | number:'1.2-2' }}</div>
+              <div class="item-meta">
+                @if (item.variations.length > 0) {
+                  <span class="badge badge-info">{{ item.variations.length }} variations</span>
+                }
+                @if (!item.isActive) {
+                  <span class="badge badge-muted">Inactive</span>
+                }
+                @if (item.trackInventory && item.variations.length === 0) {
+                  <span class="badge badge-stock">In Stock</span>
+                }
+              </div>
+            </button>
+            <div class="item-card-actions">
+              <button class="btn btn-sm btn-outline-secondary" (click)="openEditItem(item)" [attr.aria-label]="'Edit ' + item.name">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteItem(item)" [attr.aria-label]="'Delete ' + item.name">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-box-seam"></i>
+            <h3>No items yet</h3>
+            <p>Add your first product to start building your catalog.</p>
+            <button class="btn btn-primary" (click)="openCreateItem()">
+              <i class="bi bi-plus-lg"></i> Add Item
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- List View -->
+    @if (viewMode() === 'list') {
+      <div class="item-table-wrap">
+        <table class="item-table">
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" (change)="toggleSelectAll()" aria-label="Select all items" /></th>
+              <th>Item</th>
+              <th>SKU</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Variations</th>
+              <th>Status</th>
+              <th><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredItems(); track item.id) {
+              <tr [class.selected]="selectedItemIds().has(item.id)">
+                <td class="col-check"><input type="checkbox" [checked]="selectedItemIds().has(item.id)" (change)="toggleItemSelection(item.id)" aria-label="Select {{ item.name }}" /></td>
+                <td>
+                  <div class="item-cell">
+                    @if (item.thumbnailUrl || item.imageUrl) {
+                      <img class="item-thumb" [src]="item.thumbnailUrl ?? item.imageUrl" [alt]="item.name" />
+                    }
+                    <span class="item-name">{{ item.name }}</span>
+                  </div>
+                </td>
+                <td class="text-muted">{{ item.sku ?? '—' }}</td>
+                <td>{{ getCategoryName(item.categoryId) }}</td>
+                <td>${{ item.basePrice | number:'1.2-2' }}</td>
+                <td>{{ item.variations.length || '—' }}</td>
+                <td>
+                  @if (item.isActive) {
+                    <span class="badge badge-success">Active</span>
+                  } @else {
+                    <span class="badge badge-muted">Inactive</span>
+                  }
+                </td>
+                <td class="col-actions">
+                  <button class="btn btn-sm btn-ghost" (click)="openEditItem(item)" [attr.aria-label]="'Edit ' + item.name"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-sm btn-ghost text-danger" (click)="deleteItem(item)" [attr.aria-label]="'Delete ' + item.name"><i class="bi bi-trash3"></i></button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  <!-- ==================== CATEGORIES TAB ==================== -->
+  @if (activeTab() === 'categories') {
+    <div class="category-tree">
+      @for (cat of categoryTree(); track cat.id) {
+        <div class="category-row depth-0">
+          <div class="category-info">
+            <i class="bi bi-folder2"></i>
+            <span class="category-name">{{ cat.name }}</span>
+            @if (cat.itemCount) {
+              <span class="category-count">{{ cat.itemCount }} items</span>
+            }
+          </div>
+          <div class="category-actions">
+            <button class="btn btn-sm btn-ghost" (click)="openCreateCategory(cat.id)" aria-label="Add subcategory"><i class="bi bi-plus"></i></button>
+            <button class="btn btn-sm btn-ghost" (click)="moveCategoryUp(cat)" aria-label="Move up"><i class="bi bi-chevron-up"></i></button>
+            <button class="btn btn-sm btn-ghost" (click)="moveCategoryDown(cat)" aria-label="Move down"><i class="bi bi-chevron-down"></i></button>
+            <button class="btn btn-sm btn-ghost" (click)="openEditCategory(cat)" aria-label="Edit"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-ghost text-danger" (click)="deleteCategory(cat)" aria-label="Delete"><i class="bi bi-trash3"></i></button>
+          </div>
+        </div>
+        @for (child of cat.children; track child.id) {
+          <div class="category-row depth-1">
+            <div class="category-info">
+              <i class="bi bi-folder"></i>
+              <span class="category-name">{{ child.name }}</span>
+              @if (child.itemCount) {
+                <span class="category-count">{{ child.itemCount }} items</span>
+              }
+            </div>
+            <div class="category-actions">
+              <button class="btn btn-sm btn-ghost" (click)="openCreateCategory(child.id)" aria-label="Add subcategory"><i class="bi bi-plus"></i></button>
+              <button class="btn btn-sm btn-ghost" (click)="openEditCategory(child)" aria-label="Edit"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-ghost text-danger" (click)="deleteCategory(child)" aria-label="Delete"><i class="bi bi-trash3"></i></button>
+            </div>
+          </div>
+          @for (sub of child.children; track sub.id) {
+            <div class="category-row depth-2">
+              <div class="category-info">
+                <i class="bi bi-tag"></i>
+                <span class="category-name">{{ sub.name }}</span>
+              </div>
+              <div class="category-actions">
+                <button class="btn btn-sm btn-ghost" (click)="openEditCategory(sub)" aria-label="Edit"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-ghost text-danger" (click)="deleteCategory(sub)" aria-label="Delete"><i class="bi bi-trash3"></i></button>
+              </div>
+            </div>
+          }
+        }
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-folder-plus"></i>
+          <h3>No categories</h3>
+          <p>Organize your catalog with departments, categories, and subcategories.</p>
+          <button class="btn btn-primary" (click)="openCreateCategory()">
+            <i class="bi bi-plus-lg"></i> Add Category
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== OPTION SETS TAB ==================== -->
+  @if (activeTab() === 'option-sets') {
+    <div class="option-sets-list">
+      @for (os of optionSets(); track os.id) {
+        <div class="option-set-card">
+          <div class="option-set-header">
+            <h4>{{ os.name }}</h4>
+            <div class="option-set-actions">
+              <button class="btn btn-sm btn-ghost" (click)="openEditOptionSet(os)" [attr.aria-label]="'Edit ' + os.name"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-ghost text-danger" (click)="deleteOptionSet(os)" [attr.aria-label]="'Delete ' + os.name"><i class="bi bi-trash3"></i></button>
+            </div>
+          </div>
+          <div class="option-set-values">
+            @for (val of os.values; track val) {
+              <span class="value-chip">{{ val }}</span>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-sliders"></i>
+          <h3>No option sets</h3>
+          <p>Create option sets like Size, Color, or Material to generate product variations.</p>
+          <button class="btn btn-primary" (click)="openCreateOptionSet()">
+            <i class="bi bi-plus-lg"></i> Add Option Set
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== COLLECTIONS TAB ==================== -->
+  @if (activeTab() === 'collections') {
+    <div class="collections-list">
+      @for (col of collections(); track col.id) {
+        <div class="collection-card">
+          <div class="collection-header">
+            <div>
+              <h4>{{ col.name }}</h4>
+              <span class="badge" [class.badge-info]="col.type === 'smart'" [class.badge-muted]="col.type === 'manual'">
+                {{ col.type === 'smart' ? 'Smart' : 'Manual' }}
+              </span>
+            </div>
+            <div class="collection-actions">
+              <button class="btn btn-sm btn-ghost" (click)="openEditCollection(col)" [attr.aria-label]="'Edit ' + col.name"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-ghost text-danger" (click)="deleteCollection(col)" [attr.aria-label]="'Delete ' + col.name"><i class="bi bi-trash3"></i></button>
+            </div>
+          </div>
+          @if (col.type === 'smart' && col.rules.length > 0) {
+            <div class="collection-rules">
+              @for (rule of col.rules; track $index) {
+                <span class="rule-chip">{{ rule.field }} {{ rule.operator }} {{ rule.value }}</span>
+              }
+            </div>
+          }
+          @if (col.type === 'manual') {
+            <div class="collection-count">{{ col.itemIds.length }} items</div>
+          }
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-collection"></i>
+          <h3>No collections</h3>
+          <p>Group products into collections for promotions, seasonal displays, or featured categories.</p>
+          <button class="btn btn-primary" (click)="openCreateCollection()">
+            <i class="bi bi-plus-lg"></i> Add Collection
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== BUNDLES TAB ==================== -->
+  @if (activeTab() === 'bundles') {
+    <div class="bundles-list">
+      @for (bundle of bundles(); track bundle.id) {
+        <div class="bundle-card">
+          <div class="bundle-header">
+            <div>
+              <h4>{{ bundle.name }}</h4>
+              <span class="bundle-type-badge">{{ bundle.bundleType === 'fixed_price' ? 'Fixed Price' : bundle.bundleType === 'percent_discount' ? '% Discount' : 'Cheapest Free' }}</span>
+            </div>
+            <div class="bundle-price">${{ bundle.price | number:'1.2-2' }}</div>
+          </div>
+          <div class="bundle-components">
+            @for (comp of bundle.components; track $index) {
+              <span class="component-chip">{{ comp.itemName }} ×{{ comp.quantity }}</span>
+            }
+          </div>
+          <div class="bundle-actions">
+            <button class="btn btn-sm btn-ghost" (click)="openEditBundle(bundle)" [attr.aria-label]="'Edit ' + bundle.name"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-ghost text-danger" (click)="deleteBundle(bundle)" [attr.aria-label]="'Delete ' + bundle.name"><i class="bi bi-trash3"></i></button>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-box2-heart"></i>
+          <h3>No bundles</h3>
+          <p>Create product bundles to offer customers curated packages at special pricing.</p>
+          <button class="btn btn-primary" (click)="openCreateBundle()">
+            <i class="bi bi-plus-lg"></i> Add Bundle
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ==================== ITEM MODAL ==================== -->
+@if (showItemModal()) {
+  <div class="modal-overlay" (click)="showItemModal.set(false)" (keydown.enter)="showItemModal.set(false)" (keydown.escape)="showItemModal.set(false)">
+    <div class="modal-panel modal-lg" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingItem() ? 'Edit Item' : 'New Item' }}</h3>
+        <button class="btn-close" aria-label="Close" (click)="showItemModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Basic Info -->
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="cat-item-name">Name</label>
+              <input id="cat-item-name" type="text" class="form-control" [ngModel]="itemForm().name" (ngModelChange)="updateItemForm({ name: $event })" placeholder="Product name" />
+            </div>
+            <div class="form-group" style="width: 120px;">
+              <label for="cat-item-type">Type</label>
+              <select id="cat-item-type" class="form-select" [ngModel]="itemForm().itemType" (ngModelChange)="updateItemType($event)">
+                <option value="physical">Physical</option>
+                <option value="digital">Digital</option>
+                <option value="service">Service</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="cat-item-desc">Description</label>
+            <textarea id="cat-item-desc" class="form-control" rows="3" [ngModel]="itemForm().description" (ngModelChange)="updateItemForm({ description: $event })" placeholder="Product description"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="cat-item-price">Price</label>
+              <input id="cat-item-price" type="number" class="form-control" [ngModel]="itemForm().basePrice" (ngModelChange)="updateItemForm({ basePrice: $event })" step="0.01" min="0" />
+            </div>
+            <div class="form-group flex-1">
+              <label for="cat-item-cost">Cost</label>
+              <input id="cat-item-cost" type="number" class="form-control" [ngModel]="itemForm().cost" (ngModelChange)="updateItemForm({ cost: $event })" step="0.01" min="0" placeholder="Optional" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="cat-item-cat">Category</label>
+              <select id="cat-item-cat" class="form-select" [ngModel]="itemForm().categoryId" (ngModelChange)="updateItemForm({ categoryId: $event })">
+                <option [ngValue]="null">None</option>
+                @for (cat of categories(); track cat.id) {
+                  <option [ngValue]="cat.id">{{ cat.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKU & Barcode -->
+        <div class="form-section collapsible" [class.open]="showItemAdvanced()">
+          <button class="section-toggle" (click)="toggleItemAdvanced()">
+            <i class="bi" [class.bi-chevron-right]="!showItemAdvanced()" [class.bi-chevron-down]="showItemAdvanced()"></i>
+            SKU, Barcode & Advanced
+          </button>
+          @if (showItemAdvanced()) {
+            <div class="section-content">
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="cat-item-sku">SKU</label>
+                  <div class="input-group">
+                    <input id="cat-item-sku" type="text" class="form-control" [ngModel]="itemForm().sku" (ngModelChange)="updateItemForm({ sku: $event })" placeholder="e.g. TSHRT-BLK-M" />
+                    <button class="btn btn-outline-secondary btn-sm" (click)="autoGenerateSku()">Auto</button>
+                  </div>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="cat-item-barcode">Barcode</label>
+                  <input id="cat-item-barcode" type="text" class="form-control" [ngModel]="itemForm().barcode" (ngModelChange)="updateItemForm({ barcode: $event })" placeholder="Scan or enter" />
+                </div>
+              </div>
+
+              <!-- Channel Visibility -->
+              <div class="form-group">
+                <p class="form-label mb-2">Channel Visibility</p>
+                <div class="checkbox-row">
+                  <label class="form-check">
+                    <input type="checkbox" class="form-check-input" [ngModel]="itemForm().channelVisibility.inStore" (ngModelChange)="updateChannelVisibility('inStore', $event)" />
+                    In Store
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" class="form-check-input" [ngModel]="itemForm().channelVisibility.online" (ngModelChange)="updateChannelVisibility('online', $event)" />
+                    Online
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" class="form-check-input" [ngModel]="itemForm().channelVisibility.kiosk" (ngModelChange)="updateChannelVisibility('kiosk', $event)" />
+                    Kiosk
+                  </label>
+                </div>
+              </div>
+
+              <!-- Toggles -->
+              <div class="checkbox-row">
+                <label class="form-check">
+                  <input type="checkbox" class="form-check-input" [ngModel]="itemForm().taxable" (ngModelChange)="updateItemForm({ taxable: $event })" />
+                  Taxable
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" class="form-check-input" [ngModel]="itemForm().trackInventory" (ngModelChange)="updateItemForm({ trackInventory: $event })" />
+                  Track Inventory
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" class="form-check-input" [ngModel]="itemForm().weightBased" (ngModelChange)="updateItemForm({ weightBased: $event })" />
+                  Sold by Weight
+                </label>
+              </div>
+
+              @if (itemForm().weightBased) {
+                <div class="form-group" style="max-width: 200px;">
+                  <label for="cat-item-weight-unit">Weight Unit</label>
+                  <select id="cat-item-weight-unit" class="form-select" [ngModel]="itemForm().weightUnit" (ngModelChange)="updateItemForm({ weightUnit: $event })">
+                    <option value="lb">lb</option>
+                    <option value="oz">oz</option>
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                  </select>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showItemModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="saveItem()" [disabled]="!itemForm().name">
+          {{ editingItem() ? 'Save Changes' : 'Create Item' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ==================== CATEGORY MODAL ==================== -->
+@if (showCategoryModal()) {
+  <div class="modal-overlay" (click)="showCategoryModal.set(false)" (keydown.enter)="showCategoryModal.set(false)" (keydown.escape)="showCategoryModal.set(false)">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingCategory() ? 'Edit Category' : 'New Category' }}</h3>
+        <button class="btn-close" aria-label="Close" (click)="showCategoryModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="cat-cat-name">Name</label>
+          <input id="cat-cat-name" type="text" class="form-control" [ngModel]="categoryForm().name" (ngModelChange)="updateCategoryName($event)" />
+        </div>
+        <div class="form-group">
+          <label for="cat-cat-parent">Parent Category</label>
+          <select id="cat-cat-parent" class="form-select" [ngModel]="categoryForm().parentId" (ngModelChange)="updateCategoryParent($event)">
+            <option [ngValue]="null">None (top level)</option>
+            @for (cat of categories(); track cat.id) {
+              <option [ngValue]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showCategoryModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="saveCategory()" [disabled]="!categoryForm().name">
+          {{ editingCategory() ? 'Save' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ==================== OPTION SET MODAL ==================== -->
+@if (showOptionSetModal()) {
+  <div class="modal-overlay" (click)="showOptionSetModal.set(false)" (keydown.enter)="showOptionSetModal.set(false)" (keydown.escape)="showOptionSetModal.set(false)">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingOptionSet() ? 'Edit Option Set' : 'New Option Set' }}</h3>
+        <button class="btn-close" aria-label="Close" (click)="showOptionSetModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="cat-opt-name">Name</label>
+          <input id="cat-opt-name" type="text" class="form-control" [ngModel]="optionSetForm().name" (ngModelChange)="updateOptionSetName($event)" placeholder="e.g. Size, Color" />
+        </div>
+        <div class="form-group">
+          <p class="form-label">Values</p>
+          <div class="value-input-row">
+            <input
+              type="text"
+              class="form-control"
+              [ngModel]="newOptionValue()"
+              (ngModelChange)="newOptionValue.set($event)"
+              (keydown.enter)="addOptionValue()"
+              placeholder="Type a value and press Enter"
+              aria-label="Option value"
+            />
+            <button class="btn btn-outline-primary btn-sm" (click)="addOptionValue()">Add</button>
+          </div>
+          <div class="value-chips">
+            @for (val of optionSetForm().values; track val) {
+              <span class="value-chip">
+                {{ val }}
+                <button class="chip-remove" aria-label="Remove" (click)="removeOptionValue($index)">×</button>
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showOptionSetModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="saveOptionSet()" [disabled]="!optionSetForm().name || optionSetForm().values.length === 0">
+          {{ editingOptionSet() ? 'Save' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ==================== COLLECTION MODAL ==================== -->
+@if (showCollectionModal()) {
+  <div class="modal-overlay" (click)="showCollectionModal.set(false)" (keydown.enter)="showCollectionModal.set(false)" (keydown.escape)="showCollectionModal.set(false)">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingCollection() ? 'Edit Collection' : 'New Collection' }}</h3>
+        <button class="btn-close" aria-label="Close" (click)="showCollectionModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="cat-col-name">Name</label>
+          <input id="cat-col-name" type="text" class="form-control" [ngModel]="collectionForm().name" (ngModelChange)="updateCollectionName($event)" />
+        </div>
+        <div class="form-group">
+          <label for="cat-col-type">Type</label>
+          <select id="cat-col-type" class="form-select" [ngModel]="collectionForm().type" (ngModelChange)="updateCollectionType($event)">
+            <option value="manual">Manual</option>
+            <option value="smart">Smart (Rule-based)</option>
+          </select>
+        </div>
+        @if (collectionForm().type === 'smart') {
+          <div class="form-group">
+            <p class="form-label">Rules</p>
+            <div class="rule-builder">
+              <div class="rule-input-row">
+                <select class="form-select form-select-sm" [ngModel]="newRule().field" (ngModelChange)="updateNewRuleField($event)" aria-label="Rule field">
+                  <option value="price">Price</option>
+                  <option value="category">Category</option>
+                  <option value="vendor">Vendor</option>
+                  <option value="tag">Tag</option>
+                  <option value="item_type">Item Type</option>
+                  <option value="stock_quantity">Stock Qty</option>
+                </select>
+                <select class="form-select form-select-sm" [ngModel]="newRule().operator" (ngModelChange)="updateNewRuleOperator($event)" aria-label="Rule operator">
+                  <option value="equals">equals</option>
+                  <option value="not_equals">not equals</option>
+                  <option value="greater_than">greater than</option>
+                  <option value="less_than">less than</option>
+                  <option value="contains">contains</option>
+                </select>
+                <input type="text" class="form-control form-control-sm" [ngModel]="newRule().value" (ngModelChange)="updateNewRuleValue($event)" placeholder="Value" aria-label="Rule value" />
+                <button class="btn btn-sm btn-outline-primary" (click)="addCollectionRule()">Add</button>
+              </div>
+              @for (rule of collectionForm().rules; track $index) {
+                <div class="rule-chip">
+                  {{ rule.field }} {{ rule.operator }} {{ rule.value }}
+                  <button class="chip-remove" aria-label="Remove" (click)="removeCollectionRule($index)">×</button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showCollectionModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="saveCollection()" [disabled]="!collectionForm().name">
+          {{ editingCollection() ? 'Save' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ==================== BUNDLE MODAL ==================== -->
+@if (showBundleModal()) {
+  <div class="modal-overlay" (click)="showBundleModal.set(false)" (keydown.enter)="showBundleModal.set(false)" (keydown.escape)="showBundleModal.set(false)">
+    <div class="modal-panel modal-lg" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingBundle() ? 'Edit Bundle' : 'New Bundle' }}</h3>
+        <button class="btn-close" aria-label="Close" (click)="showBundleModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="cat-bun-name">Bundle Name</label>
+            <input id="cat-bun-name" type="text" class="form-control" [ngModel]="bundleForm().name" (ngModelChange)="updateBundleName($event)" placeholder="e.g. Summer Gift Set" />
+          </div>
+          <div class="form-group" style="width: 160px;">
+            <label for="cat-bun-type">Pricing Strategy</label>
+            <select id="cat-bun-type" class="form-select" [ngModel]="bundleForm().bundleType" (ngModelChange)="updateBundleType($event)">
+              <option value="fixed_price">Fixed Price</option>
+              <option value="percent_discount">% Discount</option>
+              <option value="cheapest_free">Cheapest Free</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          @if (bundleForm().bundleType === 'fixed_price') {
+            <div class="form-group" style="width: 160px;">
+              <label for="cat-bun-price">Bundle Price</label>
+              <input id="cat-bun-price" type="number" class="form-control" [ngModel]="bundleForm().price" (ngModelChange)="updateBundlePrice($event)" step="0.01" min="0" />
+            </div>
+          }
+          @if (bundleForm().bundleType === 'percent_discount') {
+            <div class="form-group" style="width: 160px;">
+              <label for="cat-bun-discount">Discount %</label>
+              <input id="cat-bun-discount" type="number" class="form-control" [ngModel]="bundleForm().discountPercent" (ngModelChange)="updateBundleDiscount($event)" min="0" max="100" />
+            </div>
+          }
+          @if (bundleSavings() > 0) {
+            <div class="savings-preview">
+              <i class="bi bi-tag-fill"></i> Customer saves ${{ bundleSavings() | number:'1.2-2' }}
+            </div>
+          }
+        </div>
+
+        <!-- Components -->
+        <div class="form-group">
+          <p class="form-label">Components</p>
+          <div class="component-search">
+            <input
+              type="text"
+              class="form-control"
+              [ngModel]="bundleComponentSearch()"
+              (ngModelChange)="bundleComponentSearch.set($event)"
+              placeholder="Search items to add..."
+              aria-label="Search items to add"
+            />
+            @if (bundleSearchResults().length > 0) {
+              <div class="search-dropdown">
+                @for (item of bundleSearchResults(); track item.id) {
+                  <button class="search-result" (click)="addBundleComponent(item)">
+                    <span>{{ item.name }}</span>
+                    <span class="text-muted">${{ item.basePrice | number:'1.2-2' }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+          <div class="component-list">
+            @for (comp of bundleForm().components; track $index) {
+              <div class="component-row">
+                <span class="component-name">{{ getItemName(comp.itemId) }}</span>
+                <span class="component-price">${{ getItemPrice(comp.itemId) | number:'1.2-2' }}</span>
+                <span>×{{ comp.quantity }}</span>
+                <label class="form-check form-check-sm">
+                  <input type="checkbox" class="form-check-input" [checked]="comp.isRequired" />
+                  Required
+                </label>
+                <button class="btn btn-sm btn-ghost text-danger" (click)="removeBundleComponent($index)" aria-label="Remove component"><i class="bi bi-x"></i></button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showBundleModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" (click)="saveBundle()" [disabled]="!bundleForm().name || bundleForm().components.length === 0">
+          {{ editingBundle() ? 'Save' : 'Create Bundle' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ==================== CSV IMPORT MODAL ==================== -->
+@if (showImportModal()) {
+  <div class="modal-overlay" (click)="showImportModal.set(false)" (keydown.enter)="showImportModal.set(false)" (keydown.escape)="showImportModal.set(false)">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Import from CSV</h3>
+        <button class="btn-close" aria-label="Close" (click)="showImportModal.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        @if (!importResult()) {
+          <div class="import-dropzone">
+            <i class="bi bi-cloud-upload"></i>
+            <p>Drag and drop a CSV file, or click to browse</p>
+            <input type="file" accept=".csv" (change)="onImportFileChange($event)" aria-label="Choose CSV file" />
+          </div>
+          @if (importFile()) {
+            <div class="import-file-info">
+              <i class="bi bi-file-earmark-spreadsheet"></i>
+              <span>{{ importFile()!.name }}</span>
+            </div>
+          }
+        } @else {
+          <div class="import-results">
+            <div class="result-row success"><strong>{{ importResult()!.created }}</strong> created</div>
+            <div class="result-row info"><strong>{{ importResult()!.updated }}</strong> updated</div>
+            <div class="result-row muted"><strong>{{ importResult()!.skipped }}</strong> skipped</div>
+            @if (importResult()!.errors.length > 0) {
+              <div class="result-errors">
+                <h5>Errors</h5>
+                @for (err of importResult()!.errors; track err) {
+                  <div class="error-line">{{ err }}</div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        @if (!importResult()) {
+          <button class="btn btn-outline-secondary" (click)="showImportModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="runImport()" [disabled]="!importFile()">Import</button>
+        } @else {
+          <button class="btn btn-primary" (click)="closeImportModal()">Done</button>
+        }
+      </div>
+    </div>
+  </div>
+}
+</div>

@@ -1,0 +1,85 @@
+<aside class="sidebar" [class.mobile-open]="mobileOpen()">
+  <div class="sidebar-header">
+    <div class="brand-section">
+      <span class="brand-icon">
+        <i class="bi bi-stack"></i>
+      </span>
+      @if (!collapsed()) {
+        <span class="brand-text">OrderStack</span>
+      }
+    </div>
+    <button class="btn btn-link collapse-btn d-none d-md-block" (click)="toggled.emit()" [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+      <i class="bi" [class.bi-chevron-left]="!collapsed()" [class.bi-chevron-right]="collapsed()"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    @for (item of navItems(); track (item.key ?? item.route)) {
+      @if (item.dividerBefore && !collapsed()) {
+        <hr class="nav-divider">
+      }
+      <a class="nav-item"
+         [routerLink]="item.route"
+         [queryParams]="item.queryParams ?? null"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="item.exact ? { exact: true } : item.children ? { exact: true } : { exact: false }"
+         [class.nav-alert-critical]="item.alertSeverity === 'critical'"
+         [class.nav-alert-warning]="item.alertSeverity === 'warning'"
+         [class.nav-alert-info]="item.alertSeverity === 'info'"
+         (click)="closeMobile.emit()"
+         [title]="collapsed() ? item.label : ''">
+        <i class="bi {{ item.icon }}"></i>
+        @if (!collapsed()) {
+          <span class="nav-label">{{ item.label }}</span>
+          @if (item.badge) {
+            <span class="nav-badge">{{ item.badge }}</span>
+          }
+        }
+      </a>
+      @if (item.children && !collapsed()) {
+        @for (child of item.children; track child.label) {
+          <a class="nav-item nav-child"
+             [routerLink]="child.route"
+             [queryParams]="child.queryParams ?? null"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="child.queryParams ? { exact: true } : { exact: false }"
+             (click)="closeMobile.emit()"
+             [title]="collapsed() ? child.label : ''">
+            <i class="bi {{ child.icon }}"></i>
+            <span class="nav-label">{{ child.label }}</span>
+            @if (child.badge) {
+              <span class="nav-badge">{{ child.badge }}</span>
+            }
+          </a>
+        }
+      }
+    }
+  </nav>
+
+  <div class="sidebar-footer">
+    @if (restaurantName(); as name) {
+      <div class="restaurant-info" [title]="collapsed() ? name : ''">
+        <i class="bi bi-shop"></i>
+        @if (!collapsed()) {
+          <div class="restaurant-details">
+            <span class="restaurant-name">{{ name }}</span>
+            @if (restaurantAddress(); as addr) {
+              <small class="restaurant-address">{{ addr }}</small>
+            }
+          </div>
+        }
+      </div>
+    }
+    @if (userName(); as uName) {
+      <div class="user-info">
+        <i class="bi bi-person-circle"></i>
+        @if (!collapsed()) {
+          <span class="user-name">{{ uName }}</span>
+          <button class="btn btn-link logout-btn" (click)="loggedOut.emit()" aria-label="Logout">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</aside>

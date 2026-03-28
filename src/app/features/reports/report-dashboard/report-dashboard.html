@@ -1,0 +1,303 @@
+@if (view() === 'builder') {
+  <os-report-builder
+    [editingReport]="editingReport()"
+    (saved)="onBuilderSaved($event)"
+    (cancelled)="onBuilderCancelled()"
+  />
+} @else {
+  <div class="report-dashboard px-2">
+    <div class="dashboard-header">
+      <div>
+        <h1>Reports</h1>
+        <p class="header-subtitle">Create custom reports, schedule delivery, and export data</p>
+      </div>
+      <button class="btn btn-primary" (click)="openBuilder()">
+        <i class="bi bi-plus-lg"></i> New Report
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-danger">{{ error() }}</div>
+    }
+
+    <!-- Built-in reports -->
+    <section class="section">
+      <h3 class="section-title">Built-in Reports</h3>
+      <div class="builtin-grid">
+        <button class="builtin-card" (click)="goToCloseOfDay()">
+          <div class="builtin-icon">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <div class="builtin-info">
+            <h4>Close of Day</h4>
+            <p>Daily summary, payments, tips, voids, items</p>
+          </div>
+          <i class="bi bi-chevron-right"></i>
+        </button>
+
+        <button class="builtin-card" (click)="goToSalesDashboard()">
+          <div class="builtin-icon">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <div class="builtin-info">
+            <h4>Sales Dashboard</h4>
+            <p>Goals, team performance, funnel, alerts</p>
+          </div>
+          <i class="bi bi-chevron-right"></i>
+        </button>
+
+        <button class="builtin-card" (click)="goToLaborReport()">
+          <div class="builtin-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <div class="builtin-info">
+            <h4>Labor Report</h4>
+            <p>Hours, labor cost, scheduling efficiency</p>
+          </div>
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- Custom reports -->
+    <section class="section">
+      <div class="section-header">
+        <h3 class="section-title">Custom Reports</h3>
+        @if (activeScheduleCount() > 0) {
+          <span class="schedule-badge">
+            <i class="bi bi-clock"></i> {{ activeScheduleCount() }} active schedule{{ activeScheduleCount() === 1 ? '' : 's' }}
+          </span>
+        }
+      </div>
+
+      @if (isLoading()) {
+        <div class="loading-state">
+          <span class="spinner-border spinner-border-sm"></span> Loading reports...
+        </div>
+      } @else if (savedReports().length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <h4>No custom reports yet</h4>
+          <p>Create a report by selecting the blocks you need — sales, payments, items, and more.</p>
+          <button class="btn btn-primary" (click)="openBuilder()">
+            <i class="bi bi-plus-lg"></i> Create Your First Report
+          </button>
+        </div>
+      } @else {
+        <div class="report-list">
+          @for (report of savedReports(); track report.id) {
+            <div class="report-card">
+              <div class="report-card-main">
+                <div class="report-meta">
+                  <h4>{{ report.name }}</h4>
+                  <div class="meta-row">
+                    <span class="meta-item">
+                      <i class="bi bi-layers"></i> {{ getReportBlockCount(report) }} block{{ getReportBlockCount(report) === 1 ? '' : 's' }}
+                    </span>
+                    <span class="meta-item">
+                      <i class="bi bi-clock-history"></i> Updated {{ report.updatedAt | date:'MMM d, y' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="report-actions">
+                  <button class="btn btn-sm btn-outline-primary" (click)="openBuilder(report)" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-primary" (click)="openExportModal(report.id)" title="Export">
+                    <i class="bi bi-download"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-primary" (click)="openScheduleModal(report.id)" title="Schedule">
+                    <i class="bi bi-clock"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" (click)="deleteReport(report)" title="Delete">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Schedules for this report -->
+              @if (getSchedulesForReport(report.id).length > 0) {
+                <div class="report-schedules">
+                  @for (schedule of getSchedulesForReport(report.id); track schedule.id) {
+                    <div class="schedule-row">
+                      <div class="schedule-info">
+                        <i class="bi bi-clock"></i>
+                        <span>{{ getFrequencyLabel(schedule) }}</span>
+                        <span class="schedule-recipients">
+                          to {{ schedule.recipientEmails.length }} recipient{{ schedule.recipientEmails.length === 1 ? '' : 's' }}
+                        </span>
+                      </div>
+                      <div class="schedule-actions">
+                        <button
+                          class="btn btn-sm btn-toggle"
+                          [class.active]="schedule.isActive"
+                          (click)="toggleScheduleActive(schedule)"
+                        >
+                          {{ schedule.isActive ? 'Active' : 'Paused' }}
+                        </button>
+                        <button class="btn btn-sm btn-icon-danger" (click)="deleteSchedule(schedule)">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </div>
+
+  <!-- Schedule Modal -->
+  @if (showScheduleModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeScheduleModal()" (keydown.enter)="closeScheduleModal()"></button>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5>Schedule Report</h5>
+          <button class="btn-close" (click)="closeScheduleModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="schedule-frequency">Frequency</label>
+            <select id="schedule-frequency" class="form-select" aria-label="Frequency" [ngModel]="scheduleFrequency()" (ngModelChange)="setScheduleFrequency($event)">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+
+          @if (scheduleFrequency() === 'weekly') {
+            <div class="form-group">
+              <label for="schedule-day-of-week">Day of Week</label>
+              <select id="schedule-day-of-week" class="form-select" aria-label="Day of Week" [ngModel]="scheduleDayOfWeek()" (ngModelChange)="setScheduleDayOfWeek(+$event)">
+                <option [value]="0">Sunday</option>
+                <option [value]="1">Monday</option>
+                <option [value]="2">Tuesday</option>
+                <option [value]="3">Wednesday</option>
+                <option [value]="4">Thursday</option>
+                <option [value]="5">Friday</option>
+                <option [value]="6">Saturday</option>
+              </select>
+            </div>
+          }
+
+          @if (scheduleFrequency() === 'monthly') {
+            <div class="form-group">
+              <label for="schedule-day-of-month">Day of Month</label>
+              <select id="schedule-day-of-month" class="form-select" [ngModel]="scheduleDayOfMonth()" (ngModelChange)="setScheduleDayOfMonth(+$event)">
+                @for (d of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28]; track d) {
+                  <option [value]="d">{{ d }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <div class="form-group">
+            <label for="schedule-time">Time</label>
+            <input id="schedule-time" type="time" class="form-control" aria-label="Schedule time" [ngModel]="scheduleTime()" (ngModelChange)="setScheduleTime($event)" />
+          </div>
+
+          <div class="form-group">
+            <label for="schedule-emails">Recipient Emails</label>
+            <input
+              id="schedule-emails"
+              type="text"
+              class="form-control"
+              aria-label="Recipient emails"
+              placeholder="email1@example.com, email2@example.com"
+              [ngModel]="scheduleEmails()"
+              (ngModelChange)="setScheduleEmails($event)"
+            />
+            <small class="form-text text-muted">Separate multiple emails with commas</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" (click)="closeScheduleModal()">Cancel</button>
+          <button class="btn btn-primary" [disabled]="isSavingSchedule()" (click)="saveSchedule()">
+            @if (isSavingSchedule()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            }
+            Create Schedule
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Export Modal -->
+  @if (showExportModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeExportModal()" (keydown.enter)="closeExportModal()"></button>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5>Export Report</h5>
+          <button class="btn-close" (click)="closeExportModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <p id="export-format-label" class="form-label">Format</p>
+            <fieldset class="format-options" aria-labelledby="export-format-label"><legend class="visually-hidden">Format</legend>
+              <button
+                class="format-option"
+                [class.active]="exportFormat() === 'pdf'"
+                (click)="setExportFormat('pdf')"
+              >
+                <i class="bi bi-file-earmark-pdf"></i>
+                <span>PDF</span>
+              </button>
+              <button
+                class="format-option"
+                [class.active]="exportFormat() === 'csv'"
+                (click)="setExportFormat('csv')"
+              >
+                <i class="bi bi-filetype-csv"></i>
+                <span>CSV</span>
+              </button>
+              <button
+                class="format-option"
+                [class.active]="exportFormat() === 'xlsx'"
+                (click)="setExportFormat('xlsx')"
+              >
+                <i class="bi bi-file-earmark-excel"></i>
+                <span>Excel</span>
+              </button>
+            </fieldset>
+          </div>
+
+          <div class="form-group">
+            <p id="export-date-range-label" class="form-label">Date Range</p>
+            <fieldset class="date-row" aria-labelledby="export-date-range-label"><legend class="visually-hidden">Date Range</legend>
+              <input type="date" class="form-control" aria-label="Start date" [ngModel]="exportStartDate()" (ngModelChange)="setExportStartDate($event)" />
+              <span class="date-sep">to</span>
+              <input type="date" class="form-control" aria-label="End date" [ngModel]="exportEndDate()" (ngModelChange)="setExportEndDate($event)" />
+            </fieldset>
+          </div>
+
+          <div class="form-group">
+            <label for="export-comparison">Compare To</label>
+            <select id="export-comparison" class="form-select" aria-label="Compare to" [ngModel]="exportComparison()" (ngModelChange)="setExportComparison($event)">
+              <option value="">No comparison</option>
+              <option value="previous_period">Previous Period</option>
+              <option value="same_period_last_year">Same Period Last Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" (click)="closeExportModal()">Cancel</button>
+          <button class="btn btn-primary" [disabled]="isExporting()" (click)="doExport()">
+            @if (isExporting()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            } @else {
+              <i class="bi bi-download"></i>
+            }
+            Export
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}

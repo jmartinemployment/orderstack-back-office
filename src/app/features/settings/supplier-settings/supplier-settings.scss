@@ -1,0 +1,155 @@
+:host {
+  display: block;
+}
+
+.supplier-settings {
+  max-width: 800px;
+}
+
+.section-heading {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.alert-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.credential-card {
+  border: 1px solid var(--os-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--os-bg-card);
+}
+
+.credential-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 106, 255, 0.03);
+  border-bottom: 1px solid var(--os-border);
+}
+
+.credential-provider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  > i {
+    font-size: 1.5rem;
+    color: var(--os-primary);
+  }
+
+  h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+}
+
+.credential-status {
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+  }
+}
+
+.credential-body {
+  padding: 1.25rem;
+}
+
+.form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--os-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+
+.form-control,
+.form-select {
+  background: var(--os-bg-card);
+  color: var(--os-text-primary);
+  border-color: var(--os-border);
+
+  &::placeholder {
+    color: var(--os-text-secondary);
+  }
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 3px rgba(0, 106, 255, 0.1);
+  }
+}
+
+.credential-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.help-card {
+  border: 1px solid var(--os-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: var(--os-bg-card);
+
+  h5 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    margin-bottom: 1rem;
+  }
+
+  a {
+    color: var(--os-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.help-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.help-step {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--os-text-secondary);
+  line-height: 1.5;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--os-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .credential-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

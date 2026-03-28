@@ -1,0 +1,230 @@
+@if (activeTeamMember(); as member) {
+  <div class="authenticated-bar">
+    <!-- User info row -->
+    <div class="auth-row">
+      <div class="auth-info">
+        <div class="auth-avatar" [style.background-color]="getAvatarColor(member.displayName)">
+          {{ getInitials(member.displayName) }}
+        </div>
+        <div class="auth-details">
+          <span class="auth-name">{{ member.displayName }}</span>
+          @if (isClockedIn()) {
+            <div class="auth-clock-info">
+              <span class="auth-status clocked-in">
+                <i class="bi bi-circle-fill"></i> Clocked In
+              </span>
+              <span class="auth-duration">{{ clockedInDuration() }}</span>
+              @if (activeTimecard()) {
+                <span class="auth-job">{{ activeTimecard()!.jobTitle }}</span>
+              }
+            </div>
+          } @else {
+            <span class="auth-status not-clocked">Not Clocked In</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Active break banner -->
+    @if (isOnBreak()) {
+      <div class="break-banner">
+        <i class="bi bi-cup-hot-fill"></i>
+        <div class="break-info">
+          <span class="break-name">{{ activeBreak()!.name }}</span>
+          <span class="break-elapsed">{{ breakElapsedMinutes() }}m / {{ activeBreak()!.expectedMinutes }}m</span>
+        </div>
+        <button class="btn-end-break" [disabled]="isClockAction()" (click)="doEndBreak()">
+          End Break
+        </button>
+      </div>
+    }
+
+    <!-- Error display -->
+    @if (error()) {
+      <button
+        type="button"
+        class="auth-error"
+        (click)="dismissError()"
+        (keydown.enter)="dismissError()">
+        <i class="bi bi-exclamation-circle"></i>
+        {{ error() }}
+        <i class="bi bi-x"></i>
+      </button>
+    }
+
+    <!-- Action buttons -->
+    <div class="auth-actions">
+      @if (isClockedIn() && !isOnBreak()) {
+        <!-- Break buttons -->
+        @for (bt of activeBreakTypes(); track bt.id) {
+          <button class="btn-action btn-break" [disabled]="isClockAction()" (click)="doStartBreak(bt.id)">
+            <i class="bi bi-cup-hot"></i>
+            {{ bt.name }}
+            <span class="btn-meta">{{ bt.expectedMinutes }}m</span>
+          </button>
+        }
+
+        <!-- Clock Out button -->
+        <button class="btn-action btn-clock-out" [disabled]="isClockAction()" (click)="openClockOutModal()">
+          <i class="bi bi-box-arrow-right"></i> Clock Out
+        </button>
+
+        <!-- Switch Job button (multi-job only) -->
+        @if (canSwitchJob()) {
+          <button class="btn-action btn-switch-job" [disabled]="isClockAction()" (click)="openJobSwitcher()">
+            <i class="bi bi-arrow-repeat"></i> Switch Job
+          </button>
+        }
+      }
+
+      <!-- Switch User (always visible) -->
+      <button class="btn-action btn-switch-user" (click)="switchUser()">
+        <i class="bi bi-arrow-left-right"></i> Switch User
+      </button>
+    </div>
+  </div>
+
+  <!-- Clock-Out Modal -->
+  @if (showClockOutModal()) {
+    <div class="modal-overlay" (click)="cancelClockOut()" (keydown.enter)="cancelClockOut()" (keydown.escape)="cancelClockOut()">
+      <div class="clock-out-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="cancelClockOut()">
+        <h3>Shift Summary</h3>
+
+        @if (shiftSummary(); as s) {
+          <!-- Visual shift timeline -->
+          <div class="shift-timeline">
+            <div class="timeline-row">
+              <span class="timeline-dot in"></span>
+              <span class="timeline-label">Clock In</span>
+              <span class="timeline-value">{{ s.clockInTime }}</span>
+            </div>
+            @for (brk of s.breaks; track brk.id) {
+              <div class="timeline-row break-row">
+                <span class="timeline-dot break"></span>
+                <span class="timeline-label">{{ brk.name }}</span>
+                <span class="timeline-value">
+                  {{ brk.actualMinutes ?? 0 }}m
+                  @if (brk.isPaid) {
+                    <span class="badge-sm paid">Paid</span>
+                  }
+                </span>
+              </div>
+            }
+            <div class="timeline-row">
+              <span class="timeline-dot out"></span>
+              <span class="timeline-label">Clock Out</span>
+              <span class="timeline-value">{{ s.clockOutTime }}</span>
+            </div>
+          </div>
+
+          <!-- Hours breakdown -->
+          <div class="clockout-summary">
+            <div class="clockout-row">
+              <span>Total Time</span>
+              <span>{{ s.totalHours | number:'1.1-1' }}h</span>
+            </div>
+            @if (s.breakMinutes > 0) {
+              <div class="clockout-row">
+                <span>Break Time</span>
+                <span>{{ s.breakMinutes }}m</span>
+              </div>
+              @if (s.paidBreakMinutes > 0) {
+                <div class="clockout-row sub">
+                  <span>Paid Breaks</span>
+                  <span>{{ s.paidBreakMinutes }}m</span>
+                </div>
+              }
+              @if (s.unpaidBreakMinutes > 0) {
+                <div class="clockout-row sub">
+                  <span>Unpaid Breaks</span>
+                  <span>{{ s.unpaidBreakMinutes }}m</span>
+                </div>
+              }
+            }
+            <div class="clockout-row highlight">
+              <span>Net Paid Hours</span>
+              <span>{{ s.netPaidHours | number:'1.1-1' }}h</span>
+            </div>
+            @if (s.jobTitle) {
+              <div class="clockout-row">
+                <span>Job</span>
+                <span>{{ s.jobTitle }}</span>
+              </div>
+            }
+            @if (s.hourlyRate > 0) {
+              <div class="clockout-row est-pay">
+                <span>Estimated Pay</span>
+                <span>{{ s.estimatedPay | currency }}</span>
+              </div>
+            }
+          </div>
+
+          @if (s.isTipEligible) {
+            <div class="tip-declaration">
+              <label for="declaredCashTips">Declare Cash Tips ($)</label>
+              <input
+                type="number"
+                class="tip-input"
+                id="declaredCashTips"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                [value]="declaredTips()"
+                (input)="setDeclaredTips($any($event.target).valueAsNumber)">
+            </div>
+          }
+        }
+
+        <div class="clockout-actions">
+          <button class="btn-cancel" (click)="cancelClockOut()">Cancel</button>
+          <button class="btn-confirm-clockout" [disabled]="isClockAction()" (click)="doClockOut()">
+            @if (isClockAction()) { Clocking Out... } @else { Confirm Clock Out }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Job Switch Modal -->
+  @if (showJobSwitcher()) {
+    <div class="modal-overlay" (click)="cancelJobSwitch()" (keydown.enter)="cancelJobSwitch()" (keydown.escape)="cancelJobSwitch()">
+      <div class="job-switch-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="cancelJobSwitch()">
+        <h3>Switch Job</h3>
+        <p class="job-switch-desc">
+          This will close your current timecard as
+          <strong>{{ activeTimecard()!.jobTitle }}</strong>
+          and start a new one.
+        </p>
+
+        <div class="job-switch-options">
+          @for (job of memberJobs(); track job.id) {
+            @if (job.jobTitle !== activeTimecard()!.jobTitle) {
+              <button
+                class="job-switch-btn"
+                [class.selected]="switchJobTitle() === job.jobTitle"
+                (click)="selectSwitchJob(job.jobTitle)">
+                <div class="job-switch-info">
+                  <span class="job-switch-title">{{ job.jobTitle }}</span>
+                  <span class="job-switch-rate">${{ (job.hourlyRate / 100).toFixed(2) }}/hr</span>
+                </div>
+                @if (job.isTipEligible) {
+                  <span class="job-switch-tip">Tip Eligible</span>
+                }
+              </button>
+            }
+          }
+        </div>
+
+        <div class="job-switch-actions">
+          <button class="btn-cancel" (click)="cancelJobSwitch()">Cancel</button>
+          <button
+            class="btn-confirm-switch"
+            [disabled]="!switchJobTitle() || isClockAction()"
+            (click)="confirmSwitchJob()">
+            @if (isClockAction()) { Switching... } @else { Switch Job }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}

@@ -1,12 +1,34 @@
 {
   "name": "orderstack-back-office",
   "version": "0.0.0",
+  "main": "out-tsc/electron/main.js",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "npx playwright test",
+    "e2e:ui": "npx playwright test --ui",
+    "e2e:headed": "npx playwright test --headed",
+    "electron:build": "tsc -p tsconfig.electron.json",
+    "electron:build:angular": "ng build --base-href ./",
+    "electron:dev": "npm run electron:build:angular && npm run electron:build && electron .",
+    "electron:start": "electron .",
+    "lint": "ng lint"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
   },
   "private": true,
   "packageManager": "npm@11.11.0",
@@ -17,16 +39,29 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@paypal/paypal-js": "^9.5.0",
+    "@supabase/supabase-js": "^2.100.0",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.1",
+    "marked": "^17.0.3",
     "rxjs": "~7.8.0",
+    "socket.io-client": "^4.8.3",
+    "systeminformation": "^5.31.5",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular/build": "^21.2.3",
     "@angular/cli": "^21.2.3",
     "@angular/compiler-cli": "^21.2.0",
+    "@playwright/test": "^1.58.2",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "electron": "^41.0.4",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
+    "simple-icons": "^16.13.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.18"
   }
 }

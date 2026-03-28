@@ -1,0 +1,401 @@
+:host {
+  display: block;
+}
+
+// --- Bottom Navigation Bar ---
+
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 8px 0 12px;
+  border-top: 1px solid #e8e8e8;
+  background: #fff;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.15s;
+
+  i {
+    font-size: 20px;
+  }
+
+  span {
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  &:hover {
+    color: #6b6b6b;
+  }
+
+  &:active {
+    color: #006aff;
+  }
+}
+
+// --- Notification Badge ---
+
+.nav-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #dc2626;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+// --- Modal Overlay ---
+
+.bottom-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.bottom-nav-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 560px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.2s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #9ca3af;
+  border-radius: 8px;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #f5f5f5;
+    color: #1a1a1a;
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.modal-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #9ca3af;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+// --- Transactions Modal ---
+
+.transactions-modal {
+  overflow: hidden;
+
+  os-transactions {
+    overflow-y: auto;
+  }
+}
+
+// --- Notifications Panel ---
+
+.notifications-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #9ca3af;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 15px;
+    margin: 0;
+  }
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f0f7ff;
+  border: 1px solid #d0e3ff;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #e0eeff;
+  }
+}
+
+.notification-icon {
+  flex-shrink: 0;
+
+  i {
+    font-size: 24px;
+    color: #22c55e;
+  }
+}
+
+.notification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notification-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.notification-detail {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.notification-dismiss {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: #9ca3af;
+}
+
+// --- Mode List ---
+
+.more-modal .modal-body {
+  padding: 16px 24px 24px;
+}
+
+.mode-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+
+  &.active {
+    background: #f0f7ff;
+    border-color: #006aff;
+  }
+}
+
+.mode-option-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 10px;
+
+  i {
+    font-size: 18px;
+    color: #1a1a1a;
+  }
+
+  .active & {
+    background: #006aff;
+
+    i {
+      color: #fff;
+    }
+  }
+}
+
+.mode-option-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mode-option-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-option-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.mode-active-check {
+  font-size: 14px;
+  color: #006aff;
+}
+
+.mode-option-description {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.mode-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mode-highlight-pill {
+  padding: 2px 8px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #4b5563;
+
+  .active & {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+}
+
+// --- Clock Out Toast ---
+
+.clock-out-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 1100;
+  animation: toastIn 0.25s ease-out;
+
+  i {
+    font-size: 18px;
+    color: #22c55e;
+  }
+}
+
+// --- Animations ---
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes toastIn {
+  from { transform: translateX(-50%) translateY(10px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}

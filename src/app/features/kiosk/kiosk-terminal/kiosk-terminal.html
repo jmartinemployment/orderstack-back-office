@@ -1,0 +1,128 @@
+@if (isTableClosing()) {
+  <div class="kiosk-closing-screen">
+    <div class="closing-card">
+      <i class="bi bi-receipt-cutoff closing-icon"></i>
+      <h2>This table's check has been presented.</h2>
+      <p>Please see your server.</p>
+      <button type="button" class="btn btn-outline-light btn-lg mt-3" (click)="goBack()">Go Back</button>
+    </div>
+  </div>
+} @else {
+<div class="kiosk-terminal">
+  <!-- ==================== LEFT: Item Grid Area ==================== -->
+  <main class="kiosk-main">
+
+    <!-- Category pills (always visible) -->
+    @if (categories().length > 0) {
+      <div class="category-pills">
+        <button
+          type="button"
+          class="category-pill"
+          [class.active]="selectedCategoryId() === null"
+          (click)="selectCategory(null)">
+          All
+        </button>
+        @for (cat of categories(); track cat.id) {
+          <button
+            type="button"
+            class="category-pill"
+            [class.active]="selectedCategoryId() === cat.id"
+            (click)="selectCategory(cat.id)">
+            {{ cat.name }}
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Item Grid -->
+    <os-item-grid
+      [items]="gridItems()"
+      [isLoading]="isLoading()"
+      tileMode="image"
+      [itemImageFn]="getItemImageFn"
+      (itemClick)="checkout.addItem($event)" />
+
+  </main>
+
+  <!-- ==================== RIGHT: Current Sale Panel ==================== -->
+  <aside class="sale-panel">
+    <div class="sale-header">
+      <h2>Your Order{{ checkout.cartCount() > 0 ? ' (' + checkout.cartCount() + ')' : '' }}</h2>
+    </div>
+
+    <!-- Line items -->
+    <div class="sale-items">
+      @if (checkout.cartItems().length === 0) {
+        <div class="sale-empty">
+          <p>No items yet</p>
+        </div>
+      } @else {
+        @for (item of checkout.cartItems(); track item.id) {
+          <div class="sale-line-item">
+            <div class="line-item-info">
+              <button type="button" class="line-item-name" (click)="checkout.removeItem(item.id)">
+                @if (item.weightUnit) {
+                  <span class="line-item-qty">{{ item.quantity }} {{ weightUnitLabels[item.weightUnit] }}</span>
+                } @else if (item.quantity > 1) {
+                  <span class="line-item-qty">{{ item.quantity }}x</span>
+                }
+                {{ item.menuItem.name }}
+              </button>
+              @if (item.weightUnit) {
+                <span class="line-item-modifier">@ {{ item.unitPrice | currency:'USD':'symbol':'1.2-2' }}/{{ weightUnitLabels[item.weightUnit] }}</span>
+              }
+              @if (item.modifierSummary) {
+                <span class="line-item-modifier">{{ item.modifierSummary }}</span>
+              }
+            </div>
+            <span class="line-item-price">{{ item.totalPrice | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Totals + actions -->
+    <div class="sale-footer">
+      @if (checkout.cartItems().length > 0) {
+        <div class="sale-totals">
+          <div class="total-row">
+            <span>Tax</span>
+            <span>{{ checkout.tax() | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          <div class="total-divider"></div>
+          <button type="button" class="add-discount-btn">Add discount</button>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="charge-btn"
+        [disabled]="checkout.cartItems().length === 0"
+        (click)="checkout.startCheckout('charge', 'kiosk')">
+        @if (checkout.cartItems().length > 0) {
+          Charge {{ checkout.total() | currency:'USD':'symbol':'1.2-2' }}
+        } @else {
+          Charge
+        }
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- ==================== WEIGHT SCALE OVERLAY ==================== -->
+@if (checkout.showWeightScale()) {
+  <div class="checkout-overlay">
+    <div class="checkout-modal">
+      <os-weight-scale
+        [itemName]="checkout.weightScaleItem()!.name"
+        [unitPrice]="checkout.weightScaleUnitPrice()"
+        [weightUnit]="checkout.weightScaleUnit()"
+        (weightConfirmed)="checkout.onWeightConfirmed($event)"
+        (cancelled)="checkout.closeWeightScale()" />
+    </div>
+  </div>
+}
+
+<!-- ==================== CHECKOUT OVERLAY ==================== -->
+<os-checkout [mode]="'charge'" [orderSource]="'kiosk'" />
+}

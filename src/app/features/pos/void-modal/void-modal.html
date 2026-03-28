@@ -1,0 +1,98 @@
+<div class="modal-overlay" (click)="onCancel()" (keydown.escape)="onCancel()" aria-hidden="true">
+  <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+    <div class="modal-header-bar">
+      <h5>{{ mode() === 'void' ? 'Void Item' : 'Comp Item' }}</h5>
+      <button type="button" class="btn-close" (click)="onCancel()"></button>
+    </div>
+
+    <div class="modal-body-content">
+      <!-- Item info -->
+      <div class="item-info mb-3">
+        <span class="item-name">{{ itemName() }}</span>
+        <span class="item-price">{{ itemPrice() | currency }}</span>
+      </div>
+
+      @if (mode() === 'void') {
+        <!-- Void reason -->
+        <div class="mb-3">
+          <span class="form-label">Reason for void</span>
+          <div class="reason-grid">
+            @for (opt of voidReasons; track opt.value) {
+              <button
+                type="button"
+                class="reason-btn"
+                [class.active]="reason() === opt.value"
+                (click)="setReason(opt.value)">
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (reason() === 'other') {
+          <div class="mb-3">
+            <input
+              type="text"
+              class="form-control"
+              aria-label="Custom void reason"
+              placeholder="Describe reason..."
+              [value]="customReason()"
+              (input)="setCustomReason($any($event.target).value)">
+          </div>
+        }
+      } @else {
+        <!-- Comp reason -->
+        <div class="mb-3">
+          <span class="form-label">Reason for comp</span>
+          <input
+            type="text"
+            class="form-control"
+            aria-label="Reason for comp"
+            placeholder="e.g., Birthday, VIP guest, quality issue..."
+            [value]="customReason()"
+            (input)="setCustomReason($any($event.target).value)">
+        </div>
+
+        <div class="comp-note mb-3">
+          <i class="bi bi-info-circle"></i>
+          Item will remain on the ticket at $0.00 for reporting purposes.
+        </div>
+      }
+
+      <!-- Manager PIN section -->
+      @if (needsPin()) {
+        <div class="pin-section mb-3">
+          <span class="form-label">Manager PIN</span>
+          <input
+            type="password"
+            class="form-control pin-input"
+            aria-label="Manager PIN"
+            maxlength="6"
+            placeholder="Enter PIN"
+            [value]="pin()"
+            (input)="setPin($any($event.target).value)">
+        </div>
+      }
+
+      @if (error()) {
+        <div class="alert alert-danger py-2 mb-0">{{ error() }}</div>
+      }
+    </div>
+
+    <div class="modal-footer-bar">
+      <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">Cancel</button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-danger]="mode() === 'void'"
+        [class.btn-warning]="mode() === 'comp'"
+        (click)="onConfirm()">
+        @if (!needsPin() && requireManagerPin()) {
+          Next
+        } @else {
+          {{ mode() === 'void' ? 'Void Item' : 'Comp Item' }}
+        }
+      </button>
+    </div>
+  </div>
+</div>

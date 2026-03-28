@@ -1,0 +1,109 @@
+@if (isChargeMode()) {
+  <!-- Charge Mode: counter-service (register/bar) -->
+  @if (hasCartItems()) {
+    <os-checkout
+      [mode]="checkoutMode()"
+      [orderSource]="checkoutSource()" />
+  } @else {
+    <div class="charge-empty">
+      <div class="charge-empty-icon">
+        <i class="bi bi-cart3"></i>
+      </div>
+      <h3>Cart is empty</h3>
+      <p>Add items to begin checkout</p>
+    </div>
+  }
+} @else {
+  <!-- Send Mode: full-service POS -->
+  @switch (sendView()) {
+    @case ('list') {
+      @if (openChecks().length > 0) {
+        <div class="check-list-header">
+          <span class="check-count">{{ openChecks().length }} unpaid {{ openChecks().length === 1 ? 'order' : 'orders' }}</span>
+        </div>
+        <div class="check-list">
+          @for (order of openChecks(); track order.guid) {
+            <button
+              type="button"
+              class="check-card"
+              [class.check-ready]="order.guestOrderStatus === 'READY_FOR_PICKUP'"
+              (click)="selectCheck(order)">
+              <div class="check-info">
+                <div class="check-top-row">
+                  <span class="check-order-number">#{{ getOrderId(order) }}</span>
+                  @if (order.table) {
+                    <span class="check-table">{{ order.table.name }}</span>
+                  }
+                </div>
+                <span class="check-items-summary">{{ getItemSummary(order) }}</span>
+              </div>
+              <div class="check-right">
+                <span class="check-amount">{{ order.checks[0].totalAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+                <span class="check-status-badge" [class]="getStatusClass(order)">{{ getStatusLabel(order) }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="send-empty">
+          <div class="send-empty-icon">
+            <i class="bi bi-receipt"></i>
+          </div>
+          <h3>No unpaid orders</h3>
+          <p>Open checks will appear here when orders are sent to the kitchen</p>
+        </div>
+      }
+    }
+
+    @case ('payment') {
+      @if (selectedOrder(); as order) {
+        <div class="payment-view">
+          <div class="payment-header">
+            <button type="button" class="payment-back-btn" aria-label="Back to check list" (click)="backToList()">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <div class="payment-order-info">
+              <span class="payment-order-label">Order #{{ getOrderId(order) }}</span>
+              @if (order.table) {
+                <span class="payment-order-table">{{ order.table.name }}</span>
+              }
+            </div>
+            <span class="payment-order-amount">{{ selectedCheck()!.totalAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          <os-payment-terminal
+            [amount]="selectedCheck()!.totalAmount"
+            [orderId]="order.guid"
+            (paymentComplete)="onPaymentComplete()"
+            (paymentFailed)="onPaymentFailed($event)" />
+        </div>
+      }
+    }
+
+    @case ('success') {
+      <div class="send-result">
+        <div class="result-icon result-success">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h3>Payment complete</h3>
+        <p>Order #{{ selectedOrder() ? getOrderId(selectedOrder()!) : '' }} has been paid</p>
+        <div class="result-actions">
+          <button type="button" class="result-btn-primary" (click)="backToList()">Done</button>
+        </div>
+      </div>
+    }
+
+    @case ('failed') {
+      <div class="send-result">
+        <div class="result-icon result-failed">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h3>Payment failed</h3>
+        <p>{{ sendError() }}</p>
+        <div class="result-actions">
+          <button type="button" class="result-btn-danger" (click)="retryPayment()">Retry payment</button>
+          <button type="button" class="result-btn-secondary" (click)="backToList()">Back to orders</button>
+        </div>
+      </div>
+    }
+  }
+}

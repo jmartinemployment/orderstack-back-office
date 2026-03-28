@@ -1,0 +1,14 @@
+<div class="loading-spinner-container d-flex flex-column align-items-center justify-content-center">
+  <output
+    class="spinner-border"
+    [class.spinner-border-sm]="size() === 'sm'"
+    [class.text-primary]="color() === 'primary'"
+    [class.text-light]="color() === 'light'"
+    aria-label="Loading"
+  >
+    <span class="visually-hidden">Loading...</span>
+  </output>
+  @if (message()) {
+    <p class="mt-2 mb-0 text-muted">{{ message() }}</p>
+  }
+</div>

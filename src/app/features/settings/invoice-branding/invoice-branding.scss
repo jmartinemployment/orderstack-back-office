@@ -1,0 +1,128 @@
+.panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+
+  .panel-title {
+    color: var(--os-text-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .panel-description {
+    color: var(--os-text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.form-control, .form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: none;
+    background-color: var(--os-bg-card);
+    color: var(--os-text-primary);
+  }
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.form-text {
+  color: var(--os-text-muted);
+  font-size: 0.8rem;
+}
+
+// Logo preview
+.logo-preview {
+  margin-top: 0.75rem;
+}
+
+.preview-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--os-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.logo-preview-img {
+  max-height: 80px;
+  max-width: 300px;
+  object-fit: contain;
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  background: #fff;
+}
+
+// Color picker row
+.color-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.color-picker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-control-color {
+  width: 48px;
+  height: 38px;
+  padding: 0.25rem;
+  cursor: pointer;
+  border-radius: 0.375rem;
+}
+
+.color-hex-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .form-control {
+    width: 120px;
+    font-family: monospace;
+  }
+}
+
+.color-swatch {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--os-border);
+  flex-shrink: 0;
+  margin-bottom: 0.125rem;
+}
+
+// Invoice notes preview
+.notes-preview {
+  margin-top: 0.75rem;
+}
+
+.notes-preview-body {
+  border-top: 3px solid;
+  padding-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--os-text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}

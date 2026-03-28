@@ -1,0 +1,328 @@
+@if (isLoading()) {
+  <div class="d-flex justify-content-center align-items-center py-5">
+    <output class="spinner-border text-primary">
+      <span class="visually-hidden">Loading...</span>
+    </output>
+  </div>
+} @else if (job(); as j) {
+  <!-- Toolbar — hidden when printing -->
+  <div class="toolbar no-print d-flex justify-content-between align-items-center mb-4">
+    <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
+      <i class="bi bi-arrow-left me-1"></i> Back
+    </button>
+    <button type="button" class="btn btn-primary" (click)="print()">
+      <i class="bi bi-printer me-1"></i> Print BEO
+    </button>
+  </div>
+
+  <div class="beo-document">
+    <!-- Header -->
+    <header class="beo-header text-center mb-4">
+      <h1 class="beo-title">Banquet Event Order</h1>
+      <h2 class="beo-event-name">{{ j.title }}</h2>
+      <p class="text-muted">BEO #{{ j.id.slice(0, 8).toUpperCase() }}</p>
+    </header>
+
+    <hr />
+
+    <!-- Event Details -->
+    <section class="beo-section mb-4">
+      <h3 class="beo-section-title">Event Details</h3>
+      <table class="table table-sm beo-table">
+        <tbody>
+          <tr>
+            <th scope="row">Event Title</th>
+            <td>{{ j.title }}</td>
+            <th scope="row">Event Type</th>
+            <td>{{ j.eventType }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Date</th>
+            <td>{{ j.fulfillmentDate | date:'fullDate':'UTC' }}</td>
+            <th scope="row">Headcount</th>
+            <td>{{ j.headcount }} {{ j.headcount === 1 ? 'guest' : 'guests' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Start Time</th>
+            <td>{{ formatTime(j.startTime) }}</td>
+            <th scope="row">End Time</th>
+            <td>{{ formatTime(j.endTime) }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Location</th>
+            <td colspan="3">
+              @if (j.locationType === 'off_site' && j.locationAddress) {
+                {{ j.locationAddress }} <span class="badge bg-secondary ms-2">Off-Site</span>
+              } @else {
+                On-Site
+              }
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Client Details -->
+    <section class="beo-section mb-4">
+      <h3 class="beo-section-title">Client Information</h3>
+      <table class="table table-sm beo-table">
+        <tbody>
+          <tr>
+            <th scope="row">Name</th>
+            <td>{{ j.clientName }}</td>
+            <th scope="row">Company</th>
+            <td>{{ j.companyName ?? '--' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Email</th>
+            <td>{{ j.clientEmail ?? '--' }}</td>
+            <th scope="row">Phone</th>
+            <td>{{ j.clientPhone ?? '--' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Selected Package -->
+    @if (selectedPackage; as pkg) {
+      <section class="beo-section mb-4">
+        <h3 class="beo-section-title">Selected Package</h3>
+        <table class="table table-sm beo-table">
+          <tbody>
+            <tr>
+              <th scope="row">Package</th>
+              <td>{{ pkg.name }}</td>
+              <th scope="row">Tier</th>
+              <td class="text-capitalize">{{ pkg.tier }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Pricing Model</th>
+              <td class="text-capitalize">{{ pkg.pricingModel.replaceAll('_', ' ') }}</td>
+              <th scope="row">Price Per Unit</th>
+              <td>${{ formatCents(pkg.pricePerUnit * 100) }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Minimum Headcount</th>
+              <td>{{ pkg.minimumHeadcount }}</td>
+              <th scope="row">Menu Items</th>
+              <td>{{ pkg.menuItemIds.length }} item(s)</td>
+            </tr>
+            @if (pkg.description) {
+              <tr>
+                <th scope="row">Description</th>
+                <td colspan="3">{{ pkg.description }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+    <!-- Dietary Requirements -->
+    @if (dietaryEntries.length > 0) {
+      <section class="beo-section mb-4">
+        <h3 class="beo-section-title">Dietary Requirements</h3>
+        <table class="table table-sm table-bordered beo-table">
+          <thead>
+            <tr>
+              <th scope="col">Requirement</th>
+              <th scope="col" class="text-end">Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of dietaryEntries; track entry.label) {
+              <tr>
+                <td>{{ entry.label }}</td>
+                <td class="text-end">
+                  @if (entry.count > 0) {
+                    {{ entry.count }}
+                  } @else {
+                    <em class="text-muted">See notes</em>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+    <!-- Delivery Details (off-site only) -->
+    @if (j.locationType === 'off_site' && j.deliveryDetails; as dd) {
+      <section class="beo-section mb-4">
+        <h3 class="beo-section-title">Delivery &amp; Logistics</h3>
+
+        <div class="delivery-timeline mb-3">
+          <table class="table table-sm beo-table">
+            <tbody>
+              @if (dd.loadTime) {
+                <tr>
+                  <th scope="row"><i class="bi bi-box-seam me-1"></i> Load Time</th>
+                  <td>{{ formatTime(dd.loadTime) }}</td>
+                </tr>
+              }
+              @if (dd.departureTime) {
+                <tr>
+                  <th scope="row"><i class="bi bi-truck me-1"></i> Departure</th>
+                  <td>{{ formatTime(dd.departureTime) }}</td>
+                </tr>
+              }
+              @if (dd.arrivalTime) {
+                <tr>
+                  <th scope="row"><i class="bi bi-geo-alt me-1"></i> Arrival</th>
+                  <td>{{ formatTime(dd.arrivalTime) }}</td>
+                </tr>
+              }
+              @if (dd.setupTime) {
+                <tr>
+                  <th scope="row"><i class="bi bi-tools me-1"></i> Setup Complete</th>
+                  <td>{{ formatTime(dd.setupTime) }}</td>
+                </tr>
+              }
+              @if (dd.breakdownTime) {
+                <tr>
+                  <th scope="row"><i class="bi bi-archive me-1"></i> Breakdown</th>
+                  <td>{{ formatTime(dd.breakdownTime) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (dd.driverName || dd.driverPhone || dd.vehicleDescription) {
+          <h5>Driver</h5>
+          <p class="mb-1">{{ dd.driverName ?? 'TBD' }} {{ dd.driverPhone ? '(' + dd.driverPhone + ')' : '' }}</p>
+          @if (dd.vehicleDescription) {
+            <p class="text-muted mb-3">{{ dd.vehicleDescription }}</p>
+          }
+        }
+
+        @if (dd.equipmentChecklist && dd.equipmentChecklist.length > 0) {
+          <h5>Equipment Checklist</h5>
+          <ul class="equipment-checklist">
+            @for (item of dd.equipmentChecklist; track item) {
+              <li><i class="bi bi-square me-2"></i>{{ item }}</li>
+            }
+          </ul>
+        }
+
+        @if (dd.routeNotes) {
+          <h5>Route Notes</h5>
+          <p>{{ dd.routeNotes }}</p>
+        }
+      </section>
+    }
+
+    <!-- Financial Summary -->
+    <section class="beo-section mb-4">
+      <h3 class="beo-section-title">Financial Summary</h3>
+      <table class="table table-sm beo-table financial-table">
+        <tbody>
+          <tr>
+            <th scope="row">Subtotal</th>
+            <td class="text-end">${{ formatCents(j.subtotalCents) }}</td>
+          </tr>
+          @if (j.serviceChargeCents > 0) {
+            <tr>
+              <th scope="row">
+                Service Charge
+                @if (j.serviceChargePercent) {
+                  ({{ j.serviceChargePercent }}%)
+                }
+              </th>
+              <td class="text-end">${{ formatCents(j.serviceChargeCents) }}</td>
+            </tr>
+          }
+          @if (j.taxCents > 0) {
+            <tr>
+              <th scope="row">
+                Tax
+                @if (j.taxPercent) {
+                  ({{ j.taxPercent }}%)
+                }
+              </th>
+              <td class="text-end">${{ formatCents(j.taxCents) }}</td>
+            </tr>
+          }
+          @if (j.gratuityCents > 0) {
+            <tr>
+              <th scope="row">
+                Gratuity
+                @if (j.gratuityPercent) {
+                  ({{ j.gratuityPercent }}%)
+                }
+              </th>
+              <td class="text-end">${{ formatCents(j.gratuityCents) }}</td>
+            </tr>
+          }
+          <tr class="total-row">
+            <th scope="row">Total</th>
+            <td class="text-end fw-bold">${{ formatCents(j.totalCents) }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Paid</th>
+            <td class="text-end text-success">${{ formatCents(j.paidCents) }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Balance Due</th>
+            <td class="text-end text-danger fw-bold">${{ formatCents(j.totalCents - j.paidCents) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Milestone Payment Schedule -->
+    @if (j.milestones.length > 0) {
+      <section class="beo-section mb-4">
+        <h3 class="beo-section-title">Payment Schedule</h3>
+        <table class="table table-sm table-bordered beo-table">
+          <thead>
+            <tr>
+              <th scope="col">Milestone</th>
+              <th scope="col" class="text-end">Percent</th>
+              <th scope="col" class="text-end">Amount</th>
+              <th scope="col">Due Date</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of j.milestones; track m.id) {
+              <tr>
+                <td>{{ m.label }}</td>
+                <td class="text-end">{{ m.percent }}%</td>
+                <td class="text-end">${{ formatCents(m.amountCents) }}</td>
+                <td>{{ m.dueDate ? (m.dueDate | date:'mediumDate':'UTC') : '--' }}</td>
+                <td>
+                  @if (m.paidAt) {
+                    <span class="badge bg-success">Paid {{ m.paidAt | date:'shortDate' }}</span>
+                  } @else {
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+    <!-- Notes -->
+    @if (j.notes) {
+      <section class="beo-section mb-4">
+        <h3 class="beo-section-title">Notes</h3>
+        <p class="beo-notes">{{ j.notes }}</p>
+      </section>
+    }
+
+    <!-- Footer -->
+    <footer class="beo-footer text-center text-muted mt-5 pt-3 border-top">
+      <small>Generated on {{ today | date:'fullDate' }} — OrderStack Catering</small>
+    </footer>
+  </div>
+} @else {
+  <div class="text-center py-5">
+    <i class="bi bi-exclamation-circle fs-1 text-muted"></i>
+    <p class="mt-3 text-muted">Job not found.</p>
+    <button class="btn btn-outline-primary" (click)="goBack()">Back to Catering</button>
+  </div>
+}

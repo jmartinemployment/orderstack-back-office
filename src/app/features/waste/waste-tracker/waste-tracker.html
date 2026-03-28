@@ -1,0 +1,207 @@
+@if (isAuthenticated()) {
+<div class="waste-tracker px-2">
+  <!-- Header -->
+  <div class="tracker-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="header-title">
+        <span class="header-icon">&#9851;</span>
+        Waste Reduction
+      </h2>
+      <button type="button" class="btn btn-sm btn-primary" (click)="openForm()">+ Log Waste</button>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-card kpi-alert">
+        <div class="kpi-value">{{ totalWasteCost() | currency }}</div>
+        <div class="kpi-label">Total Waste Cost</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ summary().totalEntries }}</div>
+        <div class="kpi-label">Entries</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ summary().topWastedItems.length > 0 ? summary().topWastedItems[0].name : '—' }}</div>
+        <div class="kpi-label">Top Waste Item</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ recommendations().length }}</div>
+        <div class="kpi-label">AI Tips</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tracker-tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'log'" (click)="setTab('log')">Waste Log</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'analysis'" (click)="setTab('analysis')">Analysis</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'recommendations'" (click)="setTab('recommendations')">
+      AI Tips
+      <span class="tab-badge">{{ recommendations().length }}</span>
+    </button>
+  </div>
+
+  <!-- LOG TAB -->
+  @if (activeTab() === 'log') {
+    <div class="tab-content">
+      <!-- Log Form -->
+      @if (showForm()) {
+        <div class="waste-form mx-3 mt-3">
+          <div class="form-header d-flex justify-content-between mb-2">
+            <h6 class="mb-0">Log Waste Entry</h6>
+            <button type="button" class="btn btn-sm btn-outline-light" (click)="closeForm()">&#10005;</button>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="waste-item">Inventory Item *</label>
+            <select class="form-select form-select-sm" id="waste-item" [value]="formItemId()" (change)="onFormField('item', $event)">
+              <option value="">Select item...</option>
+              @for (item of inventoryItems(); track item.id) {
+                <option [value]="item.id">{{ item.name }} ({{ item.unit }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="waste-category">Category *</label>
+              <select class="form-select form-select-sm" id="waste-category" [value]="formCategory()" (change)="onFormField('category', $event)">
+                @for (cat of wasteCategories; track cat.value) {
+                  <option [value]="cat.value">{{ cat.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="waste-quantity">Quantity *</label>
+              <input type="number" class="form-control form-control-sm" id="waste-quantity" [value]="formQuantity()" (input)="onFormField('quantity', $event)" min="0.01" step="0.1" />
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="waste-reason">Reason</label>
+            <input type="text" class="form-control form-control-sm" id="waste-reason" [value]="formReason()" (input)="onFormField('reason', $event)" placeholder="Optional reason..." />
+          </div>
+
+          <button type="button" class="btn btn-sm btn-primary w-100" (click)="logWaste()" [disabled]="!formItemId() || formQuantity() <= 0">
+            Log Waste
+          </button>
+        </div>
+      }
+
+      <!-- Category Filter -->
+      <div class="filter-bar px-3 pt-3">
+        <button type="button" class="filter-pill" [class.active]="categoryFilter() === 'all'" (click)="setCategoryFilter('all')">All</button>
+        @for (cat of wasteCategories; track cat.value) {
+          <button type="button" class="filter-pill" [class.active]="categoryFilter() === cat.value" (click)="setCategoryFilter(cat.value)">
+            {{ cat.label }}
+          </button>
+        }
+      </div>
+
+      <!-- Entries List -->
+      <div class="entries-list px-3 pt-2">
+        @for (entry of filteredEntries(); track entry.id) {
+          <div class="entry-item">
+            <div class="entry-header">
+              <div class="d-flex align-items-center gap-2">
+                <span class="category-badge" [class]="getCategoryClass(entry.category)">{{ getCategoryLabel(entry.category) }}</span>
+                <span class="entry-name">{{ entry.itemName }}</span>
+              </div>
+              <span class="entry-cost">{{ entry.estimatedCost | currency }}</span>
+            </div>
+            <div class="entry-body">
+              <span class="entry-qty">{{ entry.quantity }} {{ entry.unit }}</span>
+              @if (entry.reason) {
+                <span class="entry-reason">{{ entry.reason }}</span>
+              }
+              <span class="entry-time">{{ entry.createdAt | date:'short' }}</span>
+            </div>
+            <button type="button" class="delete-btn" (click)="deleteEntry(entry.id)">&#10005;</button>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <p>No waste entries recorded</p>
+            <button type="button" class="btn btn-sm btn-primary" (click)="openForm()">Log First Entry</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ANALYSIS TAB -->
+  @if (activeTab() === 'analysis') {
+    <div class="tab-content px-3 pt-3">
+      @if (summary().totalEntries === 0) {
+        <div class="empty-state">
+          <p>No data to analyze yet. Start logging waste to see insights.</p>
+        </div>
+      } @else {
+        <!-- Category Breakdown -->
+        <h6 class="section-title">Waste by Category</h6>
+        <div class="category-breakdown mb-3">
+          @for (cat of wasteCategories; track cat.value) {
+            <div class="breakdown-row">
+              <div class="breakdown-info">
+                <span class="category-badge" [class]="getCategoryClass(cat.value)">{{ cat.label }}</span>
+                <span class="breakdown-count">{{ summary().byCategory[cat.value].count }} entries</span>
+              </div>
+              <div class="breakdown-bar-track">
+                <div class="breakdown-bar-fill" [class]="getCategoryClass(cat.value)" [style.width.%]="getCategoryPercent(cat.value)"></div>
+              </div>
+              <span class="breakdown-cost">{{ summary().byCategory[cat.value].cost | currency }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Top Wasted Items -->
+        @if (summary().topWastedItems.length > 0) {
+          <h6 class="section-title">Top Wasted Items</h6>
+          <div class="top-items mb-3">
+            @for (item of summary().topWastedItems; track item.name; let i = $index) {
+              <div class="top-item">
+                <span class="top-rank">#{{ i + 1 }}</span>
+                <span class="top-name">{{ item.name }}</span>
+                <span class="top-count">{{ item.count }}x</span>
+                <span class="top-cost">{{ item.totalCost | currency }}</span>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- RECOMMENDATIONS TAB -->
+  @if (activeTab() === 'recommendations') {
+    <div class="tab-content px-3 pt-3">
+      <p class="text-muted small mb-3">AI-powered suggestions to reduce waste and save costs.</p>
+
+      <div class="rec-list">
+        @for (rec of recommendations(); track rec.title) {
+          <div class="rec-card" [class]="getPriorityClass(rec.priority)">
+            <div class="rec-header">
+              <span class="category-badge" [class]="getCategoryClass(rec.category)">{{ getCategoryLabel(rec.category) }}</span>
+              <span class="priority-badge" [class]="getPriorityClass(rec.priority)">{{ rec.priority }}</span>
+            </div>
+            <div class="rec-title">{{ rec.title }}</div>
+            <div class="rec-desc">{{ rec.description }}</div>
+            <div class="rec-savings">
+              <span class="savings-label">Est. savings:</span> {{ rec.estimatedSavings }}
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted">No recommendations yet. Log waste entries to receive data-driven reduction tips.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+} @else {
+<div class="auth-required d-flex align-items-center justify-content-center p-5">
+  <div class="text-center">
+    <h3 class="text-warning mb-3">Authentication Required</h3>
+    <p class="text-light">Please log in to track waste.</p>
+  </div>
+</div>
+}

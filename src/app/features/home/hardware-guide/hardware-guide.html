@@ -1,0 +1,154 @@
+<div class="hardware-guide px-2">
+  <!-- Hero Section -->
+  <div class="hero">
+    <button type="button" class="back-btn" (click)="goBack()">
+      <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </button>
+    <div class="hero-content">
+      <h1>Hardware Guide</h1>
+      <p class="hero-subtitle">Everything you need to run your business, recommended by our team. We've tested dozens of devices to find the best options at every price point.</p>
+      <div class="hero-budget">
+        <div class="budget-card">
+          <span class="budget-label">Starting from</span>
+          <span class="budget-value">{{ totalBudgetMin() | currency:'USD':'symbol':'1.0-0' }}</span>
+          <span class="budget-detail">Essential hardware (Good tier)</span>
+        </div>
+        <div class="budget-card">
+          <span class="budget-label">Premium setup</span>
+          <span class="budget-value">{{ totalBudgetMax() | currency:'USD':'symbol':'1.0-0' }}</span>
+          <span class="budget-detail">Best-in-class hardware</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What You Need Checklist -->
+  <div class="checklist-section">
+    <h2 class="section-title">
+      <i class="bi bi-check2-square me-2"></i>What You Need
+    </h2>
+    <p class="section-desc">Based on your business type, here's your hardware checklist. Click any category to jump to our picks.</p>
+    <div class="checklist-grid">
+      @for (item of checklist(); track item.category) {
+        <button type="button" class="checklist-card" (click)="selectCategory(item.category)">
+          <div class="checklist-icon">
+            <i class="bi {{ item.icon }}"></i>
+          </div>
+          <div class="checklist-info">
+            <span class="checklist-label">{{ item.label }}</span>
+            @if (item.required) {
+              <span class="checklist-badge required">Required</span>
+            } @else {
+              <span class="checklist-badge optional">Recommended</span>
+            }
+          </div>
+          <i class="bi bi-chevron-right checklist-arrow"></i>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Processor Notice -->
+  @if (connectedProcessor() !== 'none') {
+    <div class="processor-notice">
+      <i class="bi bi-info-circle me-2"></i>
+      Showing hardware compatible with your
+      <strong>PayPal</strong>
+      payment connection.
+    </div>
+  }
+
+  <!-- Category Filter -->
+  <div class="category-filter">
+    <button
+      type="button"
+      class="filter-pill"
+      [class.active]="selectedCategory() === 'all'"
+      (click)="selectCategory('all')">
+      All Categories
+    </button>
+    @for (item of checklist(); track item.category) {
+      <button
+        type="button"
+        class="filter-pill"
+        [class.active]="selectedCategory() === item.category"
+        (click)="selectCategory(item.category)">
+        <i class="bi {{ item.icon }} me-1"></i>{{ item.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Category Sections -->
+  @for (section of categorySections(); track section.category) {
+    <div class="category-section">
+      <div class="category-header">
+        <div class="category-header-text">
+          <div class="category-title-row">
+            <i class="bi {{ section.icon }} me-2"></i>
+            <h2>{{ section.label }}</h2>
+            @if (section.required) {
+              <span class="req-badge">Required</span>
+            }
+          </div>
+          <p class="category-desc">{{ section.description }}</p>
+        </div>
+      </div>
+
+      <div class="product-grid">
+        @for (product of section.products; track product.id) {
+          <div class="product-card" [class]="getTierClass(product.tier)">
+            <div class="product-tier-banner">
+              {{ getTierLabel(product.tier) }}
+            </div>
+            <div class="product-body">
+              <div class="product-header">
+                <div class="product-icon-circle">
+                  <i class="bi {{ product.icon }}"></i>
+                </div>
+                <div class="product-price">
+                  {{ product.price | currency:'USD':'symbol':'1.0-0' }}
+                </div>
+              </div>
+              <h3 class="product-name">{{ product.name }}</h3>
+              <p class="product-desc">{{ product.description }}</p>
+              <div class="product-why">
+                <i class="bi bi-lightbulb-fill me-1"></i>
+                <span>{{ product.whyRecommended }}</span>
+              </div>
+              @if (product.processorCompat !== 'universal') {
+                <div class="product-compat">
+                  <i class="bi bi-link-45deg me-1"></i>{{ getCompatLabel(product.processorCompat) }}
+                </div>
+              }
+            </div>
+            <div class="product-footer">
+              <a
+                [href]="product.buyUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="buy-btn">
+                <i class="bi bi-box-arrow-up-right me-1"></i>
+                View & Buy
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  } @empty {
+    <div class="empty-state">
+      <i class="bi bi-bag"></i>
+      <p>No products match your current filters.</p>
+      <button type="button" class="btn btn-outline-primary" (click)="selectCategory('all')">Show All</button>
+    </div>
+  }
+
+  <!-- Bottom CTA -->
+  <div class="bottom-cta">
+    <h3>Ready to get started?</h3>
+    <p>You can always come back to this guide from your dashboard. Hardware can be purchased at any time — OrderStack works on any device with a web browser.</p>
+    <button type="button" class="btn btn-primary btn-lg" (click)="goBack()">
+      Back to Dashboard
+    </button>
+  </div>
+</div>

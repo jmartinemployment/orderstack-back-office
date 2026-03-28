@@ -1,0 +1,171 @@
+<!-- Hero -->
+<os-mkt-section background="hero">
+  <os-mkt-hero
+    [tag]="hero.tag"
+    [title]="hero.title"
+    [subtitle]="hero.subtitle"
+    alignment="center" />
+</os-mkt-section>
+
+<!-- Two-column layout -->
+<os-mkt-section>
+  <div class="mkt-contact">
+    <!-- Left: Form -->
+    <div class="mkt-contact__form-col" id="contact-form">
+      @if (!submitted()) {
+        <form class="mkt-contact-form" (submit)="onSubmit($event)">
+          <!-- Name -->
+          <div class="mkt-contact-form__group">
+            <label for="cf-name">{{ labels.name }}</label>
+            <input
+              id="cf-name"
+              type="text"
+              [value]="name()"
+              (input)="onFieldInput('name', $event)"
+              (blur)="nameTouched.set(true)"
+              [class.mkt-contact-form__input--error]="nameError()"
+              required />
+            @if (nameError()) {
+              <span class="mkt-contact-form__error">{{ nameError() }}</span>
+            }
+          </div>
+
+          <!-- Email -->
+          <div class="mkt-contact-form__group">
+            <label for="cf-email">{{ labels.email }}</label>
+            <input
+              id="cf-email"
+              type="email"
+              [value]="email()"
+              (input)="onFieldInput('email', $event)"
+              (blur)="emailTouched.set(true)"
+              [class.mkt-contact-form__input--error]="emailError()"
+              required />
+            @if (emailError()) {
+              <span class="mkt-contact-form__error">{{ emailError() }}</span>
+            }
+          </div>
+
+          <!-- Phone -->
+          <div class="mkt-contact-form__group">
+            <label for="cf-phone">{{ labels.phone }}</label>
+            <input
+              id="cf-phone"
+              type="tel"
+              [value]="phone()"
+              (input)="onFieldInput('phone', $event)" />
+          </div>
+
+          <!-- Restaurant Name -->
+          <div class="mkt-contact-form__group">
+            <label for="cf-restaurant">{{ labels.restaurantName }}</label>
+            <input
+              id="cf-restaurant"
+              type="text"
+              [value]="restaurantName()"
+              (input)="onFieldInput('restaurantName', $event)" />
+          </div>
+
+          <!-- Inquiry Type -->
+          <div class="mkt-contact-form__group">
+            <label for="cf-inquiry">{{ labels.inquiryType }}</label>
+            <select
+              id="cf-inquiry"
+              [value]="inquiryType()"
+              (change)="onFieldInput('inquiryType', $event)"
+              (blur)="inquiryTypeTouched.set(true)"
+              [class.mkt-contact-form__input--error]="inquiryTypeError()"
+              required>
+              @for (opt of inquiryTypes; track opt.value) {
+                <option [value]="opt.value" [selected]="opt.value === inquiryType()">{{ opt.label }}</option>
+              }
+            </select>
+            @if (inquiryTypeError()) {
+              <span class="mkt-contact-form__error">{{ inquiryTypeError() }}</span>
+            }
+          </div>
+
+          <!-- Message -->
+          <div class="mkt-contact-form__group">
+            <label for="cf-message">{{ labels.message }}</label>
+            <textarea
+              id="cf-message"
+              rows="5"
+              [value]="message()"
+              (input)="onFieldInput('message', $event)"
+              (blur)="messageTouched.set(true)"
+              [class.mkt-contact-form__input--error]="messageError()"
+              required></textarea>
+            @if (messageError()) {
+              <span class="mkt-contact-form__error">{{ messageError() }}</span>
+            }
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            class="mkt-contact-form__submit"
+            [disabled]="!formValid() || submitting()">
+            @if (submitting()) {
+              {{ labels.submitting }}
+            } @else {
+              {{ labels.submit }}
+            }
+          </button>
+        </form>
+      } @else {
+        <!-- Thank You State -->
+        <div class="mkt-contact-thanks">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <h2 class="mkt-contact-thanks__title">{{ thankYouTitle() }}</h2>
+          <p class="mkt-contact-thanks__label">What to expect:</p>
+          <ol class="mkt-contact-thanks__steps">
+            @for (step of thankYou.steps; track step) {
+              <li>{{ step }}</li>
+            }
+          </ol>
+          <a routerLink="/" class="mkt-contact-thanks__link">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Home
+          </a>
+        </div>
+      }
+    </div>
+
+    <!-- Right: Contact Info -->
+    <div class="mkt-contact__info-col">
+      <div class="mkt-contact-info-card">
+        <i class="bi bi-envelope" aria-hidden="true"></i>
+        <div>
+          <strong>Email</strong>
+          <span>{{ contactInfo.email }}</span>
+        </div>
+      </div>
+      <div class="mkt-contact-info-card">
+        <i class="bi bi-telephone" aria-hidden="true"></i>
+        <div>
+          <strong>Phone</strong>
+          <span>{{ contactInfo.phone }}</span>
+        </div>
+      </div>
+      <div class="mkt-contact-info-card">
+        <i class="bi bi-geo-alt" aria-hidden="true"></i>
+        <div>
+          <strong>{{ contactInfo.location }}</strong>
+          <span>{{ contactInfo.serviceArea }}</span>
+        </div>
+      </div>
+
+      <!-- Demo callout -->
+      <div class="mkt-contact-demo-callout">
+        <h4>Prefer a demo?</h4>
+        <p>See OrderStack in action with a personalized walkthrough tailored to your restaurant.</p>
+        <button class="mkt-contact-demo-callout__btn" (click)="scrollToForm()">
+          Schedule a Demo <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</os-mkt-section>
+
+<!-- Final CTA -->
+<os-final-cta />

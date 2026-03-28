@@ -1,0 +1,62 @@
+<div class="mkt-compare">
+  <div class="mkt-section-header text-center">
+    <span class="os-badge info">{{ header.tag }}</span>
+    <h2 class="mkt-section-title">{{ header.title }}</h2>
+    <p class="mkt-section-subtitle">{{ header.subtitle }}</p>
+  </div>
+
+  <div class="mkt-compare__table-wrap">
+    <table class="mkt-compare__table" aria-label="Feature comparison: OrderStack vs Toast vs Square">
+      <thead>
+        <tr>
+          <th class="mkt-compare__feature-col">Feature</th>
+          <th class="mkt-compare__brand-col mkt-compare__brand-col--os">
+            <i class="bi bi-stack" aria-hidden="true"></i> OrderStack
+          </th>
+          <th class="mkt-compare__brand-col">Toast</th>
+          <th class="mkt-compare__brand-col">Square</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows; track row.feature) {
+          <tr>
+            <td class="mkt-compare__feature">{{ row.feature }}</td>
+            <td class="mkt-compare__cell mkt-compare__cell--os">
+              @if (isBoolean(row.orderstack)) {
+                @if (row.orderstack) {
+                  <i class="bi bi-check-circle-fill mkt-icon--yes" aria-label="Yes"></i>
+                } @else {
+                  <i class="bi bi-x-circle mkt-icon--no" aria-label="No"></i>
+                }
+              } @else {
+                {{ row.orderstack }}
+              }
+            </td>
+            <td class="mkt-compare__cell">
+              @if (isBoolean(row.toast)) {
+                @if (row.toast) {
+                  <i class="bi bi-check-circle-fill mkt-icon--yes" aria-label="Yes"></i>
+                } @else {
+                  <i class="bi bi-x-circle mkt-icon--no" aria-label="No"></i>
+                }
+              } @else {
+                {{ row.toast }}
+              }
+            </td>
+            <td class="mkt-compare__cell">
+              @if (isBoolean(row.square)) {
+                @if (row.square) {
+                  <i class="bi bi-check-circle-fill mkt-icon--yes" aria-label="Yes"></i>
+                } @else {
+                  <i class="bi bi-x-circle mkt-icon--no" aria-label="No"></i>
+                }
+              } @else {
+                {{ row.square }}
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,182 @@
+<div class="device-setup">
+  <div class="setup-card">
+
+    <!-- ========== PHASE: SUCCESS ========== -->
+    @if (phase() === 'success') {
+      <div class="success-state">
+        <div class="success-icon">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h2>Welcome!</h2>
+        <p class="text-secondary">Signing you in...</p>
+      </div>
+    }
+
+    <!-- ========== PHASE: PIN LOGIN ========== -->
+    @else if (phase() === 'pin') {
+      <div class="pin-screen">
+        <div class="setup-header">
+          <div class="brand">
+            <i class="bi bi-stack"></i>
+            <span>OrderStack</span>
+          </div>
+          <h1>Who's Working?</h1>
+          <p class="text-secondary">Tap your name to sign in</p>
+        </div>
+
+        <!-- Owner avatar card -->
+        @if (ownerInfo(); as owner) {
+          <div class="avatar-grid">
+            <button class="avatar-card" (click)="phase.set('pin-entry')">
+              <div class="avatar-circle" [style.background-color]="ownerColor()">
+                {{ ownerInitials() }}
+              </div>
+              <span class="avatar-name">{{ owner.displayName }}</span>
+              <span class="avatar-role">Owner</span>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ========== PHASE: PIN ENTRY (sub-phase of pin) ========== -->
+    @else if (phase() === 'pin-entry') {
+      <div class="pin-screen">
+        <div class="pin-header">
+          <div class="avatar-circle lg" [style.background-color]="ownerColor()">
+            {{ ownerInitials() }}
+          </div>
+          <h2>{{ ownerInfo()?.displayName }}</h2>
+          <p class="text-secondary">Enter your PIN</p>
+        </div>
+
+        <div class="pin-dots">
+          @for (filled of pinDots(); track $index) {
+            <span class="pin-dot" [class.filled]="filled"></span>
+          }
+        </div>
+
+        @if (pinError(); as error) {
+          <div class="pin-error">{{ error }}</div>
+        }
+
+        <div class="keypad">
+          @for (digit of ['1','2','3','4','5','6','7','8','9','','0','⌫']; track $index) {
+            @if (digit === '') {
+              <div class="keypad-spacer"></div>
+            } @else if (digit === '⌫') {
+              <button type="button" class="keypad-btn keypad-back" (click)="onPinBackspace()">
+                <i class="bi bi-backspace"></i>
+              </button>
+            } @else {
+              <button type="button" class="keypad-btn" (click)="onPinDigit(digit)" [disabled]="isAuthenticating() || failedAttempts() >= 5">
+                {{ digit }}
+              </button>
+            }
+          }
+        </div>
+
+        <button type="button" class="btn-back-to-grid" (click)="phase.set('pin')">
+          <i class="bi bi-arrow-left"></i> Back
+        </button>
+      </div>
+    }
+
+    <!-- ========== PHASE: DEVICE SETUP ========== -->
+    @else {
+      @if (pairingSuccess()) {
+        <div class="success-state">
+          <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <h2>Device Paired</h2>
+          <p class="text-secondary">Setting up your workspace...</p>
+        </div>
+      } @else {
+        <!-- Header -->
+        <div class="setup-header">
+          <div class="brand">
+            <i class="bi bi-stack"></i>
+            <span>OrderStack</span>
+          </div>
+          <h1>Set Up This Device</h1>
+          <p class="text-secondary">
+            Choose how to configure this device for your point of sale.
+          </p>
+        </div>
+
+        <!-- Quick start (primary action) -->
+        <div class="quick-start-section">
+          <button class="btn btn-primary btn-lg w-100" (click)="getStarted()">
+            <i class="bi bi-rocket-takeoff me-2"></i>
+            Get Started
+          </button>
+          <p class="quick-start-hint text-secondary">
+            Use your default POS mode and start taking orders right away.
+            You can customize this device later from Settings.
+          </p>
+        </div>
+
+        <!-- Pairing code option -->
+        <div class="pair-section">
+          <div class="divider">
+            <span>or pair with a code</span>
+          </div>
+          <p class="text-secondary mb-3">
+            Have a pairing code from another device? Enter it below to sync this device's configuration.
+          </p>
+
+          <div class="code-input-section">
+            <label for="pairingCodeInput" class="form-label fw-semibold">Pairing Code</label>
+            <div class="code-display">
+              @for (i of [0, 1, 2, 3, 4]; track i) {
+                <div class="code-cell" [class.filled]="codeDigits().length > i">
+                  {{ codeDigits()[i] }}
+                </div>
+              }
+            </div>
+            <input
+              id="pairingCodeInput"
+              type="text"
+              class="code-hidden-input"
+              [value]="pairingCode()"
+              (input)="onCodeInput($event)"
+              maxlength="5"
+              placeholder="XXXXX"
+              autocomplete="off" />
+
+            @if (pairingError(); as error) {
+              <div class="alert alert-danger mt-3 mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+              </div>
+            }
+          </div>
+
+          <div class="setup-actions mt-3">
+            <button
+              class="btn btn-outline-primary w-100"
+              [disabled]="!isCodeComplete() || isPairing()"
+              (click)="submitCode()">
+              @if (isPairing()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Pairing...
+              } @else {
+                <i class="bi bi-link-45deg me-2"></i>
+                Pair Device
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Help -->
+        <div class="help-section">
+          <p class="text-secondary">
+            <i class="bi bi-question-circle me-1"></i>
+            Pairing codes are generated from <strong>Settings &gt; Hardware &gt; Devices</strong>
+            on any device already connected to your account.
+          </p>
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,105 @@
+<div class="invoice-branding">
+
+  <!-- Logo -->
+  <div class="panel mb-3">
+    <h5 class="panel-title">Logo</h5>
+    <p class="panel-description">Paste a public URL to your logo image. It will appear at the top of every proposal, invoice, and BEO.</p>
+
+    <div class="mb-3">
+      <label for="logoUrl" class="form-label">Logo URL</label>
+      <input
+        type="url"
+        id="logoUrl"
+        class="form-control"
+        [ngModel]="logoUrl()"
+        (ngModelChange)="updateLogoUrl($event)"
+        placeholder="https://example.com/logo.png" />
+      <div class="form-text">Use a PNG or SVG on a transparent or white background. Recommended width: 300–600 px.</div>
+    </div>
+
+    @if (logoPreviewValid()) {
+      <div class="logo-preview">
+        <p class="preview-label">Preview</p>
+        <img [src]="logoUrl()" alt="Logo preview" class="logo-preview-img" />
+      </div>
+    }
+  </div>
+
+  <!-- Brand Color -->
+  <div class="panel mb-3">
+    <h5 class="panel-title">Brand Color</h5>
+    <p class="panel-description">Used for headings, dividers, and accents on proposals and invoices.</p>
+
+    <div class="color-row">
+      <div class="color-picker-wrap">
+        <input
+          type="color"
+          id="brandColor"
+          class="form-control form-control-color"
+          [ngModel]="brandColor()"
+          (ngModelChange)="updateBrandColor($event)"
+          aria-label="Brand color picker" />
+        <label for="brandColor" class="form-label mb-0">Pick a color</label>
+      </div>
+      <div class="color-hex-wrap">
+        <label for="brandColorHex" class="form-label">Hex value</label>
+        <input
+          type="text"
+          id="brandColorHex"
+          class="form-control"
+          [ngModel]="brandColor()"
+          (ngModelChange)="updateBrandColor($event)"
+          maxlength="7"
+          placeholder="#1a56db" />
+      </div>
+      <div class="color-swatch" [style.background]="brandColor()"></div>
+    </div>
+  </div>
+
+  <!-- Invoice Notes / Footer -->
+  <div class="panel mb-3">
+    <h5 class="panel-title">Invoice Footer Notes</h5>
+    <p class="panel-description">Appears at the bottom of every invoice and proposal — use it for payment terms, cancellation policy, or a thank-you message.</p>
+
+    <div class="mb-3">
+      <label for="invoiceNotes" class="form-label">Footer text</label>
+      <textarea
+        id="invoiceNotes"
+        class="form-control"
+        rows="4"
+        [ngModel]="invoiceNotes()"
+        (ngModelChange)="updateInvoiceNotes($event)"
+        placeholder="e.g. Payment is due within 30 days. A 50% deposit is required to hold your event date. Thank you for choosing us!"></textarea>
+    </div>
+
+    @if (invoiceNotes()) {
+      <div class="notes-preview">
+        <p class="preview-label">Preview</p>
+        <div class="notes-preview-body" [style.border-top-color]="brandColor()">
+          {{ invoiceNotes() }}
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Save -->
+  <div class="d-flex align-items-center gap-3">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="!hasUnsavedChanges() || isSaving()"
+      (click)="save()">
+      @if (isSaving()) {
+        <span class="spinner-border spinner-border-sm me-1"></span> Saving…
+      } @else {
+        Save changes
+      }
+    </button>
+    @if (showSaveSuccess()) {
+      <span class="text-success fw-medium">
+        <i class="bi bi-check-circle-fill me-1"></i> Saved
+      </span>
+    }
+  </div>
+
+</div>

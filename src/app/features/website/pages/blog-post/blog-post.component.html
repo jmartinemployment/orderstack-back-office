@@ -1,0 +1,75 @@
+@if (post(); as post) {
+  <!-- Back link -->
+  <os-mkt-section>
+    <a routerLink="/blog" class="mkt-back-link">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Blog
+    </a>
+  </os-mkt-section>
+
+  <!-- Article header -->
+  <os-mkt-section>
+    <article class="mkt-article">
+      <header class="mkt-article__header">
+        <span class="mkt-blog-category">{{ post.category }}</span>
+        <h1 class="mkt-article__title">{{ post.title }}</h1>
+        <div class="mkt-article__meta">
+          <span>By {{ post.author }}</span>
+          <span class="mkt-article__meta-dot"></span>
+          <span>{{ post.date | date:'mediumDate' }}</span>
+          <span class="mkt-article__meta-dot"></span>
+          <span>{{ post.readTime }} min read</span>
+        </div>
+        <div class="mkt-article__tags">
+          @for (tag of post.tags; track tag) {
+            <span class="mkt-article__tag">{{ tag }}</span>
+          }
+        </div>
+      </header>
+
+      <!-- Article body (Markdown rendered as HTML) -->
+      <div class="mkt-prose" [innerHTML]="bodyHtml()"></div>
+    </article>
+  </os-mkt-section>
+
+  <!-- Related posts -->
+  @if (relatedPosts().length > 0) {
+    <os-mkt-section background="alt">
+      <div class="mkt-related">
+        <h2 class="mkt-related__title">Related Articles</h2>
+        <div class="mkt-related__grid">
+          @for (related of relatedPosts(); track related.slug) {
+            <a [routerLink]="['/blog', related.slug]" class="mkt-related-card">
+              <div class="mkt-related-card__image">
+                <div class="mkt-related-card__placeholder">
+                  <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                </div>
+              </div>
+              <div class="mkt-related-card__body">
+                <span class="mkt-blog-category">{{ related.category }}</span>
+                <h3 class="mkt-related-card__title">{{ related.title }}</h3>
+                <div class="mkt-article__meta">
+                  <span>{{ related.date | date:'mediumDate' }}</span>
+                  <span class="mkt-article__meta-dot"></span>
+                  <span>{{ related.readTime }} min read</span>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    </os-mkt-section>
+  }
+
+  <!-- Final CTA -->
+  <os-final-cta />
+} @else {
+  <!-- 404 state -->
+  <os-mkt-section>
+    <div class="mkt-not-found">
+      <i class="bi bi-journal-x" aria-hidden="true"></i>
+      <h1>Post Not Found</h1>
+      <p>The article you're looking for doesn't exist or may have been moved.</p>
+      <a routerLink="/blog" class="btn btn-primary">Back to Blog</a>
+    </div>
+  </os-mkt-section>
+}

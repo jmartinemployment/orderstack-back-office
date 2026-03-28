@@ -1,0 +1,227 @@
+@if (isAuthenticated()) {
+<div class="dynamic-pricing px-2">
+  <!-- Header -->
+  <div class="pricing-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="header-title">Dynamic Pricing</h2>
+        <div class="header-meta">
+          @if (currentActiveRule(); as rule) {
+            <span class="active-rule-badge">Active: {{ rule.name }} ({{ getMultiplierLabel(rule.multiplier) }})</span>
+          } @else {
+            <span class="meta-text">No pricing rules active right now</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-value">{{ rules().length }}</div>
+        <div class="kpi-label">Total Rules</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ activeRules().length }}</div>
+        <div class="kpi-label">Active</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ adjustedItemCount() }}</div>
+        <div class="kpi-label">Items Adjusted</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ recommendations().length }}</div>
+        <div class="kpi-label">AI Suggestions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="pricing-tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'rules'" (click)="setTab('rules')">Rules</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'preview'" (click)="setTab('preview')">Price Preview</button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'recommendations'" (click)="setTab('recommendations')">
+      AI Suggestions
+      <span class="tab-badge">{{ recommendations().length }}</span>
+    </button>
+  </div>
+
+  <!-- RULES TAB -->
+  @if (activeTab() === 'rules') {
+    <div class="tab-content px-3 pt-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted small">{{ rules().length }} pricing rule{{ rules().length === 1 ? '' : 's' }}</span>
+        <button type="button" class="btn btn-sm btn-primary" (click)="openNewForm()">+ New Rule</button>
+      </div>
+
+      <!-- Rule Form -->
+      @if (showForm()) {
+        <div class="rule-form mb-3">
+          <div class="form-header d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">{{ editingRuleId() ? 'Edit' : 'New' }} Rule</h6>
+            <button type="button" class="btn btn-sm btn-outline-light" (click)="closeForm()">&#10005;</button>
+          </div>
+
+          <div class="mb-2">
+            <span class="form-label">Name</span>
+            <input type="text" class="form-control form-control-sm" [value]="formName()" (input)="onFormField('name', $event)" placeholder="e.g. Happy Hour" aria-label="Rule name" />
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <span class="form-label">Type</span>
+              <select class="form-select form-select-sm" [value]="formType()" (change)="onFormField('type', $event)" aria-label="Rule type">
+                <option value="happy_hour">Happy Hour</option>
+                <option value="surge">Surge</option>
+                <option value="off_peak">Off Peak</option>
+                <option value="seasonal">Seasonal</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <span class="form-label">Multiplier</span>
+              <input type="number" class="form-control form-control-sm" [value]="formMultiplier()" (input)="onFormField('multiplier', $event)" step="0.05" min="0.5" max="2" aria-label="Price multiplier" />
+              <small class="text-muted">{{ getMultiplierLabel(formMultiplier()) }}</small>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <span class="form-label">Start Time</span>
+              <input type="time" class="form-control form-control-sm" [value]="formStartTime()" (input)="onFormField('startTime', $event)" aria-label="Start time" />
+            </div>
+            <div class="col-6">
+              <span class="form-label">End Time</span>
+              <input type="time" class="form-control form-control-sm" [value]="formEndTime()" (input)="onFormField('endTime', $event)" aria-label="End time" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <span class="form-label">Days</span>
+            <div class="day-pills d-flex gap-1 flex-wrap">
+              @for (day of allDays(); track day) {
+                <button type="button" class="day-pill" [class.active]="formDays().includes(day)" (click)="toggleFormDay(day)">
+                  {{ getDayLabel(day) }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-sm btn-primary w-100" (click)="saveRule()" [disabled]="!formName()">
+            {{ editingRuleId() ? 'Update' : 'Create' }} Rule
+          </button>
+        </div>
+      }
+
+      <!-- Rules List -->
+      <div class="rules-list">
+        @for (rule of rules(); track rule.id) {
+          <div class="rule-card" [class.rule-inactive]="!rule.active">
+            <div class="rule-card-header">
+              <div class="d-flex align-items-center gap-2">
+                <span class="rule-type-badge" [class]="getRuleTypeClass(rule.type)">{{ getRuleTypeLabel(rule.type) }}</span>
+                <span class="rule-name">{{ rule.name }}</span>
+              </div>
+              <div class="rule-multiplier" [class.discount]="rule.multiplier < 1" [class.premium]="rule.multiplier > 1">
+                {{ getMultiplierLabel(rule.multiplier) }}
+              </div>
+            </div>
+            <div class="rule-card-body">
+              <div class="rule-schedule">
+                <span class="rule-time">{{ rule.startTime }} - {{ rule.endTime }}</span>
+                <span class="rule-days">
+                  @for (day of rule.daysOfWeek; track day; let last = $last) {
+                    {{ getDayLabel(day) }}{{ last ? '' : ', ' }}
+                  }
+                </span>
+              </div>
+            </div>
+            <div class="rule-card-footer">
+              <button type="button" class="toggle-btn" [class.active]="rule.active" (click)="toggleRuleActive(rule.id)">
+                @if (rule.active) { Active } @else { Inactive }
+              </button>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-light" (click)="editRule(rule)">Edit</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteRule(rule.id)">Delete</button>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="text-center p-4">
+            <p class="text-muted">No pricing rules configured</p>
+            <button type="button" class="btn btn-sm btn-primary" (click)="openNewForm()">Create First Rule</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- PREVIEW TAB -->
+  @if (activeTab() === 'preview') {
+    <div class="tab-content px-3 pt-3">
+      <p class="text-muted small mb-3">Live preview of current pricing based on active rules and current time.</p>
+
+      <div class="preview-table">
+        <div class="preview-header">
+          <span class="col-name">Item</span>
+          <span class="col-base">Base</span>
+          <span class="col-adjusted">Current</span>
+          <span class="col-rule">Rule</span>
+        </div>
+        @for (item of pricePreview(); track item.menuItemId) {
+          <div class="preview-row" [class.row-adjusted]="item.multiplier !== 1">
+            <span class="col-name">{{ item.name }}</span>
+            <span class="col-base" [class.strike]="item.multiplier !== 1">{{ item.basePrice | currency }}</span>
+            <span class="col-adjusted" [class.discount]="item.multiplier < 1" [class.premium]="item.multiplier > 1">
+              {{ item.adjustedPrice | currency }}
+            </span>
+            <span class="col-rule">
+              @if (item.activeRule) {
+                <span class="rule-mini-badge">{{ item.activeRule }}</span>
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </span>
+          </div>
+        } @empty {
+          <div class="text-center p-4 text-muted">No menu items loaded</div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- RECOMMENDATIONS TAB -->
+  @if (activeTab() === 'recommendations') {
+    <div class="tab-content px-3 pt-3">
+      <p class="text-muted small mb-3">AI-generated pricing recommendations based on order patterns and demand analysis.</p>
+
+      <div class="rec-list">
+        @for (rec of recommendations(); track rec.suggestion) {
+          <div class="rec-card">
+            <div class="rec-header">
+              <span class="rule-type-badge" [class]="getRuleTypeClass(rec.type)">{{ getRuleTypeLabel(rec.type) }}</span>
+              <span class="confidence-badge" [class]="'conf-' + rec.confidence">{{ rec.confidence }}</span>
+            </div>
+            <div class="rec-suggestion">{{ rec.suggestion }}</div>
+            <div class="rec-reason">{{ rec.reason }}</div>
+            <div class="rec-impact">
+              <span class="impact-label">Estimated impact:</span> {{ rec.estimatedImpact }}
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted">No AI suggestions yet. Create pricing rules and accumulate order data to receive recommendations.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+} @else {
+<div class="auth-required d-flex align-items-center justify-content-center p-5">
+  <div class="text-center">
+    <h3 class="text-warning mb-3">Authentication Required</h3>
+    <p class="text-light">Please log in to manage dynamic pricing.</p>
+  </div>
+</div>
+}

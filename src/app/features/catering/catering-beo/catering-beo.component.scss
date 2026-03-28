@@ -1,0 +1,120 @@
+:host {
+  display: block;
+  padding: 1.5rem;
+}
+
+.beo-document {
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--bs-body-bg, #fff);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.beo-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.beo-event-name {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.beo-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6);
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.beo-table {
+  th {
+    width: 160px;
+    font-weight: 600;
+    color: var(--bs-secondary-color, #6c757d);
+    white-space: nowrap;
+  }
+}
+
+.financial-table {
+  max-width: 400px;
+  margin-left: auto;
+
+  th {
+    width: auto;
+  }
+}
+
+.total-row {
+  border-top: 2px solid var(--bs-border-color, #dee2e6);
+}
+
+.equipment-checklist {
+  list-style: none;
+  padding-left: 0;
+
+  li {
+    padding: 0.25rem 0;
+  }
+}
+
+.beo-notes {
+  white-space: pre-wrap;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+}
+
+.beo-footer {
+  font-size: 0.8rem;
+}
+
+// --- Print styles ---
+@media print {
+  :host {
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .beo-document {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .beo-section {
+    page-break-inside: avoid;
+  }
+
+  .financial-table {
+    page-break-inside: avoid;
+  }
+
+  table {
+    border-collapse: collapse;
+
+    th,
+    td {
+      border: 1px solid #ccc !important;
+      padding: 4px 8px !important;
+    }
+  }
+
+  .beo-notes {
+    background: none;
+    border: 1px solid #ccc;
+  }
+}

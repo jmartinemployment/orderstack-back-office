@@ -1,0 +1,30 @@
+<div class="mkt-fcard">
+  <!-- Screenshot placeholder -->
+  <div class="mkt-fcard__preview" [attr.aria-label]="feature().screenshotAlt">
+    <div class="mkt-fcard__preview-inner">
+      <i [class]="'bi ' + feature().icon" aria-hidden="true"></i>
+      <span>{{ feature().title }}</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="mkt-fcard__content">
+    <h3 class="mkt-fcard__headline">{{ feature().headline }}</h3>
+    <p class="mkt-fcard__desc">{{ feature().description }}</p>
+
+    <div class="mkt-fcard__steps">
+      @for (step of feature().steps; track step.title; let idx = $index) {
+        <div class="mkt-fcard__step">
+          <div class="mkt-fcard__step-num">{{ idx + 1 }}</div>
+          <div class="mkt-fcard__step-icon">
+            <i [class]="'bi ' + step.icon" aria-hidden="true"></i>
+          </div>
+          <div class="mkt-fcard__step-body">
+            <strong>{{ step.title }}</strong>
+            <p>{{ step.description }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

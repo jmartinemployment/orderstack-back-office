@@ -1,0 +1,14 @@
+<div class="booking-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <os-sidebar
+    [navItems]="navItems()"
+    [collapsed]="sidebarCollapsed()"
+    [restaurantName]="restaurantName()"
+    [restaurantAddress]="restaurantAddress()"
+    [userName]="userName()"
+    (toggle)="toggleSidebar()"
+    (loggedOut)="logout()" />
+
+  <main class="booking-content">
+    <os-booking-manager />
+  </main>
+</div>

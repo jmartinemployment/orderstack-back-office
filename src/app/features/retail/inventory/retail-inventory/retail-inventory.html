@@ -1,0 +1,1087 @@
+<div class="retail-inventory px-2">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Retail Inventory</h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">
+      Overview
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'adjustments'" (click)="setTab('adjustments')">
+      Adjustments
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'transfers'" (click)="setTab('transfers')">
+      Transfers
+      @if (pendingTransfers().length > 0) {
+        <span class="tab-badge">{{ pendingTransfers().length }}</span>
+      }
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'counts'" (click)="setTab('counts')">
+      Counts
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'alerts'" (click)="setTab('alerts')">
+      Alerts
+      @if (unresolvedAlerts().length > 0) {
+        <span class="tab-badge tab-badge-danger">{{ unresolvedAlerts().length }}</span>
+      }
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'fifo'" (click)="setTab('fifo')">
+      FIFO
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'labels'" (click)="setTab('labels')">
+      Labels
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'reports'" (click)="setTab('reports')">
+      Reports
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="loading-bar">
+      <div class="loading-bar-fill"></div>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="error-banner">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{ error() }}
+    </div>
+  }
+
+  <!-- ==================== OVERVIEW TAB ==================== -->
+  @if (activeTab() === 'overview') {
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total SKUs</div>
+        <div class="kpi-value">{{ totalSkus() }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Value</div>
+        <div class="kpi-value">${{ totalStockValue() | number:'1.2-2' }}</div>
+      </div>
+      <div class="kpi-card kpi-warning">
+        <div class="kpi-label">Low Stock</div>
+        <div class="kpi-value">{{ lowStockCount() }}</div>
+      </div>
+      <div class="kpi-card kpi-danger">
+        <div class="kpi-label">Out of Stock</div>
+        <div class="kpi-value">{{ outOfStockCount() }}</div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="filter-bar">
+      <div class="search-input-wrap">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, SKU, or barcode..."
+          aria-label="Search by name, SKU, or barcode"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="updateSearch($event)"
+        />
+      </div>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>SKU</th>
+            <th>On Hand</th>
+            <th>Reserved</th>
+            <th>Available</th>
+            <th>Avg Cost</th>
+            <th>Value</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (record of filteredStock(); track record.id) {
+            <tr>
+              <td class="item-cell">
+                <div class="item-name">{{ record.itemName }}</div>
+                @if (record.variationName) {
+                  <div class="item-variation">{{ record.variationName }}</div>
+                }
+              </td>
+              <td class="mono">{{ record.sku ?? '—' }}</td>
+              <td>{{ record.quantityOnHand }}</td>
+              <td>{{ record.quantityReserved }}</td>
+              <td class="fw-semibold">{{ record.quantityAvailable }}</td>
+              <td>${{ record.averageCostPerUnit | number:'1.2-2' }}</td>
+              <td>${{ record.totalStockValue | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge" [class]="getStockBadgeClass(record)">
+                  {{ getStockBadgeLabel(record) }}
+                </span>
+              </td>
+              <td>
+                <button class="btn-icon" title="Quick Adjust" (click)="openQuickAdjust(record)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="empty-cell">
+                @if (searchQuery()) {
+                  No items match your search.
+                } @else {
+                  No stock records yet. Add items to your catalog to begin tracking inventory.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ==================== ADJUSTMENTS TAB ==================== -->
+  @if (activeTab() === 'adjustments') {
+    <div class="section-header">
+      <h2>Adjustment History</h2>
+      <button class="btn-primary" (click)="showAdjustModal.set(true)">
+        <i class="bi bi-plus-lg"></i> New Adjustment
+      </button>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filter-pills">
+      <button class="pill" [class.active]="adjustmentFilter() === 'all'" (click)="setAdjustmentFilter('all')">
+        All
+      </button>
+      @for (type of adjustmentTypes; track type) {
+        <button class="pill" [class.active]="adjustmentFilter() === type" (click)="setAdjustmentFilter(type)">
+          {{ adjustmentTypeLabels[type] }}
+        </button>
+      }
+    </div>
+
+    <!-- Adjustment List -->
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Type</th>
+            <th>Qty</th>
+            <th>Previous</th>
+            <th>New</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (adj of filteredAdjustments(); track adj.id) {
+            <tr>
+              <td class="mono">{{ adj.createdAt | date:'short' }}</td>
+              <td class="item-cell">
+                <div class="item-name">{{ adj.itemName }}</div>
+                @if (adj.variationName) {
+                  <div class="item-variation">{{ adj.variationName }}</div>
+                }
+              </td>
+              <td>
+                <span class="badge badge-secondary">{{ adjustmentTypeLabels[adj.type] }}</span>
+              </td>
+              <td class="fw-semibold" [class.text-success]="adj.quantity > 0" [class.text-danger]="adj.quantity < 0">
+                {{ adj.quantity > 0 ? '+' : '' }}{{ adj.quantity }}
+              </td>
+              <td>{{ adj.previousQuantity }}</td>
+              <td>{{ adj.newQuantity }}</td>
+              <td>{{ adj.reason }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty-cell">No adjustments recorded yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ==================== TRANSFERS TAB ==================== -->
+  @if (activeTab() === 'transfers') {
+    <div class="section-header">
+      <h2>Stock Transfers</h2>
+      <button class="btn-primary" (click)="openTransferModal()">
+        <i class="bi bi-arrow-left-right"></i> New Transfer
+      </button>
+    </div>
+
+    <!-- Transfer List -->
+    <div class="card-list">
+      @for (transfer of transfers(); track transfer.id) {
+        <div class="transfer-card">
+          <div class="transfer-header">
+            <div class="transfer-route">
+              <span class="location">{{ transfer.fromLocationName }}</span>
+              <i class="bi bi-arrow-right"></i>
+              <span class="location">{{ transfer.toLocationName }}</span>
+            </div>
+            <span class="badge" [class]="getTransferStatusClass(transfer.status)">
+              {{ transfer.status | titlecase }}
+            </span>
+          </div>
+          <div class="transfer-meta">
+            <span>{{ transfer.items.length }} item(s)</span>
+            <span>Created {{ transfer.createdAt | date:'short' }}</span>
+            @if (transfer.note) {
+              <span>{{ transfer.note }}</span>
+            }
+          </div>
+          <div class="transfer-items">
+            @for (item of transfer.items; track item.itemId) {
+              <div class="transfer-item-row">
+                <span class="item-name">{{ item.itemName }}</span>
+                @if (item.variationName) {
+                  <span class="item-variation">{{ item.variationName }}</span>
+                }
+                <span class="qty">Sent: {{ item.quantity }}</span>
+                @if (transfer.status === 'received' || transfer.status === 'partial') {
+                  <span class="qty received">Received: {{ item.receivedQuantity }}</span>
+                }
+              </div>
+            }
+          </div>
+          @if (transfer.status === 'pending' || transfer.status === 'in_transit') {
+            <div class="transfer-actions">
+              @if (transfer.status === 'in_transit') {
+                <button class="btn-primary btn-sm" (click)="openReceiveModal(transfer)">
+                  <i class="bi bi-box-arrow-in-down"></i> Receive
+                </button>
+              }
+              <button class="btn-outline btn-sm" (click)="cancelTransfer(transfer.id)">
+                Cancel
+              </button>
+            </div>
+          }
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-arrow-left-right"></i>
+          <p>No transfers yet. Create a transfer to move stock between locations.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== COUNTS TAB ==================== -->
+  @if (activeTab() === 'counts') {
+    <div class="section-header">
+      <h2>Cycle Counts</h2>
+      <button class="btn-primary" (click)="openStartCountModal()">
+        <i class="bi bi-clipboard-check"></i> Start Count
+      </button>
+    </div>
+
+    <!-- Active Count -->
+    @if (activeCount(); as count) {
+      <div class="active-count-panel">
+        <div class="count-header">
+          <h3>{{ count.type === 'full' ? 'Full Count' : 'Cycle Count' }}</h3>
+          <span class="badge" [class]="getCountStatusClass(count.status)">
+            {{ count.status | titlecase }}
+          </span>
+        </div>
+
+        <div class="count-entries">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Expected</th>
+                <th>Counted</th>
+                <th>Variance</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of count.entries; track entry.itemId + (entry.variationId ?? '')) {
+                <tr [class.variance-high]="entry.variance !== 0 && entry.countedQuantity !== null">
+                  <td class="item-cell">
+                    <div class="item-name">{{ entry.itemName }}</div>
+                    @if (entry.variationName) {
+                      <div class="item-variation">{{ entry.variationName }}</div>
+                    }
+                  </td>
+                  <td>{{ entry.expectedQuantity }}</td>
+                  <td>
+                    @if (count.status === 'in_progress') {
+                      <input
+                        type="number"
+                        class="count-input"
+                        aria-label="Counted quantity"
+                        [value]="entry.countedQuantity"
+                        (change)="submitCountEntry(count.id, entry.itemId, entry.variationId, $any($event.target).value)"
+                      />
+                    } @else {
+                      {{ entry.countedQuantity ?? '—' }}
+                    }
+                  </td>
+                  <td [class.text-danger]="entry.variance < 0" [class.text-success]="entry.variance > 0">
+                    @if (entry.countedQuantity !== null) {
+                      {{ entry.variance > 0 ? '+' : '' }}{{ entry.variance }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (count.status === 'in_progress') {
+          <div class="count-actions">
+            <button class="btn-primary" (click)="completeCount(count.id)">
+              <i class="bi bi-check-lg"></i> Complete Count
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Count History -->
+    <h3 class="section-title">Count History</h3>
+    <div class="card-list">
+      @for (count of activeCounts(); track count.id) {
+        <button type="button" class="count-card" [class.active]="activeCountId() === count.id" (click)="selectCount(count.id)">
+          <div class="count-card-header">
+            <span class="count-type">{{ count.type === 'full' ? 'Full Count' : 'Cycle Count' }}</span>
+            <span class="badge" [class]="getCountStatusClass(count.status)">
+              {{ count.status | titlecase }}
+            </span>
+          </div>
+          <div class="count-card-meta">
+            <span>{{ count.entries.length }} items</span>
+            <span>{{ count.createdAt | date:'short' }}</span>
+          </div>
+        </button>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-clipboard-check"></i>
+          <p>No counts yet. Start a full or cycle count to verify inventory.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== ALERTS TAB ==================== -->
+  @if (activeTab() === 'alerts') {
+    <div class="section-header">
+      <h2>Stock Alerts</h2>
+      <label class="toggle-label">
+        <input type="checkbox" [ngModel]="showResolvedAlerts()" (ngModelChange)="toggleShowResolved()" />
+        Show resolved
+      </label>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filter-pills">
+      <button class="pill" [class.active]="alertFilter() === 'all'" (click)="setAlertFilter('all')">
+        All
+      </button>
+      @for (type of alertTypes; track type) {
+        <button class="pill" [class.active]="alertFilter() === type" (click)="setAlertFilter(type)">
+          {{ alertTypeLabels[type] }}
+        </button>
+      }
+    </div>
+
+    <!-- Alert Cards -->
+    <div class="card-list">
+      @for (alert of filteredAlerts(); track alert.id) {
+        <div class="alert-card" [class]="getAlertClass(alert.alertType)" [class.acknowledged]="alert.acknowledged">
+          <div class="alert-icon">
+            <i class="bi" [class]="getAlertIcon(alert.alertType)"></i>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">
+              {{ alertTypeLabels[alert.alertType] }}: {{ alert.itemName }}
+              @if (alert.variationName) {
+                <span class="alert-variation">— {{ alert.variationName }}</span>
+              }
+            </div>
+            <div class="alert-detail">
+              Current: {{ alert.currentQuantity }} · Threshold: {{ alert.threshold }}
+              @if (alert.sku) {
+                · SKU: {{ alert.sku }}
+              }
+            </div>
+            <div class="alert-date">{{ alert.createdAt | date:'short' }}</div>
+          </div>
+          @if (!alert.acknowledged) {
+            <button class="btn-outline btn-sm" (click)="acknowledgeAlert(alert.id)">
+              Acknowledge
+            </button>
+          } @else {
+            <span class="badge badge-success">Resolved</span>
+          }
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-bell"></i>
+          <p>No alerts. Your inventory levels look healthy.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== FIFO TAB ==================== -->
+  @if (activeTab() === 'fifo') {
+    <div class="section-header">
+      <h2>FIFO Cost Layers</h2>
+    </div>
+
+    <p class="tab-description">View cost layers for each item. Oldest cost is consumed first on sale (First In, First Out).</p>
+
+    <!-- Item Selector -->
+    <div class="fifo-selector">
+      <div class="search-input-wrap">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Search items..."
+          aria-label="Search items"
+          [ngModel]="fifoItemSearch()"
+          (ngModelChange)="updateFifoSearch($event)"
+        />
+      </div>
+
+      <div class="fifo-item-list">
+        @for (record of fifoFilteredStock(); track record.id) {
+          <button
+            class="fifo-item-btn"
+            [class.active]="fifoItemId() === record.itemId"
+            (click)="selectFifoItem(record.itemId)"
+          >
+            <span class="item-name">{{ record.itemName }}</span>
+            @if (record.variationName) {
+              <span class="item-variation">{{ record.variationName }}</span>
+            }
+            <span class="item-qty">{{ record.quantityOnHand }} units</span>
+          </button>
+        } @empty {
+          <div class="empty-mini">No items found.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Cost Layers -->
+    @if (fifoItemId()) {
+      <div class="fifo-summary">
+        <div class="fifo-kpi">
+          <span class="fifo-kpi-label">Total Units</span>
+          <span class="fifo-kpi-value">{{ fifoTotalUnits() }}</span>
+        </div>
+        <div class="fifo-kpi">
+          <span class="fifo-kpi-label">Total Value</span>
+          <span class="fifo-kpi-value">${{ fifoTotalValue() | number:'1.2-2' }}</span>
+        </div>
+        <div class="fifo-kpi">
+          <span class="fifo-kpi-label">Weighted Avg Cost</span>
+          <span class="fifo-kpi-value">${{ fifoWeightedAvgCost() | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Received</th>
+              <th>Source</th>
+              <th>Qty Remaining</th>
+              <th>Cost/Unit</th>
+              <th>Layer Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (layer of costLayers(); track layer.id) {
+              <tr>
+                <td class="mono">{{ layer.receivedAt | date:'short' }}</td>
+                <td>
+                  <span class="badge badge-secondary">{{ getCostLayerSourceLabel(layer.sourceType) }}</span>
+                </td>
+                <td class="fw-semibold">{{ layer.quantityRemaining }}</td>
+                <td>${{ layer.costPerUnit | number:'1.2-2' }}</td>
+                <td>${{ layer.quantityRemaining * layer.costPerUnit | number:'1.2-2' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty-cell">No cost layers for this item.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-layers"></i>
+        <p>Select an item to view its FIFO cost layers.</p>
+      </div>
+    }
+  }
+
+  <!-- ==================== LABELS TAB ==================== -->
+  @if (activeTab() === 'labels') {
+    <div class="section-header">
+      <h2>Barcode Label Printing</h2>
+      <button
+        class="btn-primary"
+        (click)="printLabels()"
+        [disabled]="labelSelectedCount() === 0 || isPrinting()"
+      >
+        @if (isPrinting()) {
+          Generating...
+        } @else {
+          <i class="bi bi-printer"></i> Print Labels ({{ labelSelectedCount() }})
+        }
+      </button>
+    </div>
+
+    <!-- Label Settings -->
+    <div class="label-settings">
+      <div class="label-settings-row">
+        <div class="form-group">
+          <label for="inv-label-size">Label Size</label>
+          <select id="inv-label-size" [ngModel]="labelSize()" (ngModelChange)="updateLabelSize($event)">
+            <option value="small">Small (1" × 0.5")</option>
+            <option value="standard">Standard (2" × 1")</option>
+            <option value="shelf">Shelf (3" × 1.25")</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inv-label-copies">Copies per Item</label>
+          <input
+            id="inv-label-copies"
+            type="number"
+            min="1"
+            max="100"
+            [ngModel]="labelQuantity()"
+            (ngModelChange)="updateLabelQuantity($event)"
+          />
+        </div>
+      </div>
+      <div class="label-toggles">
+        <label class="toggle-label">
+          <input type="checkbox" [checked]="labelShowName()" (change)="toggleLabelShowName()" />
+          Item Name
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" [checked]="labelShowVariation()" (change)="toggleLabelShowVariation()" />
+          Variation
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" [checked]="labelShowPrice()" (change)="toggleLabelShowPrice()" />
+          Price
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" [checked]="labelShowBarcode()" (change)="toggleLabelShowBarcode()" />
+          Barcode
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" [checked]="labelShowSku()" (change)="toggleLabelShowSku()" />
+          SKU
+        </label>
+      </div>
+    </div>
+
+    <!-- Label Preview -->
+    <div class="label-preview" [class]="'label-preview-' + labelSize()">
+      <div class="label-preview-card">
+        @if (labelShowName()) {
+          <div class="label-preview-name">Item Name</div>
+        }
+        @if (labelShowVariation()) {
+          <div class="label-preview-variation">Variation</div>
+        }
+        @if (labelShowPrice()) {
+          <div class="label-preview-price">$0.00</div>
+        }
+        @if (labelShowBarcode()) {
+          <div class="label-preview-barcode">
+            <i class="bi bi-upc"></i>
+          </div>
+        }
+        @if (labelShowSku()) {
+          <div class="label-preview-sku">SKU-000</div>
+        }
+      </div>
+    </div>
+
+    <!-- Item Selection -->
+    <div class="label-selection-controls">
+      <button class="btn-text" (click)="selectAllLabelItems()">Select All</button>
+      <button class="btn-text" (click)="deselectAllLabelItems()">Deselect All</button>
+    </div>
+
+    <!-- Search -->
+    <div class="filter-bar">
+      <div class="search-input-wrap">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Search items to print labels..."
+          aria-label="Search items to print labels"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="updateSearch($event)"
+        />
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="th-check"></th>
+            <th>Item</th>
+            <th>SKU</th>
+            <th>Barcode</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (record of labelFilteredStock(); track record.id) {
+            <tr [class.selected]="isLabelItemSelected(record.id)">
+              <td class="td-check">
+                <input
+                  type="checkbox"
+                  aria-label="Select {{ record.itemName }} for label printing"
+                  [checked]="isLabelItemSelected(record.id)"
+                  (change)="toggleLabelItem(record.id)"
+                />
+              </td>
+              <td class="item-cell">
+                <div class="item-name">{{ record.itemName }}</div>
+                @if (record.variationName) {
+                  <div class="item-variation">{{ record.variationName }}</div>
+                }
+              </td>
+              <td class="mono">{{ record.sku ?? '—' }}</td>
+              <td class="mono">{{ record.barcode ?? '—' }}</td>
+              <td>${{ record.averageCostPerUnit | number:'1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty-cell">No items found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ==================== REPORTS TAB ==================== -->
+  @if (activeTab() === 'reports') {
+    <div class="section-header">
+      <h2>Inventory Reports</h2>
+    </div>
+
+    <!-- Report View Pills -->
+    <div class="filter-pills">
+      <button class="pill" [class.active]="reportView() === 'aging'" (click)="setReportView('aging')">
+        <i class="bi bi-clock-history"></i> Aging Inventory
+      </button>
+      <button class="pill" [class.active]="reportView() === 'sell-through'" (click)="setReportView('sell-through')">
+        <i class="bi bi-graph-up"></i> Sell-Through
+      </button>
+      <button class="pill" [class.active]="reportView() === 'shrinkage'" (click)="setReportView('shrinkage')">
+        <i class="bi bi-exclamation-diamond"></i> Shrinkage
+      </button>
+    </div>
+
+    @if (isLoadingReport()) {
+      <div class="loading-bar">
+        <div class="loading-bar-fill"></div>
+      </div>
+    }
+
+    <!-- Aging Report -->
+    @if (reportView() === 'aging') {
+      <div class="report-kpis">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Items</div>
+          <div class="kpi-value">{{ agingTotalItems() }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Value</div>
+          <div class="kpi-value">${{ agingTotalValue() | number:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      <!-- Aging Buckets -->
+      <div class="aging-buckets">
+        @for (bucket of agingBuckets(); track bucket.label; let i = $index) {
+          <div class="aging-bucket" [class]="getAgingBucketClass(i)">
+            <div class="aging-bucket-header">
+              <span class="aging-bucket-label">{{ bucket.label }}</span>
+              <span class="aging-bucket-range">{{ bucket.dayRange }}</span>
+            </div>
+            <div class="aging-bucket-stats">
+              <span class="aging-bucket-count">{{ bucket.itemCount }} items</span>
+              <span class="aging-bucket-value">${{ bucket.totalValue | number:'1.2-2' }}</span>
+            </div>
+
+            @if (bucket.items.length > 0) {
+              <div class="aging-bucket-items">
+                @for (item of bucket.items; track item.itemId) {
+                  <div class="aging-item">
+                    <span class="aging-item-name">{{ item.itemName }}</span>
+                    <span class="aging-item-days">{{ item.daysSinceLastSale }}d</span>
+                    <span class="aging-item-qty">{{ item.quantity }} units</span>
+                    <span class="aging-item-value">${{ item.value | number:'1.2-2' }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-clock-history"></i>
+            <p>No aging data available. Run the report to see inventory age analysis.</p>
+          </div>
+        }
+      </div>
+
+      <div class="report-action">
+        <button class="btn-primary" (click)="loadAgingReport()" [disabled]="isLoadingReport()">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
+    }
+
+    <!-- Sell-Through Report -->
+    @if (reportView() === 'sell-through') {
+      <div class="report-date-range">
+        <div class="form-group">
+          <label for="inv-report-from">From</label>
+          <input id="inv-report-from" type="date" [ngModel]="reportDateFrom()" (ngModelChange)="updateReportDateFrom($event)" />
+        </div>
+        <div class="form-group">
+          <label for="inv-report-to">To</label>
+          <input id="inv-report-to" type="date" [ngModel]="reportDateTo()" (ngModelChange)="updateReportDateTo($event)" />
+        </div>
+        <button class="btn-primary" (click)="loadSellThroughReport()" [disabled]="isLoadingReport()">
+          Run Report
+        </button>
+      </div>
+
+      @if (sellThroughData().length > 0) {
+        <div class="report-kpis">
+          <div class="kpi-card">
+            <div class="kpi-label">Avg Sell-Through Rate</div>
+            <div class="kpi-value">{{ sellThroughAvgRate() | number:'1.0-0' }}%</div>
+          </div>
+        </div>
+      }
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>SKU</th>
+              <th>Opening Stock</th>
+              <th>Received</th>
+              <th>Sold</th>
+              <th>Sell-Through</th>
+              <th>Benchmark</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of sellThroughData(); track row.itemId) {
+              <tr>
+                <td class="item-name">{{ row.itemName }}</td>
+                <td class="mono">{{ row.sku ?? '—' }}</td>
+                <td>{{ row.openingStock }}</td>
+                <td>{{ row.received }}</td>
+                <td class="fw-semibold">{{ row.sold }}</td>
+                <td>{{ row.sellThroughRate | number:'1.0-0' }}%</td>
+                <td>
+                  <span class="badge" [class]="getBenchmarkClass(row.benchmark)">
+                    {{ row.benchmark | titlecase }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty-cell">No sell-through data. Run the report to analyze.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Shrinkage Report -->
+    @if (reportView() === 'shrinkage') {
+      <div class="report-kpis">
+        <div class="kpi-card" [class.kpi-danger]="shrinkageTotalVariance() < 0">
+          <div class="kpi-label">Total Shrinkage Value</div>
+          <div class="kpi-value">${{ shrinkageTotalVariance() | number:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Expected</th>
+              <th>Counted</th>
+              <th>Variance (Units)</th>
+              <th>Variance (Value)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of shrinkageData(); track row.itemId) {
+              <tr [class.variance-high]="row.variance < 0">
+                <td class="item-name">{{ row.itemName }}</td>
+                <td>{{ row.expectedQuantity }}</td>
+                <td>{{ row.countedQuantity }}</td>
+                <td [class.text-danger]="row.variance < 0" [class.text-success]="row.variance > 0" class="fw-semibold">
+                  {{ row.variance > 0 ? '+' : '' }}{{ row.variance }}
+                </td>
+                <td [class.text-danger]="row.varianceValue < 0" class="fw-semibold">
+                  ${{ row.varianceValue | number:'1.2-2' }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty-cell">No shrinkage data. Complete a cycle count to generate.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="report-action">
+        <button class="btn-primary" (click)="loadShrinkageReport()" [disabled]="isLoadingReport()">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
+    }
+  }
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Adjust Stock Modal -->
+  @if (showAdjustModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeAdjustModal()" (keydown.enter)="closeAdjustModal()" (keydown.escape)="closeAdjustModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Adjust Stock</h3>
+          <button class="btn-close" (click)="closeAdjustModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="inv-adj-type">Adjustment Type</label>
+            <select id="inv-adj-type" [ngModel]="adjustType()" (ngModelChange)="updateAdjustType($event)">
+              @for (type of adjustmentTypes; track type) {
+                <option [value]="type">{{ adjustmentTypeLabels[type] }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="inv-adj-qty">Quantity</label>
+            <input id="inv-adj-qty"
+              type="number"
+              aria-label="Quantity"
+              [ngModel]="adjustQuantity()"
+              (ngModelChange)="updateAdjustQuantity($event)"
+              placeholder="Enter quantity (positive to add, negative to remove)"
+            />
+          </div>
+          <div class="form-group">
+            <label for="inv-adj-reason">Reason</label>
+            <input id="inv-adj-reason"
+              type="text"
+              aria-label="Reason"
+              [ngModel]="adjustReason()"
+              (ngModelChange)="updateAdjustReason($event)"
+              placeholder="Reason for adjustment"
+            />
+          </div>
+          <div class="form-group">
+            <label for="inv-adj-note">Note (optional)</label>
+            <textarea
+              id="inv-adj-note"
+              [ngModel]="adjustNote()"
+              (ngModelChange)="updateAdjustNote($event)"
+              placeholder="Additional notes..."
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="inv-adj-cost">Cost per Unit (optional)</label>
+            <input id="inv-adj-cost"
+              type="number"
+              step="0.01"
+              aria-label="Cost per Unit"
+              [ngModel]="adjustCostPerUnit()"
+              (ngModelChange)="updateAdjustCost($event)"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeAdjustModal()">Cancel</button>
+          <button class="btn-primary" (click)="submitAdjustment()" [disabled]="!adjustQuantity()">
+            Submit Adjustment
+          </button>
+        </div>
+      </div>
+    </button>
+  }
+
+  <!-- Transfer Modal -->
+  @if (showTransferModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeTransferModal()" (keydown.enter)="closeTransferModal()" (keydown.escape)="closeTransferModal()">
+      <div class="modal-content modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>New Stock Transfer</h3>
+          <button class="btn-close" (click)="closeTransferModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inv-xfer-from">From Location</label>
+              <input id="inv-xfer-from"
+                type="text"
+                aria-label="From Location"
+                [ngModel]="transferFromLocation()"
+                (ngModelChange)="updateTransferFrom($event)"
+                placeholder="Source location"
+              />
+            </div>
+            <div class="form-group">
+              <label for="inv-xfer-to">To Location</label>
+              <input id="inv-xfer-to"
+                type="text"
+                aria-label="To Location"
+                [ngModel]="transferToLocation()"
+                (ngModelChange)="updateTransferTo($event)"
+                placeholder="Destination location"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <p class="form-label">Items</p>
+            @for (item of transferItems(); track $index) {
+              <div class="transfer-item-input">
+                <label [for]="'transfer-item-' + $index" class="visually-hidden">Transfer item {{ $index + 1 }}</label>
+                <select [id]="'transfer-item-' + $index" [ngModel]="item.itemId" (ngModelChange)="updateTransferItemId($index, $event)">
+                  <option value="">Select item...</option>
+                  @for (stockItem of stock(); track stockItem.id) {
+                    <option [value]="stockItem.itemId">
+                      {{ stockItem.itemName }}
+                      @if (stockItem.variationName) { — {{ stockItem.variationName }} }
+                    </option>
+                  }
+                </select>
+                <input
+                  type="number"
+                  min="1"
+                  aria-label="Transfer item quantity"
+                  [ngModel]="item.quantity"
+                  (ngModelChange)="updateTransferItemQty($index, $event)"
+                  placeholder="Qty"
+                  class="qty-input"
+                />
+                <button class="btn-icon btn-danger-icon" (click)="removeTransferItem($index)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-text" (click)="addTransferItem()">
+              <i class="bi bi-plus-lg"></i> Add Item
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label for="inv-xfer-note">Note (optional)</label>
+            <textarea
+              id="inv-xfer-note"
+              [ngModel]="transferNote()"
+              (ngModelChange)="updateTransferNote($event)"
+              placeholder="Transfer notes..."
+              rows="2"
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeTransferModal()">Cancel</button>
+          <button
+            class="btn-primary"
+            (click)="submitTransfer()"
+            [disabled]="!transferFromLocation() || !transferToLocation() || transferItems().length === 0"
+          >
+            Create Transfer
+          </button>
+        </div>
+      </div>
+    </button>
+  }
+
+  <!-- Start Count Modal -->
+  @if (showStartCountModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeStartCountModal()" (keydown.enter)="closeStartCountModal()" (keydown.escape)="closeStartCountModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Start Inventory Count</h3>
+          <button class="btn-close" (click)="closeStartCountModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="inv-count-type">Count Type</label>
+            <select id="inv-count-type" [ngModel]="countType()" (ngModelChange)="updateCountType($event)">
+              <option value="full">Full Count (all items)</option>
+              <option value="cycle">Cycle Count (by category)</option>
+            </select>
+          </div>
+          @if (countType() === 'cycle') {
+            <div class="form-group">
+              <label for="inv-count-category">Category</label>
+              <input
+                id="inv-count-category"
+                type="text"
+                [ngModel]="countCategoryId()"
+                (ngModelChange)="updateCountCategory($event)"
+                placeholder="Category ID"
+              />
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeStartCountModal()">Cancel</button>
+          <button
+            class="btn-primary"
+            (click)="startCount()"
+            [disabled]="countType() === 'cycle' && !countCategoryId()"
+          >
+            Start Count
+          </button>
+        </div>
+      </div>
+    </button>
+  }
+</div>

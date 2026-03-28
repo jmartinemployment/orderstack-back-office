@@ -1,0 +1,172 @@
+@if (isLoading()) {
+  <os-loading-spinner />
+} @else if (error()) {
+  <div class="store-error">
+    <i class="bi bi-exclamation-triangle"></i>
+    <h2>Store Not Found</h2>
+    <p>{{ error() }}</p>
+  </div>
+} @else {
+  <!-- Store Header -->
+  <header class="store-header">
+    <div class="store-header-inner">
+      @if (storeConfig()?.logoUrl) {
+        <img [src]="storeConfig()!.logoUrl" [alt]="storeConfig()!.storeName" class="store-logo" />
+      }
+      <div class="store-info">
+        <h1 class="store-name">{{ storeConfig()?.storeName ?? 'Shop' }}</h1>
+        @if (storeConfig()?.description) {
+          <p class="store-description">{{ storeConfig()!.description }}</p>
+        }
+      </div>
+      <button class="cart-button" (click)="toggleCart()">
+        <i class="bi bi-bag"></i>
+        @if (cartItemCount() > 0) {
+          <span class="cart-badge">{{ cartItemCount() }}</span>
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-inner">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Search products..."
+          [ngModel]="filters().search"
+          (ngModelChange)="setSearch($event)"
+          aria-label="Search products"
+        />
+      </div>
+
+      <div class="toolbar-controls">
+        <select class="sort-select" [ngModel]="filters().sort" (ngModelChange)="setSort($event)" aria-label="Sort products">
+          <option value="name_asc">Name (A-Z)</option>
+          <option value="name_desc">Name (Z-A)</option>
+          <option value="price_asc">Price (Low-High)</option>
+          <option value="price_desc">Price (High-Low)</option>
+          <option value="newest">Newest</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Grid -->
+  <main class="product-grid-container">
+    <div class="product-count">{{ filteredItems().length }} product{{ filteredItems().length !== 1 ? 's' : '' }}</div>
+
+    @if (filteredItems().length === 0) {
+      <div class="empty-state">
+        <i class="bi bi-bag-x"></i>
+        <h3>No products found</h3>
+        <p>Try adjusting your search or filters.</p>
+      </div>
+    } @else {
+      <div class="product-grid">
+        @for (item of filteredItems(); track item.id) {
+          <div class="product-card" (click)="goToProduct(item)" (keydown.enter)="goToProduct(item)">
+            <div class="product-image">
+              @if (item.imageUrl) {
+                <img [src]="item.imageUrl" [alt]="item.name" />
+              } @else {
+                <div class="image-placeholder">
+                  <i class="bi bi-image"></i>
+                </div>
+              }
+            </div>
+            <div class="product-info">
+              <h3 class="product-name">{{ item.name }}</h3>
+              @if (item.description) {
+                <p class="product-description">{{ item.description }}</p>
+              }
+              <div class="product-price-row">
+                @if (hasVariations(item)) {
+                  <span class="product-price">From {{ item.basePrice | currency }}</span>
+                } @else {
+                  <span class="product-price">{{ item.basePrice | currency }}</span>
+                }
+                @if (hasVariations(item)) {
+                  <span class="variation-count">{{ item.variations!.length }} options</span>
+                }
+              </div>
+              @if (!hasVariations(item)) {
+                <button class="add-to-cart-btn" (click)="addToCart(item); $event.stopPropagation()">
+                  <i class="bi bi-bag-plus"></i> Add to Cart
+                </button>
+              } @else {
+                <button class="add-to-cart-btn select-options" (click)="goToProduct(item); $event.stopPropagation()">
+                  Select Options
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Cart Drawer -->
+  @if (showCart()) {
+    <button type="button" class="cart-overlay" aria-label="Close cart" (click)="closeCart()"></button>
+    <aside class="cart-drawer">
+      <div class="cart-header">
+        <h2>Your Cart</h2>
+        <button class="close-cart" (click)="closeCart()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      @if (cart().length === 0) {
+        <div class="cart-empty">
+          <i class="bi bi-bag"></i>
+          <p>Your cart is empty</p>
+        </div>
+      } @else {
+        <div class="cart-items">
+          @for (item of cart(); track $index; let i = $index) {
+            <div class="cart-item">
+              @if (item.imageUrl) {
+                <img [src]="item.imageUrl" [alt]="item.name" class="cart-item-image" />
+              } @else {
+                <div class="cart-item-image placeholder">
+                  <i class="bi bi-image"></i>
+                </div>
+              }
+              <div class="cart-item-details">
+                <div class="cart-item-name">{{ item.name }}</div>
+                @if (item.variationName) {
+                  <div class="cart-item-variation">{{ item.variationName }}</div>
+                }
+                <div class="cart-item-price">{{ item.unitPrice | currency }}</div>
+              </div>
+              <div class="cart-item-actions">
+                <div class="qty-stepper">
+                  <button (click)="updateCartQuantity(i, item.quantity - 1)">-</button>
+                  <span>{{ item.quantity }}</span>
+                  <button (click)="updateCartQuantity(i, item.quantity + 1)">+</button>
+                </div>
+                <button class="remove-item" (click)="removeFromCart(i)">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="cart-footer">
+          <div class="cart-total">
+            <span>Subtotal</span>
+            <span>{{ cartTotal() | currency }}</span>
+          </div>
+          <p class="cart-tax-note">Shipping and taxes calculated at checkout</p>
+          <button class="checkout-btn" (click)="goToCheckout()">
+            Checkout
+          </button>
+        </div>
+      }
+    </aside>
+  }
+}

@@ -1,0 +1,188 @@
+<div class="packages-page">
+  <!-- Header -->
+  <div class="packages-header">
+    <div>
+      <h1 class="packages-title">Catering Packages</h1>
+      <p class="packages-subtitle">Reusable package templates for proposals and jobs</p>
+    </div>
+    <button type="button" class="btn-new" (click)="openNewForm()">
+      <i class="bi bi-plus-lg"></i> New Package
+    </button>
+  </div>
+
+  <!-- Info Callout -->
+  <div class="info-callout">
+    <i class="bi bi-info-circle"></i>
+    Package templates are applied when creating or editing a job. Editing a template does not change existing jobs.
+  </div>
+
+  @if (templates().length === 0 && !_showForm()) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-box-seam"></i>
+      </div>
+      <h3>No package templates yet</h3>
+      <p>Create your first package to speed up proposal creation.</p>
+      <button type="button" class="btn-new-empty" (click)="openNewForm()">
+        <i class="bi bi-plus-lg"></i> Create Package
+      </button>
+    </div>
+  }
+
+  <!-- Slide-in Form -->
+  @if (_showForm()) {
+    <div class="form-panel">
+      <div class="form-panel-header">
+        <h3>{{ _editingId() ? 'Edit Package' : 'New Package' }}</h3>
+        <button type="button" class="btn-close-form" (click)="closeForm()" aria-label="Close form">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="form-body">
+        <div class="form-field">
+          <label for="pkg-name">Name</label>
+          <input id="pkg-name" type="text" [value]="_form().name" (input)="updateField('name', $any($event.target).value)" placeholder="e.g. Silver Package" aria-label="Package name">
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="pkg-tier">Tier</label>
+            <select id="pkg-tier" [value]="_form().tier" (change)="updateField('tier', $any($event.target).value)" aria-label="Package tier">
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="pkg-pricing-model">Pricing Model</label>
+            <select id="pkg-pricing-model" [value]="_form().pricingModel" (change)="updateField('pricingModel', $any($event.target).value)" aria-label="Pricing model">
+              <option value="per_person">Per Person</option>
+              <option value="per_tray">Per Tray</option>
+              <option value="flat">Flat Fee</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="pkg-price-per-unit">Price Per Unit ($)</label>
+            <input id="pkg-price-per-unit" type="number" min="0" step="0.01" [value]="_form().pricePerUnitDollars" (input)="updateField('pricePerUnitDollars', +$any($event.target).value)" aria-label="Price per unit">
+            @if (suggestedPricePerUnit() !== null) {
+              <div class="price-suggestion">
+                <span class="suggestion-label">Based on selected items:</span>
+                <span class="suggestion-amount">{{ suggestedPricePerUnit()! | currency:'USD' }}</span>
+                <button type="button" class="btn-use-suggestion" (click)="updateField('pricePerUnitDollars', suggestedPricePerUnit()!)">Use</button>
+              </div>
+            }
+          </div>
+          <div class="form-field">
+            <label for="pkg-min-headcount">Min. Headcount</label>
+            <input id="pkg-min-headcount" type="number" min="1" [value]="_form().minimumHeadcount" (input)="updateField('minimumHeadcount', +$any($event.target).value)" aria-label="Minimum headcount">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="pkg-description">Description</label>
+          <textarea id="pkg-description" rows="3" [value]="_form().description" (input)="updateField('description', $any($event.target).value)" placeholder="What's included in this package..." aria-label="Package description"></textarea>
+        </div>
+
+        <!-- Menu Item Picker -->
+        <div class="form-field">
+          <label for="pkg-item-search">Menu Items</label>
+          <input id="pkg-item-search" type="text" class="item-search" [value]="_itemFilter()" (input)="_itemFilter.set($any($event.target).value)" placeholder="Search catering menu items..." aria-label="Search menu items">
+          <div class="item-picker">
+            @if (filteredMenuItems().length === 0) {
+              <p class="no-items">No catering menu items found</p>
+            }
+            @for (item of filteredMenuItems(); track item.id) {
+              <label class="item-check">
+                <input type="checkbox" [checked]="isItemSelected(item.id)" (change)="toggleMenuItem(item.id)" aria-label="Select menu item">
+                <span>{{ item.name }}</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        @if (_error()) {
+          <div class="form-error">{{ _error() }}</div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeForm()">Cancel</button>
+          <button type="button" class="btn-save" [disabled]="_saving() || !_form().name" (click)="saveForm()">
+            @if (_saving()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            }
+            {{ _editingId() ? 'Update' : 'Create' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Package Cards -->
+  @if (templates().length > 0) {
+    <div class="packages-grid">
+      @for (t of templates(); track t.id) {
+        <div class="package-card">
+          <div class="card-top">
+            <div class="card-title-row">
+              <span class="pkg-name">{{ t.name }}</span>
+              <span class="tier-badge tier-{{ t.tier }}">{{ tierLabels[t.tier] }}</span>
+            </div>
+            <div class="card-meta">
+              <span class="pricing-label">{{ pricingModelLabels[t.pricingModel] }}</span>
+              <span class="pricing-value">{{ t.pricePerUnitCents / 100 | currency:'USD' }}</span>
+            </div>
+            <div class="card-stats">
+              <span>Min. {{ t.minimumHeadcount }} {{ t.minimumHeadcount === 1 ? 'guest' : 'guests' }}</span>
+              <span>{{ t.menuItemIds.length }} items</span>
+            </div>
+          </div>
+
+          @if (t.description) {
+            <p class="card-desc">{{ t.description }}</p>
+          }
+
+          <!-- Expand Items -->
+          <button type="button" class="btn-expand" (click)="toggleExpand(t.id)">
+            @if (_expandedId() === t.id) {
+              <i class="bi bi-chevron-up"></i> Hide Items
+            } @else {
+              <i class="bi bi-chevron-down"></i> View Items ({{ t.menuItemIds.length }})
+            }
+          </button>
+
+          @if (_expandedId() === t.id) {
+            <div class="items-list">
+              @for (itemId of t.menuItemIds; track itemId) {
+                <span class="item-tag">{{ getItemName(itemId) }}</span>
+              }
+              @if (t.menuItemIds.length === 0) {
+                <p class="no-items">No items added yet</p>
+              }
+            </div>
+          }
+
+          <div class="card-actions">
+            <button type="button" class="btn-edit" (click)="openEditForm(t)">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            @if (_confirmDeleteId() === t.id) {
+              <span class="confirm-delete">
+                Delete?
+                <button type="button" class="btn-confirm-yes" (click)="executeDelete(t.id)">Yes</button>
+                <button type="button" class="btn-confirm-no" (click)="cancelDelete()">No</button>
+              </span>
+            } @else {
+              <button type="button" class="btn-delete" (click)="confirmDelete(t.id)">
+                <i class="bi bi-trash3"></i> Delete
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

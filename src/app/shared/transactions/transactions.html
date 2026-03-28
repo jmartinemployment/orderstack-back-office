@@ -1,0 +1,78 @@
+<!-- Date range filters -->
+<div class="transaction-filters">
+  @for (opt of rangeOptions; track opt.value) {
+    <button
+      type="button"
+      class="filter-pill"
+      [class.active]="txService.filter().range === opt.value"
+      (click)="setRange(opt.value)">
+      {{ opt.label }}
+    </button>
+  }
+</div>
+
+<div class="transaction-body">
+  @if (txService.isLoading()) {
+    <div class="transaction-loading">
+      <div class="spinner-border spinner-border-sm"></div>
+      <span>Loading transactions...</span>
+    </div>
+  } @else if (txService.filteredTransactions().length === 0) {
+    <div class="transaction-empty">
+      <i class="bi bi-arrow-left-right"></i>
+      <p>No transactions yet</p>
+    </div>
+  } @else {
+    <!-- Summary strip -->
+    <div class="transaction-summary">
+      <div class="summary-total">
+        <span class="summary-label">Total</span>
+        <span class="summary-value">{{ txService.totalAmount() | currency }}</span>
+      </div>
+      <div class="summary-tips">
+        <span class="summary-label">Tips</span>
+        <span class="summary-value">{{ txService.totalTips() | currency }}</span>
+      </div>
+      <div class="summary-count">
+        <span class="summary-label">Count</span>
+        <span class="summary-value">{{ txService.transactionCount() }}</span>
+      </div>
+      @for (pm of txService.paymentBreakdown(); track pm.method) {
+        <div class="summary-method">
+          <i class="bi {{ pm.icon }}"></i>
+          <span class="summary-value">{{ pm.count }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Transaction list -->
+    <div class="transaction-list">
+      @for (order of txService.filteredTransactions(); track order.guid) {
+        <div class="transaction-row">
+          <div class="tx-icon">
+            @if (txService.getPrimaryPayment(order); as payment) {
+              <i class="bi {{ txService.getPaymentIcon(payment.paymentMethod) }}"></i>
+            } @else {
+              <i class="bi bi-wallet2"></i>
+            }
+          </div>
+          <div class="tx-details">
+            <span class="tx-order-number">#{{ order.orderNumber }}</span>
+            @if (txService.getPrimaryPayment(order); as payment) {
+              <span class="tx-method">{{ payment.paymentMethod }}</span>
+            }
+          </div>
+          <div class="tx-amounts">
+            <span class="tx-total">{{ order.totalAmount | currency }}</span>
+            @if (txService.getTotalTip(order) > 0) {
+              <span class="tx-tip">+{{ txService.getTotalTip(order) | currency }} tip</span>
+            }
+          </div>
+          <div class="tx-time">
+            {{ txService.getTimeDisplay(order.timestamps.closedDate ?? order.timestamps.lastModifiedDate) }}
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

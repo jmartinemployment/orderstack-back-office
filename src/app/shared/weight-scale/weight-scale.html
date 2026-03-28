@@ -1,0 +1,47 @@
+<div class="weight-scale">
+  <div class="weight-scale-header">
+    <h3 class="weight-scale-item">{{ itemName() }}</h3>
+    <p class="weight-scale-rate">{{ unitPrice() | currency:'USD':'symbol':'1.2-2' }} / {{ unitLabel() }}</p>
+  </div>
+
+  <div class="weight-scale-display">
+    <span class="weight-value">{{ weightValue() || '0' }}</span>
+    <span class="weight-unit">{{ unitLabel() }}</span>
+  </div>
+
+  @if (isValidWeight()) {
+    <p class="weight-total">{{ estimatedTotal() | currency:'USD':'symbol':'1.2-2' }}</p>
+  }
+
+  <div class="weight-keypad">
+    @for (key of ['1','2','3','4','5','6','7','8','9','.','0','backspace']; track key) {
+      <button
+        type="button"
+        class="weight-key"
+        [class.weight-key-icon]="key === 'backspace'"
+        (click)="onKeyPress(key)"
+        [attr.aria-label]="key === 'backspace' ? 'Delete' : key">
+        @if (key === 'backspace') {
+          <i class="bi bi-backspace"></i>
+        } @else {
+          {{ key }}
+        }
+      </button>
+    }
+  </div>
+
+  <div class="weight-actions">
+    <button
+      type="button"
+      class="weight-confirm-btn"
+      [disabled]="!isValidWeight()"
+      (click)="confirm()">
+      @if (isValidWeight()) {
+        {{ confirmLabel() }} — {{ estimatedTotal() | currency:'USD':'symbol':'1.2-2' }}
+      } @else {
+        Enter weight
+      }
+    </button>
+    <button type="button" class="weight-cancel-btn" (click)="cancel()">Cancel</button>
+  </div>
+</div>

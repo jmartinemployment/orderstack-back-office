@@ -1,0 +1,168 @@
+<div class="catering-reports">
+  <h2 class="mb-4">Catering Reports</h2>
+
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        [class.active]="activeTab() === 'deferred'"
+        (click)="setTab('deferred')">
+        Deferred Revenue
+      </button>
+    </li>
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        [class.active]="activeTab() === 'performance'"
+        (click)="setTab('performance')">
+        Performance
+      </button>
+    </li>
+  </ul>
+
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <output class="spinner-border text-primary">
+        <span class="visually-hidden">Loading...</span>
+      </output>
+    </div>
+  } @else {
+    <!-- Deferred Revenue Tab -->
+    @if (activeTab() === 'deferred') {
+      @if (deferredEntries().length === 0) {
+        <div class="empty-state text-center py-5">
+          <i class="bi bi-journal-text fs-1 text-muted"></i>
+          <p class="text-muted mt-3">No deferred revenue entries yet.</p>
+          <p class="text-muted small">Revenue data will appear here once jobs have payments recorded.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Job</th>
+                <th scope="col">Event Date</th>
+                <th scope="col" class="text-end">Total</th>
+                <th scope="col" class="text-end">Collected</th>
+                <th scope="col" class="text-end">Recognized</th>
+                <th scope="col" class="text-end">Deferred</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of deferredEntries(); track entry.jobId) {
+                <tr>
+                  <td class="fw-medium">{{ entry.title }}</td>
+                  <td>{{ entry.fulfillmentDate | date:'mediumDate':'UTC' }}</td>
+                  <td class="text-end">${{ formatCents(entry.totalCents) }}</td>
+                  <td class="text-end">${{ formatCents(entry.paidCents) }}</td>
+                  <td class="text-end">${{ formatCents(entry.recognizedCents) }}</td>
+                  <td class="text-end fw-semibold">${{ formatCents(entry.deferredCents) }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="summary-row">
+                <td colspan="2" class="fw-bold">Total</td>
+                <td class="text-end fw-bold">${{ formatCents(deferredTotalCents()) }}</td>
+                <td class="text-end fw-bold">${{ formatCents(deferredPaidCents()) }}</td>
+                <td class="text-end fw-bold">${{ formatCents(deferredRecognizedCents()) }}</td>
+                <td class="text-end fw-bold">${{ formatCents(deferredDeferredCents()) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- Performance Tab -->
+    @if (activeTab() === 'performance') {
+      @if (!performance()) {
+        <div class="empty-state text-center py-5">
+          <i class="bi bi-bar-chart fs-1 text-muted"></i>
+          <p class="text-muted mt-3">No performance data available yet.</p>
+          <p class="text-muted small">Complete some catering jobs to see performance metrics.</p>
+        </div>
+      } @else {
+        <div class="kpi-grid mb-4">
+          <div class="kpi-card">
+            <div class="kpi-value">{{ performance()!.totalJobs }}</div>
+            <div class="kpi-label">Total Jobs</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">{{ performance()!.completedJobs }}</div>
+            <div class="kpi-label">Completed</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">{{ performance()!.cancelledJobs }}</div>
+            <div class="kpi-label">Cancelled</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">${{ formatCents(performance()!.totalRevenue) }}</div>
+            <div class="kpi-label">Total Revenue</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">${{ formatCents(performance()!.avgJobValue) }}</div>
+            <div class="kpi-label">Avg Job Value</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-value">{{ performance()!.closeRate.toFixed(1) }}%</div>
+            <div class="kpi-label">Close Rate</div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h5 class="mb-3">Revenue by Event Type</h5>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th scope="col">Event Type</th>
+                    <th scope="col" class="text-end">Revenue</th>
+  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of revenueByTypeEntries(); track entry[0]) {
+                    <tr>
+                      <td class="text-capitalize">{{ entry[0] }}</td>
+                      <td class="text-end">${{ formatCents(entry[1]) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="2" class="text-muted text-center">No data</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h5 class="mb-3">Revenue by Month</h5>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th scope="col">Month</th>
+                    <th scope="col" class="text-end">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of revenueByMonthEntries(); track entry[0]) {
+                    <tr>
+                      <td>{{ entry[0] }}</td>
+                      <td class="text-end">${{ formatCents(entry[1]) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="2" class="text-muted text-center">No data</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  }
+</div>

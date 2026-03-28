@@ -1,0 +1,871 @@
+@if (isLoading()) {
+  <div class="text-center py-5">
+    <output class="spinner-border text-primary">
+      <span class="visually-hidden">Loading...</span>
+    </output>
+  </div>
+} @else if (job(); as j) {
+  <div class="job-detail">
+    <!-- Header -->
+    <div class="detail-header d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <button type="button" class="btn btn-sm btn-link text-secondary ps-0 mb-1" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i> Back to Jobs
+        </button>
+        <h3 class="mb-1">{{ j.title }}</h3>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge rounded-pill" [style.background-color]="statusConfig[j.status].color">
+            <i class="bi" [class]="statusConfig[j.status].icon"></i>
+            {{ statusConfig[j.status].label }}
+          </span>
+          <span class="text-muted small">Created {{ j.createdAt | date:'mediumDate' }}</span>
+          <span class="text-muted small">Event {{ j.fulfillmentDate | date:'mediumDate':'UTC' }}</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        @for (status of nextStatuses(); track status) {
+          <button type="button" class="btn btn-sm btn-primary" (click)="advanceStatus(status)" [disabled]="isSaving()">
+            {{ statusActionLabels[status] }}
+          </button>
+        }
+        @if (j.status === 'inquiry') {
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="sendProposal()" [disabled]="isSaving()">
+            <i class="bi bi-send me-1"></i> Send Proposal
+          </button>
+        } @else if (j.status === 'proposal_sent') {
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="sendProposal()" [disabled]="isSaving()">
+            <i class="bi bi-send me-1"></i> Resend Proposal
+          </button>
+        }
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openBeo()">
+          <i class="bi bi-file-earmark-text me-1"></i> BEO
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cloneJob()" [disabled]="isSaving()">
+          <i class="bi bi-copy me-1"></i> Clone
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="downloadIcs()">
+          <i class="bi bi-calendar-plus me-1"></i> .ics
+        </button>
+        @if (canCancel()) {
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="cancelJob()" [disabled]="isSaving()">
+            Cancel Job
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Proposal URL banner -->
+    @if (proposalUrl()) {
+      <div class="alert alert-success d-flex align-items-center gap-2 mb-4">
+        <i class="bi bi-check-circle"></i>
+        <span class="flex-grow-1">Proposal ready: <code>{{ proposalUrl() }}</code></span>
+        <button type="button" class="btn btn-sm btn-outline-success" (click)="copyProposalUrl()">
+          <i class="bi bi-clipboard"></i> Copy
+        </button>
+      </div>
+    }
+
+    <!-- Section Nav -->
+    <ul class="nav nav-pills mb-4">
+      @for (sec of ['overview','packages','milestones','dietary','delivery','tastings','proposals','activity']; track sec) {
+        <li class="nav-item">
+          <button type="button" class="nav-link" [class.active]="activeSection() === sec" (click)="setSection(sec)">
+            {{ sec === 'overview' ? 'Overview' : sec === 'packages' ? 'Packages' : sec === 'milestones' ? 'Milestones' : sec === 'dietary' ? 'Dietary' : sec === 'delivery' ? 'Delivery' : sec === 'tastings' ? 'Tastings' : sec === 'proposals' ? 'AI Proposal' : 'Activity' }}
+          </button>
+        </li>
+      }
+    </ul>
+
+    <!-- OVERVIEW SECTION -->
+    @if (activeSection() === 'overview') {
+      <div class="row g-4">
+        <!-- Event Details -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Event Details</h6>
+              <div class="detail-grid">
+                <div class="detail-row">
+                  <span class="detail-label">Type</span>
+                  <span>{{ j.eventType }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Date</span>
+                  <span>{{ j.fulfillmentDate | date:'fullDate':'UTC' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Time</span>
+                  <span>{{ formatTime(j.startTime ?? '') }} – {{ formatTime(j.endTime ?? '') }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Headcount</span>
+                  <span>{{ j.headcount }} {{ j.headcount === 1 ? 'guest' : 'guests' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Location</span>
+                  <span>{{ j.locationType === 'on_site' ? 'On-Site' : j.locationAddress ?? 'Off-Site' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Financial Summary</h6>
+              <div class="detail-grid">
+                <div class="detail-row">
+                  <span class="detail-label">Subtotal</span>
+                  <span>{{ formatCents(j.subtotalCents) }}</span>
+                </div>
+                @if (j.serviceChargeCents > 0) {
+                  <div class="detail-row">
+                    <span class="detail-label">Service Charge ({{ j.serviceChargePercent }}%)</span>
+                    <span>{{ formatCents(j.serviceChargeCents) }}</span>
+                  </div>
+                }
+                @if (j.taxCents > 0) {
+                  <div class="detail-row">
+                    <span class="detail-label">Tax ({{ j.taxPercent }}%)</span>
+                    <span>{{ formatCents(j.taxCents) }}</span>
+                  </div>
+                }
+                @if (j.gratuityCents > 0) {
+                  <div class="detail-row">
+                    <span class="detail-label">Gratuity ({{ j.gratuityPercent }}%)</span>
+                    <span>{{ formatCents(j.gratuityCents) }}</span>
+                  </div>
+                }
+                <div class="detail-row fw-semibold">
+                  <span class="detail-label">Total</span>
+                  <span>{{ formatCents(j.totalCents) }}</span>
+                </div>
+                <div class="detail-row text-success">
+                  <span class="detail-label">Paid</span>
+                  <span>{{ formatCents(j.paidCents) }}</span>
+                </div>
+                <div class="detail-row" [class.text-danger]="balanceCents() > 0">
+                  <span class="detail-label">Balance</span>
+                  <span>{{ formatCents(balanceCents()) }}</span>
+                </div>
+              </div>
+              @if (j.totalCents > 0) {
+                <div class="progress mt-3" style="height: 8px;">
+                  <div class="progress-bar bg-success" [style.width.%]="paymentProgress()"></div>
+                </div>
+                <div class="text-muted small mt-1">{{ paymentProgress() }}% collected</div>
+              }
+
+              <!-- Fee Editor -->
+              <hr>
+              <h6 class="fw-semibold mb-2 small">Fee Rates</h6>
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="form-label small" for="catering-service-charge-pct">Service %</label>
+                  <input id="catering-service-charge-pct" type="number" class="form-control form-control-sm" [(ngModel)]="serviceChargePercent" min="0" max="100" step="0.5" aria-label="Service charge percent">
+                </div>
+                <div class="col-4">
+                  <label class="form-label small" for="catering-tax-pct">Tax %</label>
+                  <input id="catering-tax-pct" type="number" class="form-control form-control-sm" [(ngModel)]="taxPercent" min="0" max="100" step="0.25" aria-label="Tax percent">
+                </div>
+                <div class="col-4">
+                  <label class="form-label small" for="catering-gratuity-pct">Gratuity %</label>
+                  <input id="catering-gratuity-pct" type="number" class="form-control form-control-sm" [(ngModel)]="gratuityPercent" min="0" max="100" step="0.5" aria-label="Gratuity percent">
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary mt-2" (click)="saveFees()" [disabled]="isSaving()">
+                Update Fees
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Info -->
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Client</h6>
+              <div class="detail-grid">
+                <div class="detail-row">
+                  <span class="detail-label">Name</span>
+                  <span>{{ j.clientName }}</span>
+                </div>
+                @if (j.companyName) {
+                  <div class="detail-row">
+                    <span class="detail-label">Company</span>
+                    <span>{{ j.companyName }}</span>
+                  </div>
+                }
+                @if (j.clientEmail) {
+                  <div class="detail-row">
+                    <span class="detail-label">Email</span>
+                    <span>{{ j.clientEmail }}</span>
+                  </div>
+                }
+                @if (j.clientPhone) {
+                  <div class="detail-row">
+                    <span class="detail-label">Phone</span>
+                    <span>{{ j.clientPhone }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contract & Branding -->
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Contract</h6>
+              @if (showContractForm()) {
+                <div class="contract-form mt-1">
+                  <label class="form-label small" for="contract-url-input">Contract URL</label>
+                  <input
+                    id="contract-url-input"
+                    type="url"
+                    class="form-control form-control-sm mb-2"
+                    [(ngModel)]="contractUrlInput"
+                    placeholder="https://..."
+                    aria-label="Contract document URL"
+                  />
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="saveContractUrl()" [disabled]="!contractUrlInput.trim() || isSaving()">
+                      @if (isSaving()) { Saving... } @else { Save }
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showContractForm.set(false)">Cancel</button>
+                  </div>
+                </div>
+              } @else {
+                @if (j.contractUrl) {
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-file-earmark-pdf text-danger"></i>
+                    <a [href]="j.contractUrl" target="_blank" class="text-truncate">{{ j.contractUrl }}</a>
+                  </div>
+                  @if (j.contractSignedAt) {
+                    <span class="badge bg-success"><i class="bi bi-check2"></i> Signed {{ j.contractSignedAt | date:'mediumDate' }}</span>
+                  }
+                  <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openContractForm()">
+                      <i class="bi bi-pencil me-1"></i> Update URL
+                    </button>
+                  </div>
+                } @else {
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="openContractForm()">
+                    <i class="bi bi-upload me-1"></i> Upload Contract
+                  </button>
+                }
+              }
+
+              @if (j.notes) {
+                <hr>
+                <h6 class="fw-semibold mb-2 small">Notes</h6>
+                <p class="text-muted small mb-0" style="white-space: pre-wrap;">{{ j.notes }}</p>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- PACKAGES SECTION -->
+    @if (activeSection() === 'packages') {
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Packages</h5>
+        <button type="button" class="btn btn-sm btn-primary" (click)="openNewPackage()">
+          <i class="bi bi-plus me-1"></i> Add Package
+        </button>
+      </div>
+
+      @if (j.packages.length === 0) {
+        <div class="text-center py-5">
+          <i class="bi bi-box-seam display-4 text-muted d-block mb-3"></i>
+          <p class="text-muted">No packages yet. Add packages to create proposals.</p>
+          <button type="button" class="btn btn-primary" (click)="openNewPackage()">Add First Package</button>
+        </div>
+      } @else {
+        <div class="row g-3">
+          @for (pkg of j.packages; track pkg.id) {
+            <div class="col-md-4">
+              <div class="card h-100" [class.border-primary]="j.selectedPackageId === pkg.id">
+                @if (j.selectedPackageId === pkg.id) {
+                  <div class="card-header bg-primary text-white py-1 text-center small fw-semibold">
+                    Selected
+                  </div>
+                }
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h6 class="fw-semibold mb-0">{{ pkg.name }}</h6>
+                      <span class="badge bg-light text-secondary border">{{ pkg.tier }}</span>
+                    </div>
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-link text-secondary" type="button" (click)="openEditPackage(pkg)">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-link text-danger" type="button" (click)="removePackage(pkg.id)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <span class="h5 fw-bold">${{ pkg.pricePerUnit }}</span>
+                    <span class="text-muted small">
+                      / {{ pkg.pricingModel === 'per_person' ? 'person' : pkg.pricingModel === 'per_tray' ? 'tray' : 'flat' }}
+                    </span>
+                  </div>
+                  @if (pkg.pricingModel === 'per_person') {
+                    <div class="text-muted small mb-2">
+                      {{ j.headcount }} {{ j.headcount === 1 ? 'guest' : 'guests' }} = {{ formatCents(getPackageTotal(pkg)) }}
+                    </div>
+                  }
+                  @if (pkg.description) {
+                    <p class="text-muted small mb-2">{{ pkg.description }}</p>
+                  }
+                  @if (pkg.menuItems && pkg.menuItems.length > 0) {
+                    <div class="mb-2">
+                      <span class="text-muted small fw-semibold">Items:</span>
+                      <div class="d-flex flex-wrap gap-1 mt-1">
+                        @for (mi of pkg.menuItems; track mi.id) {
+                          <span class="badge bg-light text-secondary border">
+                            {{ mi.name }}
+                            @if (mi.pricingTier) {
+                              <span class="ms-1">({{ mi.pricingTier.price | currency }})</span>
+                            }
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (j.selectedPackageId !== pkg.id) {
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100" (click)="selectPackage(pkg.id)" [disabled]="isSaving()">
+                      Select Package
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Package Form Modal -->
+      @if (showPackageForm()) {
+        <button type="button" class="modal-backdrop" aria-label="Close form" (click)="showPackageForm.set(false)"></button>
+        <div class="modal-panel">
+          <h6 class="fw-semibold mb-3">{{ editingPackage() ? 'Edit Package' : 'New Package' }}</h6>
+          <div class="mb-3">
+            <label class="form-label" for="catering-pkg-name">Package Name</label>
+            <input id="catering-pkg-name" type="text" class="form-control" [(ngModel)]="pkgName" placeholder="e.g. Premium Dinner" aria-label="Package name">
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label" for="catering-pkg-tier">Tier</label>
+              <select id="catering-pkg-tier" class="form-select" [(ngModel)]="pkgTier" aria-label="Package tier">
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="catering-pkg-pricing-model">Pricing Model</label>
+              <select id="catering-pkg-pricing-model" class="form-select" [(ngModel)]="pkgPricingModel" aria-label="Pricing model">
+                <option value="per_person">Per Person</option>
+                <option value="per_tray">Per Tray</option>
+                <option value="flat">Flat Rate</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label" for="catering-pkg-price">Price ($)</label>
+              <input id="catering-pkg-price" type="number" class="form-control" [(ngModel)]="pkgPricePerUnit" min="0" step="0.01" aria-label="Price per unit">
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="catering-pkg-min-headcount">Min Headcount</label>
+              <input id="catering-pkg-min-headcount" type="number" class="form-control" [(ngModel)]="pkgMinHeadcount" min="0" aria-label="Minimum headcount">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="catering-pkg-description">Description</label>
+            <textarea id="catering-pkg-description" class="form-control" rows="2" [(ngModel)]="pkgDescription" aria-label="Package description"></textarea>
+          </div>
+
+          <!-- Menu Item Picker -->
+          <div class="mb-3">
+            <div class="form-label">Menu Items</div>
+            @if (cateringItems().length === 0) {
+              <div class="text-muted small p-3 border rounded text-center">
+                <i class="bi bi-info-circle me-1"></i>
+                No catering items available. Add pricing tiers to menu items in
+                <a routerLink="/app/menu" class="text-primary">Menu Management</a>.
+              </div>
+            } @else {
+              <div class="catering-item-picker border rounded" style="max-height: 240px; overflow-y: auto;">
+                @for (item of cateringItems(); track item.id) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom" [class.bg-primary-subtle]="isMenuItemSelected(item.id)">
+                    <input type="checkbox" class="form-check-input" [checked]="isMenuItemSelected(item.id)"
+                      (change)="toggleMenuItem(item.id)" aria-label="Select menu item">
+                    <div class="flex-grow-1">
+                      <span class="fw-semibold small">{{ item.name }}</span>
+                    </div>
+                    @if (isMenuItemSelected(item.id) && item.cateringPricing && item.cateringPricing.length > 1) {
+                      <label class="visually-hidden" [for]="'pricing-tier-' + item.id">Pricing tier</label>
+                      <select class="form-select form-select-sm" style="max-width: 180px;" [id]="'pricing-tier-' + item.id"
+                        (change)="selectItemTier(item.id, item.cateringPricing![$any($event.target).selectedIndex])">
+                        @for (tier of item.cateringPricing; track $index) {
+                          <option [selected]="getSelectedTier(item.id)?.model === tier.model && getSelectedTier(item.id)?.price === tier.price">
+                            {{ tier.label ? tier.label + ': ' : '' }}{{ tier.price | currency }}/{{ tier.model === 'per_person' ? 'pp' : tier.model === 'per_tray' ? 'tray' : 'flat' }}
+                          </option>
+                        }
+                      </select>
+                    } @else if (isMenuItemSelected(item.id) && item.cateringPricing && item.cateringPricing.length === 1) {
+                      <span class="badge bg-secondary small">
+                        {{ item.cateringPricing[0].price | currency }}/{{ item.cateringPricing[0].model === 'per_person' ? 'pp' : item.cateringPricing[0].model === 'per_tray' ? 'tray' : 'flat' }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="text-muted small mt-1">{{ selectedMenuItemIds().length }} item{{ selectedMenuItemIds().length !== 1 ? 's' : '' }} selected</div>
+            }
+          </div>
+
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" (click)="showPackageForm.set(false)">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="savePackage()" [disabled]="isSaving()">Save</button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- MILESTONES SECTION -->
+    @if (activeSection() === 'milestones') {
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Payment Milestones</h5>
+        <button type="button" class="btn btn-sm btn-primary" (click)="openNewMilestone()">
+          <i class="bi bi-plus me-1"></i> Add Milestone
+        </button>
+      </div>
+
+      @if (j.milestones.length === 0) {
+        <div class="text-center py-5">
+          <i class="bi bi-cash-stack display-4 text-muted d-block mb-3"></i>
+          <p class="text-muted">No milestones set. Add deposit and final payment milestones.</p>
+          <button type="button" class="btn btn-primary" (click)="openNewMilestone()">Add Milestone</button>
+        </div>
+      } @else {
+        <div class="list-group">
+          @for (ms of j.milestones; track ms.id) {
+            <div class="list-group-item d-flex align-items-center gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [checked]="!!ms.paidAt" disabled aria-label="Milestone paid status">
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-semibold">{{ ms.label }}</div>
+                <div class="text-muted small">
+                  {{ ms.percent }}% = {{ formatCents(ms.amountCents) }}
+                  @if (ms.dueDate) {
+                    <span class="ms-2">Due {{ ms.dueDate | date:'mediumDate':'UTC' }}</span>
+                  }
+                </div>
+              </div>
+              @if (ms.paidAt) {
+                <span class="badge bg-success">Paid {{ ms.paidAt | date:'shortDate' }}</span>
+              } @else {
+                <button type="button" class="btn btn-sm btn-success" (click)="markPaid(ms.id)" [disabled]="isSaving()">
+                  Mark Paid
+                </button>
+              }
+              @if (!ms.paidAt) {
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeMilestone(ms.id)" [disabled]="isSaving()">
+                  <i class="bi bi-trash"></i>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Milestone Form -->
+      @if (showMilestoneForm()) {
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="fw-semibold mb-3">New Milestone</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="catering-ms-label">Label</label>
+                <input id="catering-ms-label" type="text" class="form-control" [(ngModel)]="msLabel" placeholder="e.g. Deposit" aria-label="Milestone label">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="catering-ms-percent">Percentage</label>
+                <input id="catering-ms-percent" type="number" class="form-control" [(ngModel)]="msPercent" min="0" max="100" aria-label="Milestone percentage">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="catering-ms-due-date">Due Date</label>
+                <input id="catering-ms-due-date" type="date" class="form-control" [(ngModel)]="msDueDate" aria-label="Milestone due date">
+              </div>
+              <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="button" class="btn btn-primary" (click)="saveMilestone()" [disabled]="isSaving()">Add</button>
+                <button type="button" class="btn btn-outline-secondary" (click)="showMilestoneForm.set(false)">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- DIETARY SECTION -->
+    @if (activeSection() === 'dietary') {
+      <div class="card">
+        <div class="card-body">
+          <h5 class="fw-semibold mb-3">Dietary Requirements</h5>
+          <p class="text-muted small mb-3">Track dietary restrictions for {{ j.headcount }} {{ j.headcount === 1 ? 'guest' : 'guests' }}. Total with restrictions: {{ dietaryTotal }}</p>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-vegetarian">Vegetarian</label>
+              <input id="catering-dietary-vegetarian" type="number" class="form-control" [(ngModel)]="dietary.vegetarian" min="0" aria-label="Vegetarian count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-vegan">Vegan</label>
+              <input id="catering-dietary-vegan" type="number" class="form-control" [(ngModel)]="dietary.vegan" min="0" aria-label="Vegan count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-gluten-free">Gluten Free</label>
+              <input id="catering-dietary-gluten-free" type="number" class="form-control" [(ngModel)]="dietary.glutenFree" min="0" aria-label="Gluten free count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-nut-allergy">Nut Allergy</label>
+              <input id="catering-dietary-nut-allergy" type="number" class="form-control" [(ngModel)]="dietary.nutAllergy" min="0" aria-label="Nut allergy count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-dairy-free">Dairy Free</label>
+              <input id="catering-dietary-dairy-free" type="number" class="form-control" [(ngModel)]="dietary.dairyFree" min="0" aria-label="Dairy free count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-kosher">Kosher</label>
+              <input id="catering-dietary-kosher" type="number" class="form-control" [(ngModel)]="dietary.kosher" min="0" aria-label="Kosher count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-halal">Halal</label>
+              <input id="catering-dietary-halal" type="number" class="form-control" [(ngModel)]="dietary.halal" min="0" aria-label="Halal count">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="catering-dietary-other">Other</label>
+              <input id="catering-dietary-other" type="text" class="form-control" [(ngModel)]="dietary.other" placeholder="e.g. shellfish allergy" aria-label="Other dietary requirements">
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary mt-3" (click)="saveDietary()" [disabled]="isSaving()">Save Dietary</button>
+        </div>
+      </div>
+    }
+
+    <!-- DELIVERY SECTION -->
+    @if (activeSection() === 'delivery') {
+      <div class="card">
+        <div class="card-body">
+          <h5 class="fw-semibold mb-3">Delivery Logistics</h5>
+          @if (j.locationType !== 'off_site') {
+            <div class="text-center py-4">
+              <i class="bi bi-geo-alt display-4 text-muted d-block mb-2"></i>
+              <p class="text-muted">This is an on-site event. Delivery logistics apply to off-site events only.</p>
+            </div>
+          } @else {
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="catering-delivery-driver-name">Driver Name</label>
+                <input id="catering-delivery-driver-name" type="text" class="form-control" [(ngModel)]="deliveryDriverName" aria-label="Driver name">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="catering-delivery-driver-phone">Driver Phone</label>
+                <input id="catering-delivery-driver-phone" type="tel" class="form-control" [(ngModel)]="deliveryDriverPhone" aria-label="Driver phone">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="catering-delivery-vehicle">Vehicle</label>
+                <input id="catering-delivery-vehicle" type="text" class="form-control" [(ngModel)]="deliveryVehicle" placeholder="e.g. White cargo van" aria-label="Vehicle description">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="catering-delivery-load-time">Load Time</label>
+                <input id="catering-delivery-load-time" type="time" class="form-control" [(ngModel)]="deliveryLoadTime" aria-label="Load time">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="catering-delivery-departure-time">Departure Time</label>
+                <input id="catering-delivery-departure-time" type="time" class="form-control" [(ngModel)]="deliveryDepartureTime" aria-label="Departure time">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="catering-delivery-arrival-time">Arrival Time</label>
+                <input id="catering-delivery-arrival-time" type="time" class="form-control" [(ngModel)]="deliveryArrivalTime" aria-label="Arrival time">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="catering-delivery-setup-time">Setup Time</label>
+                <input id="catering-delivery-setup-time" type="time" class="form-control" [(ngModel)]="deliverySetupTime" aria-label="Setup time">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="catering-delivery-route-notes">Route Notes</label>
+                <textarea id="catering-delivery-route-notes" class="form-control" rows="2" [(ngModel)]="deliveryRouteNotes" placeholder="Use service entrance, loading dock on west side..." aria-label="Route notes"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="catering-delivery-equipment">Equipment Checklist (one per line)</label>
+                <textarea id="catering-delivery-equipment" class="form-control" rows="2" [(ngModel)]="deliveryEquipment" placeholder="Chafing dishes (6)&#10;Linens&#10;Serving utensils" aria-label="Equipment checklist"></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary mt-3" (click)="saveDelivery()" [disabled]="isSaving()">Save Delivery</button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- TASTINGS SECTION -->
+    @if (activeSection() === 'tastings') {
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Tasting Sessions</h5>
+        <button type="button" class="btn btn-sm btn-primary" (click)="openNewTasting()">
+          <i class="bi bi-plus me-1"></i> Schedule Tasting
+        </button>
+      </div>
+
+      @if ((j.tastings ?? []).length === 0) {
+        <div class="text-center py-5">
+          <i class="bi bi-cup-straw display-4 text-muted d-block mb-3"></i>
+          <p class="text-muted">No tastings scheduled. Schedule a menu tasting with the client.</p>
+          <button type="button" class="btn btn-primary" (click)="openNewTasting()">Schedule Tasting</button>
+        </div>
+      } @else {
+        <div class="list-group">
+          @for (t of j.tastings ?? []; track t.id) {
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-semibold">{{ t.scheduledDate | date:'mediumDate':'UTC' }}</div>
+                  <div class="text-muted small">Attendees: {{ t.attendees }}</div>
+                  @if (t.notes) {
+                    <div class="text-muted small mt-1">{{ t.notes }}</div>
+                  }
+                </div>
+                @if (t.completedAt) {
+                  <span class="badge bg-success">Completed</span>
+                } @else {
+                  <button type="button" class="btn btn-sm btn-outline-success" (click)="completeTasting(t.id)" [disabled]="isSaving()">
+                    Mark Complete
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Tasting Form -->
+      @if (showTastingForm()) {
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="fw-semibold mb-3">Schedule Tasting</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="catering-tasting-date">Date</label>
+                <input id="catering-tasting-date" type="date" class="form-control" [(ngModel)]="tastingDate" aria-label="Tasting date">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="catering-tasting-attendees">Attendees</label>
+                <input id="catering-tasting-attendees" type="text" class="form-control" [(ngModel)]="tastingAttendees" placeholder="e.g. Sarah + husband" aria-label="Tasting attendees">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="catering-tasting-notes">Notes</label>
+                <input id="catering-tasting-notes" type="text" class="form-control" [(ngModel)]="tastingNotes" aria-label="Tasting notes">
+              </div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+              <button type="button" class="btn btn-primary" (click)="saveTasting()" [disabled]="isSaving()">Schedule</button>
+              <button type="button" class="btn btn-outline-secondary" (click)="showTastingForm.set(false)">Cancel</button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- AI PROPOSAL SECTION -->
+    @if (activeSection() === 'proposals') {
+      <div class="ai-proposal-section">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <h5 class="mb-0 fw-semibold">AI Proposal Generator</h5>
+          <span class="badge bg-secondary">Beta</span>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label" for="ai-proposal-tone">Tone</label>
+                <select
+                  id="ai-proposal-tone"
+                  class="form-select"
+                  [value]="selectedTone()"
+                  (change)="setSelectedTone($any($event.target).value)"
+                  [disabled]="generating()"
+                >
+                  <option value="professional">Professional</option>
+                  <option value="warm">Warm &amp; Personal</option>
+                  <option value="casual">Casual &amp; Friendly</option>
+                </select>
+              </div>
+              <div class="col-md-auto">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  (click)="generateAiContent()"
+                  [disabled]="generating()"
+                >
+                  @if (generating()) {
+                    <output class="spinner-border spinner-border-sm me-2" aria-hidden="true"></output>
+                    Generating...
+                  } @else {
+                    <i class="bi bi-stars me-2"></i>
+                    @if (aiContent()) { Regenerate } @else { Generate AI Proposal }
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if (aiContent(); as ai) {
+          <div class="card mb-3">
+            <div class="card-header fw-semibold">Introduction</div>
+            <div class="card-body">
+              <textarea
+                class="form-control"
+                rows="4"
+                aria-label="Proposal introduction"
+                [value]="editedIntro()"
+                (input)="editedIntro.set($any($event.target).value)"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="card mb-3">
+            <div class="card-header fw-semibold">Menu Descriptions</div>
+            <div class="card-body">
+              @for (item of ai.menuDescriptions; track item.itemId) {
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">{{ item.itemName }}</label>
+                  <textarea
+                    class="form-control"
+                    rows="2"
+                    [attr.aria-label]="item.itemName + ' description'"
+                    [value]="editedMenuDescriptions()[item.itemId]"
+                    (input)="updateMenuDescription(item.itemId, $event)"
+                  ></textarea>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="card mb-3">
+            <div class="card-header fw-semibold">Service Overview</div>
+            <div class="card-body">
+              <textarea
+                class="form-control"
+                rows="3"
+                aria-label="Service overview"
+                [value]="editedServiceOverview()"
+                (input)="editedServiceOverview.set($any($event.target).value)"
+              ></textarea>
+            </div>
+          </div>
+
+          @if (editedDietaryStatement()) {
+            <div class="card mb-3">
+              <div class="card-header fw-semibold">Dietary Statement</div>
+              <div class="card-body">
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  aria-label="Dietary statement"
+                  [value]="editedDietaryStatement()"
+                  (input)="editedDietaryStatement.set($any($event.target).value)"
+                ></textarea>
+              </div>
+            </div>
+          }
+
+          <div class="card mb-4">
+            <div class="card-header fw-semibold">Closing</div>
+            <div class="card-body">
+              <textarea
+                class="form-control"
+                rows="3"
+                aria-label="Proposal closing"
+                [value]="editedClosing()"
+                (input)="editedClosing.set($any($event.target).value)"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="saveEditedContent()"
+              [disabled]="savingContent()"
+            >
+              @if (savingContent()) {
+                <output class="spinner-border spinner-border-sm me-2" aria-hidden="true"></output>
+                Saving...
+              } @else {
+                <i class="bi bi-check-lg me-1"></i> Save Edits
+              }
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="generateAiContent()"
+              [disabled]="generating()"
+            >
+              <i class="bi bi-arrow-repeat me-1"></i> Regenerate
+            </button>
+          </div>
+
+          <p class="text-muted small mt-2">
+            Generated {{ ai.generatedAt | date:'medium' }} &bull;
+            Tone: {{ ai.tone }}
+          </p>
+        } @else {
+          <div class="text-center py-5">
+            <i class="bi bi-stars display-4 text-muted d-block mb-3"></i>
+            <p class="text-muted">No AI proposal generated yet. Select a tone and click Generate to create personalized proposal copy.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ACTIVITY SECTION -->
+    @if (activeSection() === 'activity') {
+      <h5 class="fw-semibold mb-3">Activity Timeline</h5>
+      @if (activities().length === 0) {
+        <div class="text-center py-5">
+          <i class="bi bi-clock-history display-4 text-muted d-block mb-3"></i>
+          <p class="text-muted">No activity recorded yet.</p>
+        </div>
+      } @else {
+        <div class="activity-timeline">
+          @for (act of activities(); track act.id) {
+            <div class="activity-item d-flex gap-3 mb-3">
+              <div class="activity-icon" [class]="getActivityColor(act.actorType)">
+                <i class="bi" [class]="getActivityIcon(act.action)"></i>
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-semibold small">{{ act.description }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">
+                  {{ act.createdAt | date:'medium' }}
+                  <span class="badge bg-light text-secondary border ms-1">{{ act.actorType }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

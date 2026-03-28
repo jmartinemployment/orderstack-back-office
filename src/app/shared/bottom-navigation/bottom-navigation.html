@@ -1,0 +1,182 @@
+<nav class="bottom-nav">
+  <button
+    type="button"
+    class="bottom-nav-item"
+    (click)="openModal('checkout')">
+    <i class="bi bi-grid-3x3-gap-fill"></i>
+    <span>Checkout</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-nav-item"
+    (click)="openModal('transactions')">
+    <i class="bi bi-arrow-left-right"></i>
+    <span>Transactions</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-nav-item"
+    (click)="openModal('notifications')">
+    <div class="nav-icon-wrapper">
+      <i class="bi bi-bell"></i>
+      @if (orderService.itemReadyNotifications().length > 0) {
+        <span class="notification-badge">{{ orderService.itemReadyNotifications().length }}</span>
+      }
+    </div>
+    <span>Notifications</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-nav-item"
+    (click)="clockOut()">
+    <i class="bi bi-box-arrow-right"></i>
+    <span>Clock Out</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-nav-item"
+    (click)="openModal('more')">
+    <i class="bi bi-list"></i>
+    <span>Modes</span>
+  </button>
+</nav>
+
+<!-- Clock Out Toast -->
+@if (clockOutToast()) {
+  <div class="clock-out-toast">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>{{ clockOutToast() }}</span>
+  </div>
+}
+
+<!-- Checkout Modal -->
+@if (activeModal() === 'checkout') {
+  <button type="button" class="bottom-nav-overlay" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+    <div class="bottom-nav-modal checkout-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="closeModal()">
+      <div class="modal-header">
+        <h3>Checkout</h3>
+        <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <os-bottom-nav-checkout />
+      </div>
+    </div>
+  </button>
+}
+
+<!-- Transactions Modal -->
+@if (activeModal() === 'transactions') {
+  <button type="button" class="bottom-nav-overlay" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+    <div class="bottom-nav-modal transactions-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="closeModal()">
+      <div class="modal-header">
+        <h3>Transactions</h3>
+        <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <os-transactions />
+    </div>
+  </button>
+}
+
+<!-- Notifications Modal -->
+@if (activeModal() === 'notifications') {
+  <button type="button" class="bottom-nav-overlay" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+    <div class="bottom-nav-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="closeModal()">
+      <div class="modal-header">
+        <h3>Notifications</h3>
+        <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (orderService.itemReadyNotifications().length === 0) {
+          <div class="notifications-empty">
+            <i class="bi bi-bell"></i>
+            <p>No new notifications</p>
+          </div>
+        } @else {
+          <div class="notifications-list">
+            @for (notif of orderService.itemReadyNotifications(); track notif.id) {
+              <button
+                type="button"
+                class="notification-item"
+                (click)="dismissNotification(notif.id)">
+                <div class="notification-icon">
+                  @if (notif.allReady) {
+                    <i class="bi bi-check-circle-fill"></i>
+                  } @else {
+                    <i class="bi bi-clock-fill"></i>
+                  }
+                </div>
+                <div class="notification-content">
+                  <span class="notification-title">
+                    @if (notif.allReady) {
+                      Order ready
+                    } @else {
+                      Items ready — {{ notif.stationName }}
+                    }
+                  </span>
+                  <span class="notification-detail">
+                    Order #{{ notif.orderId.slice(-4) }}
+                  </span>
+                  <span class="notification-time">
+                    {{ getTimeAgo(notif.timestamp) }}
+                  </span>
+                </div>
+                <i class="bi bi-x notification-dismiss"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </button>
+}
+
+<!-- More Modal -->
+@if (activeModal() === 'more') {
+  <button type="button" class="bottom-nav-overlay" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+    <div class="bottom-nav-modal more-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="closeModal()">
+      <div class="modal-header">
+        <h3>Modes</h3>
+        <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Mode list -->
+        <div class="mode-list">
+          @for (config of availableModes; track config.mode) {
+            <button
+              type="button"
+              class="mode-option"
+              [class.active]="isModeActive(config.mode)"
+              [style.display]="isModeHidden(config.mode) ? 'none' : ''"
+              (click)="selectMode(config.mode)">
+              <div class="mode-option-icon">
+                <i class="bi {{ config.icon }}"></i>
+              </div>
+              <div class="mode-option-info">
+                <div class="mode-option-header">
+                  <span class="mode-option-label">{{ config.label }}</span>
+                  @if (isModeActive(config.mode)) {
+                    <i class="bi bi-check-circle-fill mode-active-check"></i>
+                  }
+                </div>
+                <span class="mode-option-description">{{ config.description }}</span>
+                <div class="mode-highlights">
+                  @for (highlight of config.highlights; track highlight) {
+                    <span class="mode-highlight-pill">{{ highlight }}</span>
+                  }
+                </div>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </button>
+}

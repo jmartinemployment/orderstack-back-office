@@ -1,0 +1,180 @@
+@if (isAuthenticated()) {
+<div class="voice-order px-2">
+  <!-- Header -->
+  <div class="voice-header">
+    <h2 class="header-title">
+      <span class="voice-icon">&#127908;</span>
+      Voice Ordering
+    </h2>
+    <div class="language-toggle">
+      <button type="button" class="lang-btn" [class.active]="language() === 'en'" (click)="setLanguage('en')">EN</button>
+      <button type="button" class="lang-btn" [class.active]="language() === 'es'" (click)="setLanguage('es')">ES</button>
+    </div>
+  </div>
+
+  @if (!isSupported()) {
+    <div class="unsupported-notice">
+      <div class="notice-icon">&#9888;</div>
+      <h4>Speech Recognition Not Available</h4>
+      <p>Your browser does not support the Web Speech API. Please use Chrome, Edge, or Safari.</p>
+    </div>
+  } @else if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading menu..." />
+    </div>
+  } @else {
+    <!-- Voice Control Area -->
+    <div class="voice-control">
+      <!-- State Display -->
+      <div class="state-display">
+        @switch (state()) {
+          @case ('idle') {
+            <button type="button" class="state-circle idle" (click)="startListening()" (keydown.enter)="startListening()" aria-label="Start voice ordering">
+              <span class="state-icon">&#127908;</span>
+            </button>
+            <p class="state-text">
+              @if (language() === 'es') { Toca para ordenar por voz } @else { Tap to start voice ordering }
+            </p>
+          }
+          @case ('listening') {
+            <button type="button" class="state-circle listening" (click)="stopListening()" (keydown.enter)="stopListening()" aria-label="Stop listening">
+              <span class="state-icon">&#9679;</span>
+            </button>
+            <p class="state-text listening-text">
+              @if (language() === 'es') { Escuchando... di tu pedido } @else { Listening... say your order }
+            </p>
+            @if (interimText()) {
+              <div class="interim-text">"{{ interimText() }}"</div>
+            }
+          }
+          @case ('processing') {
+            <div class="state-circle processing">
+              <span class="spinner-border"></span>
+            </div>
+            <p class="state-text">
+              @if (language() === 'es') { Procesando... } @else { Processing... }
+            </p>
+          }
+          @case ('confirming') {
+            <div class="state-circle confirming">
+              <span class="state-icon">&#10003;</span>
+            </div>
+            <p class="state-text">
+              @if (language() === 'es') { Confirma tu pedido } @else { Confirm your items }
+            </p>
+          }
+          @case ('error') {
+            <button type="button" class="state-circle error" (click)="startListening()" (keydown.enter)="startListening()" aria-label="Retry voice ordering">
+              <span class="state-icon">!</span>
+            </button>
+            <p class="state-text text-danger">{{ errorMessage() }}</p>
+            <p class="state-hint">
+              @if (language() === 'es') { Toca para reintentar } @else { Tap to retry }
+            </p>
+          }
+        }
+      </div>
+
+      <!-- Waveform bars -->
+      @if (state() === 'listening') {
+        <div class="waveform">
+          @for (bar of [1,2,3,4,5,6,7]; track bar) {
+            <div class="wave-bar" [style.animation-delay]="bar * 0.1 + 's'"></div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Matches Panel -->
+    @if (matches().length > 0) {
+      <div class="matches-panel">
+        <div class="matches-header">
+          <h5>
+            @if (language() === 'es') { Artículos detectados } @else { Detected Items }
+          </h5>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-light" (click)="clearSession()">Clear</button>
+            <button type="button" class="btn btn-sm btn-primary" (click)="confirmAllMatches()">
+              @if (language() === 'es') { Agregar todo } @else { Add All }
+            </button>
+          </div>
+        </div>
+
+        <div class="match-list">
+          @for (match of matches(); track match.menuItemId) {
+            <div class="match-item">
+              <div class="match-info">
+                <span class="match-name">{{ match.menuItemName }}</span>
+                <div class="match-meta">
+                  <span class="match-qty">x{{ match.quantity }}</span>
+                  <span class="match-price">{{ match.price * match.quantity | currency }}</span>
+                  <span class="confidence-badge" [class.high]="match.confidence > 0.7" [class.medium]="match.confidence > 0.4 && match.confidence <= 0.7">
+                    {{ (match.confidence * 100).toFixed(0) }}%
+                  </span>
+                </div>
+              </div>
+              <div class="match-actions">
+                <button type="button" class="btn btn-sm btn-outline-success" (click)="confirmMatch(match)">&#10003;</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeMatch(match.menuItemId)">&#10005;</button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Transcript History -->
+    @if (transcripts().length > 0) {
+      <div class="transcript-panel">
+        <h6 class="panel-title">
+          @if (language() === 'es') { Transcripción } @else { Transcript }
+        </h6>
+        <div class="transcript-list">
+          @for (t of transcripts(); track t.timestamp) {
+            <div class="transcript-item">
+              <span class="transcript-text">"{{ t.text }}"</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Tips -->
+    @if (state() === 'idle' && transcripts().length === 0) {
+      <div class="tips-panel">
+        <h6 class="panel-title">
+          @if (language() === 'es') { Ejemplos } @else { Try saying }
+        </h6>
+        <div class="tip-examples">
+          @if (language() === 'es') {
+            <div class="tip-item">"Dos tacos de pollo"</div>
+            <div class="tip-item">"Una hamburguesa con papas"</div>
+            <div class="tip-item">"Tres cervezas"</div>
+          } @else {
+            <div class="tip-item">"Two chicken tacos"</div>
+            <div class="tip-item">"One burger with fries"</div>
+            <div class="tip-item">"Three beers"</div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Cart Summary -->
+    @if (cartItemCount() > 0) {
+      <div class="cart-summary">
+        <div class="d-flex justify-content-between align-items-center">
+          <span>{{ cartItemCount() }} item{{ cartItemCount() === 1 ? '' : 's' }} in cart</span>
+          <span class="fw-bold">{{ cartTotal() | currency }}</span>
+        </div>
+      </div>
+    }
+  }
+</div>
+} @else {
+<div class="auth-required d-flex align-items-center justify-content-center p-5">
+  <div class="text-center">
+    <h3 class="text-warning mb-3">Authentication Required</h3>
+    <p class="text-light">Please log in to use voice ordering.</p>
+  </div>
+</div>
+}

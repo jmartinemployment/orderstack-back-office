@@ -1,0 +1,72 @@
+:host { display: block; }
+
+.offcanvas-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1040;
+}
+
+.offcanvas-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 100vw;
+  background-color: var(--os-bg-card);
+  z-index: 1045;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.25s ease-out;
+
+  @media (max-width: 576px) {
+    width: 100vw;
+  }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.offcanvas-header {
+  h5 {
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+}
+
+.offcanvas-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.offcanvas-footer {
+  background-color: var(--os-bg-card);
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.form-control,
+.form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &::placeholder { color: var(--os-text-muted); }
+
+  &:focus {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-primary);
+    color: var(--os-text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 106, 255, 0.15);
+  }
+
+  option { background-color: var(--os-bg-card); }
+}

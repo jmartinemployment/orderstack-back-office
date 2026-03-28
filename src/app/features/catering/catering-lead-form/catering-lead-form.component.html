@@ -1,0 +1,131 @@
+<div class="lead-form-wrapper">
+  <div class="lead-card">
+    @if (isSubmitted()) {
+      <div class="success-state text-center py-5">
+        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+        <h3 class="mt-3">Thank you!</h3>
+        <p class="text-muted">We'll be in touch soon.</p>
+      </div>
+    } @else {
+      <h2 class="text-center mb-4">Request a Quote</h2>
+
+      @if (error()) {
+        <div class="alert alert-danger" role="alert">
+          {{ error() }}
+        </div>
+      }
+
+      <form (ngSubmit)="submit()" #leadForm="ngForm">
+        <div class="mb-3">
+          <label for="clientName" class="form-label">Name <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            id="clientName"
+            class="form-control"
+            [(ngModel)]="clientName"
+            name="clientName"
+            required
+            placeholder="Your full name" />
+        </div>
+
+        <div class="mb-3">
+          <label for="clientEmail" class="form-label">Email <span class="text-danger">*</span></label>
+          <input
+            type="email"
+            id="clientEmail"
+            class="form-control"
+            [(ngModel)]="clientEmail"
+            name="clientEmail"
+            required
+            placeholder="you@example.com" />
+        </div>
+
+        <div class="mb-3">
+          <label for="clientPhone" class="form-label">Phone</label>
+          <input
+            type="tel"
+            id="clientPhone"
+            class="form-control"
+            [(ngModel)]="clientPhone"
+            name="clientPhone"
+            placeholder="(555) 123-4567" />
+        </div>
+
+        <div class="mb-3">
+          <label for="companyName" class="form-label">Company / Organization</label>
+          <input
+            type="text"
+            id="companyName"
+            class="form-control"
+            [(ngModel)]="companyName"
+            name="companyName"
+            placeholder="Company name (optional)" />
+        </div>
+
+        <div class="mb-3">
+          <label for="eventType" class="form-label">Event Type</label>
+          <select
+            id="eventType"
+            class="form-select"
+            [(ngModel)]="eventType"
+            name="eventType">
+            <option value="">Select an event type</option>
+            <option value="corporate">Corporate</option>
+            <option value="wedding">Wedding</option>
+            <option value="birthday">Birthday</option>
+            <option value="social">Social</option>
+            <option value="fundraiser">Fundraiser</option>
+            <option value="holiday">Holiday</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <label for="estimatedDate" class="form-label">Estimated Date</label>
+            <input
+              type="date"
+              id="estimatedDate"
+              class="form-control"
+              [(ngModel)]="estimatedDate"
+              name="estimatedDate" />
+          </div>
+          <div class="col-sm-6">
+            <label for="estimatedHeadcount" class="form-label">Estimated Headcount</label>
+            <input
+              type="number"
+              id="estimatedHeadcount"
+              class="form-control"
+              [(ngModel)]="estimatedHeadcount"
+              name="estimatedHeadcount"
+              min="1"
+              placeholder="Number of guests" />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="message" class="form-label">Message</label>
+          <textarea
+            id="message"
+            class="form-control"
+            [(ngModel)]="message"
+            name="message"
+            rows="4"
+            placeholder="Tell us about your event..."></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary w-100 btn-lg"
+          [disabled]="isSubmitting() || !clientName.trim() || !clientEmail.trim()">
+          @if (isSubmitting()) {
+            <output class="spinner-border spinner-border-sm me-2"></output>
+            Submitting...
+          } @else {
+            Submit Request
+          }
+        </button>
+      </form>
+    }
+  </div>
+</div>

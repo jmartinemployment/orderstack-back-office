@@ -1,0 +1,823 @@
+<div class="staff-portal px-2">
+  <!-- PIN Login Screen -->
+  @if (!isLoggedIn()) {
+    <div class="pin-screen">
+      <div class="pin-header">
+        <i class="bi bi-person-badge"></i>
+        <h1>Staff Portal</h1>
+        <p>Enter your PIN to view your schedule</p>
+      </div>
+
+      <div class="pin-dots">
+        @for (filled of pinDots(); track $index) {
+          <span class="pin-dot" [class.filled]="filled"></span>
+        }
+      </div>
+
+      @if (pinError()) {
+        <div class="pin-error">{{ pinError() }}</div>
+      }
+
+      @if (isValidating()) {
+        <div class="pin-validating">Verifying...</div>
+      }
+
+      <div class="pin-keypad">
+        @for (digit of ['1','2','3','4','5','6','7','8','9','','0','⌫']; track $index) {
+          @if (digit === '') {
+            <div class="keypad-spacer"></div>
+          } @else if (digit === '⌫') {
+            <button class="keypad-btn keypad-back" (click)="onBackspace()">
+              <i class="bi bi-backspace"></i>
+            </button>
+          } @else {
+            <button class="keypad-btn" (click)="onDigit(digit)">{{ digit }}</button>
+          }
+        }
+      </div>
+
+      <button class="btn-clear-pin" (click)="onClearPin()">Clear</button>
+    </div>
+  }
+
+  <!-- Main Portal -->
+  @if (isLoggedIn()) {
+    <header class="portal-header">
+      <div class="header-info">
+        <h2 class="staff-name">{{ loggedInStaff()!.name }}</h2>
+        <span class="staff-role">{{ loggedInStaff()!.role }}</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-notification" (click)="toggleNotifications()">
+          <i class="bi bi-bell"></i>
+          @if (unreadCount() > 0) {
+            <span class="notification-badge">{{ unreadCount() }}</span>
+          }
+        </button>
+        <button class="btn-logout" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Notification Panel -->
+    @if (showNotifications()) {
+      <div class="notification-panel">
+        <div class="notification-panel-header">
+          <h4>Notifications</h4>
+          @if (unreadCount() > 0) {
+            <button class="btn-mark-all" (click)="markAllRead()">Mark all read</button>
+          }
+          <button class="btn-close-panel" (click)="closeNotifications()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="notification-list">
+          @for (notif of notifications(); track notif.id) {
+            <button type="button" class="notification-item" [class.unread]="!notif.isRead" (click)="markAsRead(notif.id)" (keydown.enter)="markAsRead(notif.id)">
+              <i class="bi {{ getNotificationIcon(notif.type) }} notification-icon"></i>
+              <div class="notification-content">
+                <div class="notification-title">{{ notif.title }}</div>
+                <div class="notification-message">{{ notif.message }}</div>
+                <div class="notification-time">{{ notif.createdAt | date:'short' }}</div>
+              </div>
+              @if (!notif.isRead) {
+                <span class="notification-dot"></span>
+              }
+            </button>
+          } @empty {
+            <div class="notification-empty">
+              <i class="bi bi-bell-slash"></i>
+              <p>No notifications</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Error banner -->
+    @if (error()) {
+      <button type="button" class="error-banner" (click)="dismissError()" (keydown.enter)="dismissError()">
+        <i class="bi bi-exclamation-triangle"></i>
+        {{ error() }}
+        <i class="bi bi-x"></i>
+      </button>
+    }
+
+    <!-- Tab bar -->
+    <nav class="tab-bar">
+      <button class="tab-btn" [class.active]="activeTab() === 'schedule'" (click)="setTab('schedule')">
+        <i class="bi bi-calendar3"></i> Schedule
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'availability'" (click)="setTab('availability')">
+        <i class="bi bi-clock-history"></i> Availability
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'swaps'" (click)="setTab('swaps')">
+        <i class="bi bi-arrow-left-right"></i> Swaps
+        @if (pendingIncoming().length > 0) {
+          <span class="badge">{{ pendingIncoming().length }}</span>
+        }
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'timeclock'" (click)="setTab('timeclock')">
+        <i class="bi bi-stopwatch"></i> Time Clock
+        @if (isClockedIn()) {
+          <span class="badge badge-success">IN</span>
+        }
+      </button>
+    </nav>
+
+    <!-- Schedule Tab -->
+    @if (activeTab() === 'schedule') {
+      <div class="tab-content">
+        <!-- Week nav -->
+        <div class="week-nav">
+          <button class="btn-nav" (click)="prevWeek()"><i class="bi bi-chevron-left"></i></button>
+          <button class="week-label" (click)="thisWeek()">{{ weekLabel() }}</button>
+          <button class="btn-nav" (click)="nextWeek()"><i class="bi bi-chevron-right"></i></button>
+        </div>
+
+        <!-- Week summary -->
+        <div class="week-summary">
+          <div class="summary-card">
+            <span class="summary-value">{{ myShifts().length }}</span>
+            <span class="summary-label">Shifts</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-value">{{ totalWeekHours() | number:'1.1-1' }}</span>
+            <span class="summary-label">Hours</span>
+          </div>
+          @if (earnings()) {
+            <div class="summary-card accent">
+              <span class="summary-value">{{ earnings()!.totalEarnings | currency }}</span>
+              <span class="summary-label">Earnings</span>
+            </div>
+          }
+        </div>
+
+        <!-- Earnings breakdown -->
+        @if (earnings()) {
+          <div class="earnings-breakdown">
+            <div class="earning-row">
+              <span>Base Pay</span>
+              <span>{{ earnings()!.basePay | currency }}</span>
+            </div>
+            @if (earnings()!.overtimePay > 0) {
+              <div class="earning-row overtime">
+                <span>Overtime ({{ earnings()!.overtimeHours | number:'1.1-1' }}h)</span>
+                <span>{{ earnings()!.overtimePay | currency }}</span>
+              </div>
+            }
+            @if (earnings()!.tips > 0) {
+              <div class="earning-row tips">
+                <span>Tips</span>
+                <span>{{ earnings()!.tips | currency }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Time Off Section -->
+        <div class="section-header mt-3">
+          <h3>Time Off</h3>
+          <button class="btn-edit" (click)="openPtoForm()">
+            <i class="bi bi-plus-lg"></i> Request
+          </button>
+        </div>
+
+        <!-- PTO Balances -->
+        @if (ptoBalances().length > 0) {
+          <div class="pto-balances">
+            @for (bal of ptoBalances(); track bal.type) {
+              <div class="pto-balance-card">
+                <span class="pto-balance-type">{{ getPtoTypeLabel(bal.type) }}</span>
+                <span class="pto-balance-value">{{ bal.available | number:'1.0-0' }}h</span>
+                <span class="pto-balance-detail">{{ bal.used | number:'1.0-0' }}h used / {{ bal.accrued | number:'1.0-0' }}h accrued</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- PTO Request Form -->
+        @if (showPtoForm()) {
+          <div class="pto-form">
+            <h4>Request Time Off</h4>
+            <div class="form-group">
+              <span class="form-label">Type</span>
+              <select class="form-select" aria-label="Time off type" [value]="ptoType()" (change)="setPtoType($any($event.target).value)">
+                <option value="vacation">Vacation</option>
+                <option value="sick">Sick</option>
+                <option value="personal">Personal</option>
+                <option value="holiday">Holiday</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <span class="form-label">Start Date</span>
+                <input type="date" class="form-input" aria-label="Start date" [value]="ptoStartDate()" (input)="setPtoStartDate($any($event.target).value)">
+              </div>
+              <div class="form-group">
+                <span class="form-label">End Date</span>
+                <input type="date" class="form-input" aria-label="End date" [value]="ptoEndDate()" (input)="setPtoEndDate($any($event.target).value)">
+              </div>
+              <div class="form-group">
+                <span class="form-label">Hours</span>
+                <input type="number" class="form-input" aria-label="Hours" min="1" max="80" [value]="ptoHours()" (input)="setPtoHours($any($event.target).valueAsNumber)">
+              </div>
+            </div>
+            <div class="form-group">
+              <span class="form-label">Reason (optional)</span>
+              <input type="text" class="form-input" aria-label="Reason for time off" placeholder="Reason for time off" [value]="ptoReason()" (input)="setPtoReason($any($event.target).value)">
+            </div>
+            <div class="pto-form-actions">
+              <button class="btn-cancel" (click)="closePtoForm()">Cancel</button>
+              <button class="btn-save" [disabled]="!ptoStartDate() || !ptoEndDate() || ptoHours() <= 0 || isSubmittingPto()" (click)="submitPtoRequest()">
+                @if (isSubmittingPto()) { Submitting... } @else { Submit Request }
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- My PTO Requests -->
+        @if (myPtoRequests().length > 0) {
+          <div class="pto-requests-list">
+            @for (req of myPtoRequests(); track req.id) {
+              <div class="pto-request-item">
+                <div class="pto-request-header">
+                  <span class="pto-request-type">{{ getPtoTypeLabel(req.type) }}</span>
+                  <span class="swap-badge {{ getPtoStatusClass(req.status) }}">{{ req.status }}</span>
+                </div>
+                <div class="pto-request-dates">
+                  {{ req.startDate | date:'mediumDate' }} – {{ req.endDate | date:'mediumDate' }}
+                  <span class="pto-request-hours">{{ req.hoursRequested }}h</span>
+                </div>
+                @if (req.reason) {
+                  <div class="pto-request-reason">{{ req.reason }}</div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (isLoadingShifts()) {
+          <div class="loading-msg">Loading schedule...</div>
+        }
+
+        <!-- Day-by-day schedule -->
+        <div class="schedule-days">
+          @for (day of weekDays(); track day) {
+            <div class="day-row">
+              <div class="day-label">{{ formatDayLabel(day) }}</div>
+              <div class="day-shifts">
+                @for (shift of shiftsByDay().get(day) ?? []; track shift.id) {
+                  <div class="shift-block" [style.border-left-color]="getPositionColor(shift.position)">
+                    <div class="shift-time">{{ formatTime(shift.startTime) }} – {{ formatTime(shift.endTime) }}</div>
+                    <div class="shift-meta">
+                      <span class="shift-position" [style.color]="getPositionColor(shift.position)">{{ shift.position }}</span>
+                      <span class="shift-hours">{{ getShiftDuration(shift) | number:'1.1-1' }}h</span>
+                    </div>
+                    @if (shift.notes) {
+                      <div class="shift-notes">{{ shift.notes }}</div>
+                    }
+                  </div>
+                } @empty {
+                  <div class="no-shift">Off</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Availability Tab -->
+    @if (activeTab() === 'availability') {
+      <div class="tab-content">
+        <div class="section-header">
+          <h3>Weekly Availability</h3>
+          @if (!isEditingAvailability()) {
+            <button class="btn-edit" (click)="startEditAvailability()">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          }
+        </div>
+
+        @if (isEditingAvailability()) {
+          <div class="availability-editor">
+            @for (day of [0,1,2,3,4,5,6]; track day) {
+              <div class="avail-row" [class.unavailable]="!getEditDay(day).available">
+                <div class="avail-day-header">
+                  <button class="avail-toggle" [class.on]="getEditDay(day).available" (click)="toggleDayAvailability(day)">
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  </button>
+                  <span class="avail-day-name">{{ dayNames[day] }}</span>
+                </div>
+
+                @if (getEditDay(day).available) {
+                  <div class="avail-times">
+                    <input type="time" class="time-input" aria-label="Available start time" [value]="getEditDay(day).start" (input)="updateAvailabilityTime(day, 'start', $any($event.target).value)">
+                    <span class="time-sep">to</span>
+                    <input type="time" class="time-input" aria-label="Available end time" [value]="getEditDay(day).end" (input)="updateAvailabilityTime(day, 'end', $any($event.target).value)">
+                  </div>
+                  <input type="text" class="notes-input" aria-label="Availability notes" placeholder="Notes (optional)" [value]="getEditDay(day).notes" (input)="updateAvailabilityNotes(day, $any($event.target).value)">
+                } @else {
+                  <div class="avail-off">Not available</div>
+                }
+              </div>
+            }
+
+            <div class="avail-actions">
+              <button class="btn-cancel" (click)="cancelEditAvailability()">Cancel</button>
+              <button class="btn-save" [disabled]="isSavingAvailability()" (click)="saveAvailability()">
+                @if (isSavingAvailability()) { Saving... } @else { Save }
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="availability-view">
+            @for (day of [0,1,2,3,4,5,6]; track day) {
+              @let pref = availability().length > day ? availability()[day] : null;
+              <div class="avail-view-row">
+                <span class="avail-view-day">{{ dayNames[day] }}</span>
+                @if (pref && pref.isAvailable && pref.preferredStart && pref.preferredEnd) {
+                  <span class="avail-view-time">{{ formatTime(pref.preferredStart) }} – {{ formatTime(pref.preferredEnd) }}</span>
+                } @else if (pref && !pref.isAvailable) {
+                  <span class="avail-view-off">Unavailable</span>
+                } @else {
+                  <span class="avail-view-any">Any time</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Swaps Tab -->
+    @if (activeTab() === 'swaps') {
+      <div class="tab-content">
+        <div class="section-header">
+          <h3>Shift Swaps</h3>
+          <button class="btn-edit" (click)="openSwapForm()">
+            <i class="bi bi-plus-lg"></i> Request
+          </button>
+        </div>
+
+        <!-- Swap form -->
+        @if (showSwapForm()) {
+          <div class="swap-form">
+            <h4>Request Shift Swap</h4>
+            <div class="form-group">
+              <label class="form-label" for="swap-shift-select">Select shift to swap</label>
+              <select id="swap-shift-select" class="form-select" (change)="setSwapShiftId($any($event.target).value)">
+                <option value="">Choose a shift...</option>
+                @for (shift of swappableShifts(); track shift.id) {
+                  <option [value]="shift.id">
+                    {{ formatDayLabel(shift.date) }} {{ formatTime(shift.startTime) }}–{{ formatTime(shift.endTime) }} ({{ shift.position }})
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <span class="form-label">Reason</span>
+              <input type="text" class="form-input" aria-label="Swap reason" placeholder="Why do you need this swap?" [value]="swapReason()" (input)="setSwapReason($any($event.target).value)">
+            </div>
+            <div class="swap-form-actions">
+              <button class="btn-cancel" (click)="closeSwapForm()">Cancel</button>
+              <button class="btn-save" [disabled]="!swapShiftId() || !swapReason() || isSubmittingSwap()" (click)="submitSwapRequest()">
+                @if (isSubmittingSwap()) { Submitting... } @else { Submit }
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Incoming requests -->
+        @if (pendingIncoming().length > 0) {
+          <div class="swap-section">
+            <h4 class="swap-section-title">Incoming Requests</h4>
+            @for (req of pendingIncoming(); track req.id) {
+              <div class="swap-card incoming">
+                <div class="swap-card-header">
+                  <span class="swap-from">{{ req.requestorName }}</span>
+                  <span class="swap-badge {{ getStatusClass(req.status) }}">{{ req.status }}</span>
+                </div>
+                <div class="swap-shift-info">
+                  {{ formatDayLabel(req.shiftDate) }} {{ formatTime(req.shiftStartTime) }}–{{ formatTime(req.shiftEndTime) }}
+                </div>
+                <div class="swap-reason">{{ req.reason }}</div>
+                <div class="swap-actions">
+                  <button class="btn-approve" (click)="respondToSwap(req.id, 'approved')">Accept</button>
+                  <button class="btn-reject" (click)="respondToSwap(req.id, 'rejected')">Decline</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- My requests -->
+        <div class="swap-section">
+          <h4 class="swap-section-title">My Requests</h4>
+          @for (req of myOutgoing(); track req.id) {
+            <div class="swap-card outgoing">
+              <div class="swap-card-header">
+                <span class="swap-shift-info">
+                  {{ formatDayLabel(req.shiftDate) }} {{ formatTime(req.shiftStartTime) }}–{{ formatTime(req.shiftEndTime) }}
+                </span>
+                <span class="swap-badge {{ getStatusClass(req.status) }}">{{ req.status }}</span>
+              </div>
+              <div class="swap-reason">{{ req.reason }}</div>
+              @if (req.respondedBy) {
+                <div class="swap-responded">Responded by {{ req.respondedBy }}</div>
+              }
+            </div>
+          } @empty {
+            <div class="empty-state">No swap requests yet</div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Time Clock Tab -->
+    @if (activeTab() === 'timeclock') {
+      <div class="tab-content">
+        <!-- Clock Status Panel -->
+        <div class="clock-status-panel" [class.clocked-in]="isClockedIn()">
+          @if (isClockedIn()) {
+            <div class="clock-status-icon">
+              <i class="bi bi-clock-fill"></i>
+            </div>
+            <div class="clock-status-text">
+              <span class="clock-label">Clocked In</span>
+              <span class="clock-duration">{{ clockedInDuration() }}</span>
+              @if (activeTimecard()) {
+                <span class="clock-job">{{ activeTimecard()!.jobTitle }}</span>
+              }
+            </div>
+          } @else {
+            <div class="clock-status-icon off">
+              <i class="bi bi-clock"></i>
+            </div>
+            <div class="clock-status-text">
+              <span class="clock-label">Not Clocked In</span>
+            </div>
+          }
+        </div>
+
+        <!-- Active Break Banner -->
+        @if (isOnBreak()) {
+          <div class="break-banner">
+            <i class="bi bi-cup-hot-fill"></i>
+            <div class="break-info">
+              <span class="break-name">{{ activeBreak()!.name }}</span>
+              <span class="break-elapsed">{{ breakElapsedMinutes() }}m / {{ activeBreak()!.expectedMinutes }}m</span>
+            </div>
+            <button class="btn-end-break" [disabled]="isClockAction()" (click)="doEndBreak()">
+              End Break
+            </button>
+          </div>
+        }
+
+        <!-- Clock Actions -->
+        <div class="clock-actions">
+          @if (!isClockedIn()) {
+            <button class="btn-clock btn-clock-in" [disabled]="isClockAction()" (click)="doClockIn()">
+              @if (isClockAction()) {
+                Clocking In...
+              } @else {
+                <i class="bi bi-box-arrow-in-right"></i> Clock In
+              }
+            </button>
+          } @else if (!isOnBreak()) {
+            <div class="clock-out-row">
+              <button class="btn-clock btn-clock-out" [disabled]="isClockAction()" (click)="openClockOutConfirm()">
+                <i class="bi bi-box-arrow-right"></i> Clock Out
+              </button>
+
+              @if (canSwitchJob()) {
+                <button class="btn-clock btn-switch-job" [disabled]="isClockAction()" (click)="openJobSwitcher()">
+                  <i class="bi bi-arrow-repeat"></i> Switch Job
+                </button>
+              }
+            </div>
+
+            <!-- Break Buttons -->
+            @if (breakTypes().length > 0) {
+              <div class="break-options">
+                <span class="break-options-label">Start Break:</span>
+                <div class="break-btns">
+                  @for (bt of breakTypes(); track bt.id) {
+                    @if (bt.isActive) {
+                      <button class="btn-break" [disabled]="isClockAction()" (click)="doStartBreak(bt.id)">
+                        {{ bt.name }}
+                        <span class="break-duration">{{ bt.expectedMinutes }}m</span>
+                        @if (bt.isPaid) {
+                          <span class="break-paid">Paid</span>
+                        }
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Schedule Enforcement Warning -->
+        @if (scheduleBlockMessage()) {
+          <div class="schedule-block-alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ scheduleBlockMessage() }}</span>
+          </div>
+        }
+
+        <!-- Manager Override Modal -->
+        @if (showManagerOverride()) {
+          <div class="modal-overlay" (click)="cancelManagerOverride()" (keydown.escape)="cancelManagerOverride()" aria-hidden="true">
+            <div class="manager-override-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <h4><i class="bi bi-shield-lock"></i> Manager Override Required</h4>
+              <p class="text-muted">{{ scheduleBlockMessage() }}</p>
+              <p>Enter a manager PIN to override:</p>
+              <input
+                type="password"
+                class="override-pin-input"
+                maxlength="6"
+                aria-label="Manager PIN"
+                placeholder="Manager PIN"
+                [value]="managerOverridePin()"
+                (input)="setManagerOverridePin($any($event.target).value)">
+              <div class="override-actions">
+                <button class="btn-cancel" (click)="cancelManagerOverride()">Cancel</button>
+                <button class="btn-override" [disabled]="managerOverridePin().length < 4 || isClockAction()" (click)="submitManagerOverride()">
+                  @if (isClockAction()) { Verifying... } @else { Override & Clock In }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Today's Summary -->
+        <div class="today-summary">
+          <h4>Today</h4>
+          <div class="today-stats">
+            <div class="today-stat">
+              <span class="stat-value">{{ todayTimecards().length }}</span>
+              <span class="stat-label">Shifts</span>
+            </div>
+            <div class="today-stat">
+              <span class="stat-value">{{ todayTotalHours() | number:'1.1-1' }}h</span>
+              <span class="stat-label">Paid Hours</span>
+            </div>
+            <div class="today-stat">
+              <span class="stat-value">{{ todayTotalBreakMinutes() }}m</span>
+              <span class="stat-label">Breaks</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's History -->
+        @if (todayTimecards().length > 0) {
+          <div class="timecard-history">
+            <h4>Shift History</h4>
+            @for (tc of todayTimecards(); track tc.id) {
+              <div class="timecard-card" [class.active]="tc.status === 'OPEN'">
+                <div class="tc-header">
+                  <span class="tc-job">{{ tc.jobTitle }}</span>
+                  <span class="tc-status" [class.open]="tc.status === 'OPEN'" [class.closed]="tc.status === 'CLOSED'">
+                    {{ tc.status }}
+                  </span>
+                </div>
+                <div class="tc-times">
+                  <span>{{ formatTimecardTime(tc.clockInAt) }}</span>
+                  <span class="tc-arrow">→</span>
+                  @if (tc.clockOutAt) {
+                    <span>{{ formatTimecardTime(tc.clockOutAt) }}</span>
+                  } @else {
+                    <span class="tc-ongoing">Ongoing</span>
+                  }
+                </div>
+                <div class="tc-meta">
+                  <span>{{ tc.totalPaidHours | number:'1.1-1' }}h paid</span>
+                  @if (tc.totalBreakMinutes > 0) {
+                    <span>{{ tc.totalBreakMinutes }}m break</span>
+                  }
+                  @if (tc.declaredCashTips !== null && tc.declaredCashTips > 0) {
+                    <span class="tc-tips">${{ tc.declaredCashTips | number:'1.2-2' }} tips</span>
+                  }
+                </div>
+                @if (tc.breaks.length > 0) {
+                  <div class="tc-breaks">
+                    @for (brk of tc.breaks; track brk.id) {
+                      <div class="tc-break-row">
+                        <span class="tc-break-name">{{ brk.name }}</span>
+                        <span class="tc-break-time">
+                          {{ formatTimecardTime(brk.startAt) }}
+                          @if (brk.endAt) {
+                            – {{ formatTimecardTime(brk.endAt) }}
+                          } @else {
+                            – Active
+                          }
+                        </span>
+                        @if (brk.isPaid) {
+                          <span class="tc-break-paid">Paid</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+                @if (tc.status === 'CLOSED') {
+                  <button class="btn-request-edit" (click)="openEditRequest(tc)">
+                    <i class="bi bi-pencil-square"></i> Request Edit
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Timecard Edit Request Modal -->
+        @if (showEditForm()) {
+          <div class="modal-overlay" (click)="closeEditRequest()" (keydown.escape)="closeEditRequest()" aria-hidden="true">
+            <div class="edit-request-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <h3>Request Timecard Edit</h3>
+              <div class="edit-form-group">
+                <label class="form-label" for="timecard-edit-type">Edit Type</label>
+                <select id="timecard-edit-type" class="edit-select" [value]="editType()" (change)="setEditType($any($event.target).value)">
+                  @for (opt of editTypeOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="edit-form-group">
+                <span class="form-label">Original Value</span>
+                <div class="edit-original">{{ editOriginalValue() }}</div>
+              </div>
+              <div class="edit-form-group">
+                <span class="form-label">New Value</span>
+                @if (editType() === 'job_change') {
+                  <input type="text" class="edit-input" aria-label="New job title" placeholder="New job title" [value]="editNewValue()" (input)="setEditNewValue($any($event.target).value)">
+                } @else {
+                  <input type="time" class="edit-input" aria-label="New time value" [value]="editNewValue()" (input)="setEditNewValue($any($event.target).value)">
+                }
+              </div>
+              <div class="edit-form-group">
+                <span class="form-label">Reason *</span>
+                <input type="text" class="edit-input" aria-label="Edit reason" placeholder="Why is this edit needed?" [value]="editReason()" (input)="setEditReason($any($event.target).value)">
+              </div>
+              <div class="edit-actions">
+                <button class="btn-cancel" (click)="closeEditRequest()">Cancel</button>
+                <button class="btn-save" [disabled]="isSubmittingEdit() || !editNewValue() || !editReason()" (click)="submitEditRequest()">
+                  @if (isSubmittingEdit()) { Submitting... } @else { Submit Request }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Clock Out Confirmation Modal -->
+        @if (showClockOutConfirm()) {
+          <div class="modal-overlay" (click)="cancelClockOut()" (keydown.escape)="cancelClockOut()" aria-hidden="true">
+            <div class="clock-out-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <h3>Shift Summary</h3>
+
+              @if (shiftSummary(); as s) {
+                <!-- Visual shift timeline -->
+                <div class="shift-timeline">
+                  <div class="timeline-row">
+                    <span class="timeline-dot in"></span>
+                    <span class="timeline-label">Clock In</span>
+                    <span class="timeline-value">{{ s.clockInTime }}</span>
+                  </div>
+                  @for (brk of s.breaks; track brk.id) {
+                    <div class="timeline-row break-row">
+                      <span class="timeline-dot break"></span>
+                      <span class="timeline-label">{{ brk.name }}</span>
+                      <span class="timeline-value">
+                        {{ brk.actualMinutes ?? 0 }}m
+                        @if (brk.isPaid) {
+                          <span class="badge-sm paid">Paid</span>
+                        }
+                      </span>
+                    </div>
+                  }
+                  <div class="timeline-row">
+                    <span class="timeline-dot out"></span>
+                    <span class="timeline-label">Clock Out</span>
+                    <span class="timeline-value">{{ s.clockOutTime }}</span>
+                  </div>
+                </div>
+
+                <!-- Hours breakdown -->
+                <div class="clockout-summary">
+                  <div class="clockout-row">
+                    <span>Total Time</span>
+                    <span>{{ s.totalHours | number:'1.1-1' }}h</span>
+                  </div>
+                  @if (s.breakMinutes > 0) {
+                    <div class="clockout-row">
+                      <span>Break Time</span>
+                      <span>{{ s.breakMinutes }}m</span>
+                    </div>
+                    @if (s.paidBreakMinutes > 0) {
+                      <div class="clockout-row sub">
+                        <span>Paid Breaks</span>
+                        <span>{{ s.paidBreakMinutes }}m</span>
+                      </div>
+                    }
+                    @if (s.unpaidBreakMinutes > 0) {
+                      <div class="clockout-row sub">
+                        <span>Unpaid Breaks</span>
+                        <span>{{ s.unpaidBreakMinutes }}m</span>
+                      </div>
+                    }
+                  }
+                  <div class="clockout-row highlight">
+                    <span>Net Paid Hours</span>
+                    <span>{{ s.netPaidHours | number:'1.1-1' }}h</span>
+                  </div>
+                  @if (s.jobTitle) {
+                    <div class="clockout-row">
+                      <span>Job</span>
+                      <span>{{ s.jobTitle }}</span>
+                    </div>
+                  }
+                  @if (s.hourlyRate > 0) {
+                    <div class="clockout-row est-pay">
+                      <span>Estimated Pay</span>
+                      <span>{{ s.estimatedPay | currency }}</span>
+                    </div>
+                  }
+                </div>
+
+                @if (s.isTipEligible) {
+                  <div class="tip-declaration">
+                    <span class="form-label">Declare Cash Tips ($)</span>
+                    <input
+                      type="number"
+                      class="tip-input"
+                      aria-label="Declare cash tips"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      [value]="declaredTips()"
+                      (input)="setDeclaredTips($any($event.target).valueAsNumber)">
+                  </div>
+                }
+              }
+
+              <div class="clockout-actions">
+                <button class="btn-cancel" (click)="cancelClockOut()">Cancel</button>
+                <button class="btn-confirm-clockout" [disabled]="isClockAction()" (click)="doClockOut()">
+                  @if (isClockAction()) { Clocking Out... } @else { Confirm Clock Out }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+        <!-- Job Switch Modal -->
+        @if (showJobSwitcher()) {
+          <div class="modal-overlay" (click)="cancelJobSwitch()" (keydown.escape)="cancelJobSwitch()" aria-hidden="true">
+            <div class="job-switch-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <h3>Switch Job</h3>
+              <p class="job-switch-desc">
+                This will close your current timecard as
+                <strong>{{ activeTimecard()!.jobTitle }}</strong>
+                and start a new one.
+              </p>
+
+              <div class="job-switch-options">
+                @if (teamMemberRecord(); as record) {
+                  @for (job of record.jobs; track job.id) {
+                    @if (job.jobTitle !== activeTimecard()!.jobTitle) {
+                      <button
+                        class="job-switch-btn"
+                        [class.selected]="switchJobTitle() === job.jobTitle"
+                        (click)="selectSwitchJob(job.jobTitle)">
+                        <div class="job-switch-info">
+                          <span class="job-switch-title">{{ job.jobTitle }}</span>
+                          <span class="job-switch-rate">${{ (job.hourlyRate / 100).toFixed(2) }}/hr</span>
+                        </div>
+                        @if (job.isTipEligible) {
+                          <span class="job-switch-tip">Tip Eligible</span>
+                        }
+                      </button>
+                    }
+                  }
+                }
+              </div>
+
+              <div class="job-switch-actions">
+                <button class="btn-cancel" (click)="cancelJobSwitch()">Cancel</button>
+                <button
+                  class="btn-confirm-switch"
+                  [disabled]="!switchJobTitle() || isClockAction()"
+                  (click)="confirmSwitchJob()">
+                  @if (isClockAction()) { Switching... } @else { Switch Job }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+  }
+</div>

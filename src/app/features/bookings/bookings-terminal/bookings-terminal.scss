@@ -1,0 +1,17 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.bookings-terminal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bookings-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

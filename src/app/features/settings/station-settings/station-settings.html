@@ -1,0 +1,242 @@
+<div class="station-settings">
+  <p class="text-muted small mb-3">
+    Create stations for your kitchen (Grill, Fry, Cold, etc.) and assign menu categories to each.
+    Each KDS tablet selects its station to see only relevant items.
+  </p>
+
+  @if (error()) {
+    <div class="alert alert-danger py-2 small mb-3">{{ error() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="text-center py-4">
+      <span class="spinner-border spinner-border-sm me-2"></span>
+      Loading stations...
+    </div>
+  } @else {
+    <!-- Station List -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="small text-muted">{{ stations().length }} station(s)</span>
+      <button type="button" class="btn btn-primary btn-sm" (click)="openAddModal()">
+        + Add Station
+      </button>
+    </div>
+
+    @if (stations().length === 0) {
+      <div class="empty-state text-center py-4">
+        <p class="text-muted mb-0">No stations configured. Add a station to start routing orders.</p>
+      </div>
+    } @else {
+      <div class="station-grid mb-4">
+        @for (station of stations(); track station.id) {
+          <div class="station-card" [class.inactive]="!station.isActive">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="color-dot" [style.background-color]="station.color ?? '#0d6efd'"></span>
+                <strong>{{ station.name }}</strong>
+                @if (station.isExpo) {
+                  <span class="badge bg-expo-tag">Expo</span>
+                }
+                @if (!station.isActive) {
+                  <span class="badge bg-secondary">Inactive</span>
+                }
+              </div>
+              <span class="small text-muted">Order: {{ station.displayOrder }}</span>
+            </div>
+
+            <div class="small text-muted mb-2">
+              @if (station.categoryIds.length > 0) {
+                {{ station.categoryIds.length }} categories assigned
+              } @else {
+                No categories assigned
+              }
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-light btn-sm" (click)="openEditModal(station)">
+                Edit
+              </button>
+              <button type="button" class="btn btn-outline-info btn-sm" (click)="openCategoryAssignment(station)">
+                Categories
+              </button>
+              @if (deleteConfirmId() === station.id) {
+                <button type="button" class="btn btn-danger btn-sm" (click)="deleteStation(station.id)">
+                  Confirm Delete
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelDelete()">
+                  Cancel
+                </button>
+              } @else {
+                <button type="button" class="btn btn-outline-danger btn-sm" (click)="confirmDelete(station.id)">
+                  Delete
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Unassigned Categories Warning -->
+    @if (unassignedCategories().length > 0) {
+      <div class="alert alert-warning py-2 small mb-3">
+        <strong>{{ unassignedCategories().length }} unassigned categories</strong> will appear on all stations:
+        {{ unassignedCategoryNames() }}
+      </div>
+    }
+  }
+
+  <!-- Add/Edit Modal -->
+  @if (showModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()"></button>
+    <div class="modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title mb-0">{{ isEditing() ? 'Edit Station' : 'Add Station' }}</h6>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="stationName">Station Name</label>
+            <input
+              id="stationName"
+              type="text"
+              class="form-control"
+              [value]="formName()"
+              placeholder="e.g. Grill, Fry, Cold"
+              (input)="setFormName($event)"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="stationColor">Color</label>
+            <div class="d-flex align-items-center gap-2">
+              <input
+                id="stationColor"
+                type="color"
+                class="form-control form-control-color"
+                [value]="formColor()"
+                (input)="setFormColor($event)"
+              />
+              <span class="small text-muted">{{ formColor() }}</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="stationOrder">Display Order</label>
+            <input
+              id="stationOrder"
+              type="number"
+              class="form-control"
+              min="0"
+              [value]="formDisplayOrder()"
+              (input)="setFormDisplayOrder($event)"
+            />
+          </div>
+
+          <div class="form-check mb-3">
+            <input
+              id="stationIsExpo"
+              class="form-check-input"
+              type="checkbox"
+              [checked]="formIsExpo()"
+              (change)="setFormIsExpo($event)"
+            />
+            <label class="form-check-label" for="stationIsExpo">
+              Expo Station
+              <span class="d-block text-muted small">Expo stations handle final order verification before handoff.</span>
+            </label>
+          </div>
+
+          <div class="form-check mb-3">
+            <input
+              id="stationIsActive"
+              class="form-check-input"
+              type="checkbox"
+              [checked]="formIsActive()"
+              (change)="setFormIsActive($event)"
+            />
+            <label class="form-check-label" for="stationIsActive">
+              Active
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light btn-sm" (click)="closeModal()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="saving() || !formName()"
+            (click)="saveStation()"
+          >
+            @if (saving()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            {{ isEditing() ? 'Update' : 'Create' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Category Assignment Panel -->
+  @if (assigningStationId()) {
+    <button type="button" class="modal-backdrop" (click)="closeCategoryAssignment()" (keydown.enter)="closeCategoryAssignment()"></button>
+    <div class="modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title mb-0">Assign Categories</h6>
+          <button type="button" class="btn-close" (click)="closeCategoryAssignment()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-3">
+            Each category can only be assigned to one station. Categories assigned to another station are shown with their current assignment.
+          </p>
+          @if (categories().length === 0) {
+            <p class="text-muted small">No menu categories found. Create categories in Menu Management first.</p>
+          } @else {
+            <div class="category-grid">
+              @for (cat of categories(); track cat.id) {
+                <div
+                  class="category-check"
+                  [class.assigned-elsewhere]="isCategoryAssignedElsewhere(cat.id)"
+                >
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'cat-' + cat.id"
+                      [checked]="isCategoryAssigned(cat.id)"
+                      [disabled]="isCategoryAssignedElsewhere(cat.id)"
+                      (change)="toggleCategoryAssignment(cat.id)"
+                    />
+                    <label class="form-check-label" [for]="'cat-' + cat.id">
+                      {{ cat.name }}
+                    </label>
+                  </div>
+                  @if (isCategoryAssignedElsewhere(cat.id)) {
+                    <span class="small assigned-to-label">Assigned to {{ getCategoryStationName(cat.id) }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light btn-sm" (click)="closeCategoryAssignment()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="assigningSaving()"
+            (click)="saveCategoryAssignment()"
+          >
+            @if (assigningSaving()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Save Assignment
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

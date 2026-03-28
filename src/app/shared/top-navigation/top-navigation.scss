@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+.top-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 12px 20px 0;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff;
+}
+
+.top-tab {
+  padding: 10px 16px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b6b6b;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    color: #1a1a1a;
+  }
+
+  &.active {
+    color: #006aff;
+    border-bottom-color: #006aff;
+    font-weight: 600;
+  }
+}

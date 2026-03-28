@@ -1,0 +1,68 @@
+<header class="mkt-header" [class.mkt-header--scrolled]="scrolled()">
+  <div class="container">
+    <div class="mkt-header__inner">
+      <!-- Logo -->
+      <a class="mkt-header__brand" routerLink="/">
+        <i class="bi bi-stack" aria-hidden="true"></i>
+        <span>OrderStack</span>
+      </a>
+
+      <!-- Desktop nav -->
+      <nav class="mkt-header__nav d-none d-lg-flex" aria-label="Main navigation">
+        @for (link of navLinks; track link.route) {
+          <a class="mkt-header__link"
+             [routerLink]="link.route"
+             routerLinkActive="mkt-header__link--active"
+             [routerLinkActiveOptions]="{ exact: link.route === '/' }">
+            {{ link.label }}
+          </a>
+        }
+      </nav>
+
+      <!-- Desktop CTAs -->
+      <div class="mkt-header__actions d-none d-lg-flex">
+        <a class="btn btn-os-secondary btn-sm" [routerLink]="login.route">
+          {{ login.label }}
+        </a>
+        <a class="btn btn-os-primary btn-sm" [routerLink]="cta.route">
+          {{ cta.label }}
+        </a>
+      </div>
+
+      <!-- Mobile menu toggle -->
+      <button
+        class="mkt-header__burger d-lg-none"
+        (click)="mobileOpen.set(!mobileOpen())"
+        [attr.aria-expanded]="mobileOpen()"
+        aria-label="Toggle menu">
+        <i [class]="mobileOpen() ? 'bi bi-x-lg' : 'bi bi-list'" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile dropdown -->
+  @if (mobileOpen()) {
+    <div class="mkt-header__mobile">
+      <nav aria-label="Mobile navigation">
+        @for (link of navLinks; track link.route) {
+          <a class="mkt-header__mobile-link"
+             [routerLink]="link.route"
+             (click)="mobileOpen.set(false)">
+            {{ link.label }}
+          </a>
+        }
+        <hr>
+        <a class="btn btn-os-secondary w-100 mb-2"
+           [routerLink]="login.route"
+           (click)="mobileOpen.set(false)">
+          {{ login.label }}
+        </a>
+        <a class="btn btn-os-primary w-100"
+           [routerLink]="cta.route"
+           (click)="mobileOpen.set(false)">
+          {{ cta.label }}
+        </a>
+      </nav>
+    </div>
+  }
+</header>

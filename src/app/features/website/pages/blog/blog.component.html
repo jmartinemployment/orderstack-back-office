@@ -1,0 +1,86 @@
+<!-- Hero -->
+<os-mkt-section background="hero">
+  <os-mkt-hero
+    [title]="hero.title"
+    [subtitle]="hero.subtitle"
+    alignment="center" />
+</os-mkt-section>
+
+<!-- Featured post -->
+@if (featuredPost(); as post) {
+  <os-mkt-section>
+    <a [routerLink]="['/blog', post.slug]" class="mkt-featured-card">
+      <div class="mkt-featured-card__image">
+        <div class="mkt-featured-card__placeholder">
+          <i class="bi bi-newspaper" aria-hidden="true"></i>
+        </div>
+        <span class="mkt-featured-card__badge">Featured</span>
+      </div>
+      <div class="mkt-featured-card__body">
+        <span class="mkt-blog-category">{{ post.category }}</span>
+        <h2 class="mkt-featured-card__title">{{ post.title }}</h2>
+        <p class="mkt-featured-card__desc">{{ post.description }}</p>
+        <div class="mkt-blog-meta">
+          <span>{{ post.date | date:'mediumDate' }}</span>
+          <span class="mkt-blog-meta__dot"></span>
+          <span>{{ post.readTime }} min read</span>
+        </div>
+      </div>
+    </a>
+  </os-mkt-section>
+}
+
+<!-- Category pills -->
+<os-mkt-section background="alt">
+  <div class="mkt-category-pills">
+    @for (cat of categories; track cat.id) {
+      <button
+        class="mkt-category-pill"
+        [class.mkt-category-pill--active]="activeCategory() === cat.id"
+        (click)="onCategoryChange(cat.id)">
+        <i [class]="'bi ' + cat.icon" aria-hidden="true"></i>
+        {{ cat.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Blog post grid -->
+  <div class="mkt-blog-grid">
+    @for (post of filteredPosts(); track post.slug) {
+      <a [routerLink]="['/blog', post.slug]" class="mkt-blog-card">
+        <div class="mkt-blog-card__image">
+          <div class="mkt-blog-card__placeholder">
+            <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+          </div>
+        </div>
+        <div class="mkt-blog-card__body">
+          <span class="mkt-blog-category">{{ post.category }}</span>
+          <h3 class="mkt-blog-card__title">{{ post.title }}</h3>
+          <p class="mkt-blog-card__desc">{{ post.description }}</p>
+          <div class="mkt-blog-meta">
+            <span>{{ post.date | date:'mediumDate' }}</span>
+            <span class="mkt-blog-meta__dot"></span>
+            <span>{{ post.readTime }} min read</span>
+          </div>
+          <span class="mkt-blog-card__link">Read More <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+        </div>
+      </a>
+    } @empty {
+      <div class="mkt-blog-empty">
+        <i class="bi bi-journal-x" aria-hidden="true"></i>
+        <p>No posts in this category yet.</p>
+      </div>
+    }
+  </div>
+</os-mkt-section>
+
+<!-- Email capture -->
+<os-mkt-section background="alt">
+  <os-email-capture
+    headline="Get Restaurant Tech Insights"
+    subtext="Join operators who get weekly tips on cutting costs, improving ops, and growing without third-party fees."
+    source="blog_page" />
+</os-mkt-section>
+
+<!-- Final CTA -->
+<os-final-cta />

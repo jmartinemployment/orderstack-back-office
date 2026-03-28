@@ -1,9 +1,14 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@models/*": ["src/app/models/*"],
+      "@services/*": ["src/app/services/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@environments/*": ["src/environments/*"]
+    },
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,

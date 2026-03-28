@@ -1,0 +1,614 @@
+<div class="order-history px-2">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Order History</h2>
+    <button type="button" class="btn btn-sm btn-outline-light" (click)="exportOrders()">
+      <i class="bi bi-download me-1"></i> Export CSV
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar mb-3">
+    <div class="input-group">
+      <span class="input-group-text">
+        <i class="bi bi-search"></i>
+      </span>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Search by order #, customer, phone, item, or server..."
+        aria-label="Search orders"
+        [value]="searchQuery()"
+        (input)="setSearchQuery($any($event.target).value)"
+      />
+      @if (searchQuery()) {
+        <button class="btn btn-outline-light" type="button" (click)="setSearchQuery('')">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      }
+      <button
+        class="btn btn-outline-light"
+        type="button"
+        (click)="toggleAdvancedFilters()"
+      >
+        <i class="bi bi-funnel me-1"></i>
+        Filters
+        @if (activeFilterCount() > 0) {
+          <span class="badge bg-primary ms-1">{{ activeFilterCount() }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Filter -->
+  <div class="status-filter mb-3">
+    <div class="d-flex flex-wrap gap-2">
+      @for (option of statusOptions; track option.value) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="statusFilter() === option.value"
+          [class.btn-outline-light]="statusFilter() !== option.value"
+          (click)="setStatusFilter(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Advanced Filters Panel -->
+  @if (showAdvancedFilters()) {
+    <div class="advanced-filters mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">Advanced Filters</h6>
+        @if (activeFilterCount() > 0) {
+          <button type="button" class="btn btn-sm btn-link text-muted" (click)="clearAdvancedFilters()">
+            Clear All
+          </button>
+        }
+      </div>
+
+      <!-- Channel Filter -->
+      <div class="filter-group mb-3">
+        <p class="filter-label">Channel</p>
+        <div class="d-flex flex-wrap gap-2">
+          @for (option of channelOptions; track option.value) {
+            <button
+              type="button"
+              class="btn btn-sm channel-btn"
+              [class.active]="channelFilter() === option.value"
+              (click)="setChannelFilter(option.value)"
+            >
+              <i class="bi me-1" [class]="option.icon"></i>
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Payment Status -->
+      <div class="filter-group mb-3">
+        <p class="filter-label">Payment</p>
+        <div class="d-flex flex-wrap gap-2">
+          @for (option of paymentOptions; track option.value) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="paymentFilter() === option.value"
+              [class.btn-outline-light]="paymentFilter() !== option.value"
+              (click)="setPaymentFilter(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Date Range & Employee -->
+      <div class="row g-2">
+        <div class="col-sm-4">
+          <label class="filter-label" for="filter-date-from">From</label>
+          <input
+            id="filter-date-from"
+            type="date"
+            class="form-control form-control-sm"
+            [value]="dateFrom() ?? ''"
+            (input)="setDateFrom($any($event.target).value)"
+          />
+        </div>
+        <div class="col-sm-4">
+          <label class="filter-label" for="filter-date-to">To</label>
+          <input
+            id="filter-date-to"
+            type="date"
+            class="form-control form-control-sm"
+            [value]="dateTo() ?? ''"
+            (input)="setDateTo($any($event.target).value)"
+          />
+        </div>
+        <div class="col-sm-4">
+          <label class="filter-label" for="filter-employee">Employee</label>
+          <input
+            id="filter-employee"
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Server name..."
+            [value]="employeeFilter()"
+            (input)="setEmployeeFilter($any($event.target).value)"
+          />
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      [retryable]="true"
+      (retry)="retry()"
+    />
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading orders..." />
+    </div>
+  } @else {
+    <div class="orders-list">
+      @for (order of filteredOrders(); track order.guid) {
+        <button type="button" class="order-card card mb-2" (click)="selectOrder(order)" (keydown.enter)="selectOrder(order)">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="mb-1">Order #{{ getOrderNumber(order) }}</h5>
+                <small class="text-muted">
+                  {{ order.timestamps.createdDate | date:'short' }}
+                  @if (order.server.name) {
+                    <span class="mx-1">&middot;</span> {{ order.server.name }}
+                  }
+                </small>
+              </div>
+              <os-status-badge [status]="order.guestOrderStatus" />
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="order-meta small text-muted d-flex align-items-center gap-2">
+                <span class="badge channel-badge">
+                  <i class="bi me-1" [class]="getChannelIcon(order)"></i>{{ getChannelLabel(order) }}
+                </span>
+                <span>{{ order.diningOption.name }}</span>
+                @if (isMarketplace(order)) {
+                  <span class="badge marketplace-source">{{ marketplaceProviderLabel(order) }}</span>
+                  <span class="badge marketplace-sync" [class]="marketplaceSyncClass(order)">{{ marketplaceSyncLabel(order) }}</span>
+                }
+                <span class="badge" [class]="getPaymentBadgeClass(order.checks[0]?.paymentStatus ?? 'OPEN')">{{ getPaymentLabel(order.checks[0]?.paymentStatus ?? 'OPEN') }}</span>
+                @if (order.loyaltyPointsEarned && order.loyaltyPointsEarned > 0) {
+                  <span class="badge loyalty-earned">+{{ order.loyaltyPointsEarned }} pts</span>
+                }
+                @if (order.loyaltyPointsRedeemed && order.loyaltyPointsRedeemed > 0) {
+                  <span class="badge loyalty-redeemed">-{{ order.loyaltyPointsRedeemed }} pts</span>
+                }
+                @if (order.customer?.firstName || order.customer?.lastName) {
+                  <span>{{ order.customer?.firstName }} {{ order.customer?.lastName }}</span>
+                }
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                @if (getInsight(order.guid); as insight) {
+                  <span class="profit-badge badge" [class.bg-success]="insight.profitMargin >= 60" [class.bg-warning]="insight.profitMargin >= 40 && insight.profitMargin < 60" [class.bg-danger]="insight.profitMargin < 40">
+                    {{ insight.profitMargin }}%
+                  </span>
+                }
+                <span class="order-total fw-bold">{{ order.totalAmount | currency }}</span>
+              </div>
+            </div>
+          </div>
+        </button>
+      } @empty {
+        <div class="empty-state text-center p-5">
+          <p class="text-muted mb-0">
+            @if (searchQuery() || activeFilterCount() > 0) {
+              No orders matching your filters
+            } @else if (statusFilter() !== 'all') {
+              No orders with this status
+            } @else {
+              No orders yet
+            }
+          </p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Order Detail Modal -->
+  @if (selectedOrder()) {
+    <div class="modal-overlay" (click)="closeOrderDetail()" (keydown.enter)="closeOrderDetail()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Order #{{ getOrderNumber(selectedOrder()!) }}</h4>
+          <button type="button" class="btn-close" (click)="closeOrderDetail()"></button>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <os-status-badge [status]="selectedOrder()!.guestOrderStatus" />
+              <span class="badge channel-badge">
+                <i class="bi me-1" [class]="getChannelIcon(selectedOrder()!)"></i>{{ getChannelLabel(selectedOrder()!) }}
+              </span>
+            </div>
+            <span class="text-muted">{{ selectedOrder()!.timestamps.createdDate | date:'medium' }}</span>
+          </div>
+
+          <!-- Customer Info -->
+          <div class="section mb-3">
+            <h6>Order Details</h6>
+            <p class="mb-1"><strong>Type:</strong> {{ selectedOrder()!.diningOption.name }}</p>
+            @if (selectedOrder()!.server.name) {
+              <p class="mb-1"><strong>Server:</strong> {{ selectedOrder()!.server.name }}</p>
+            }
+            @if (isMarketplace(selectedOrder()!)) {
+              <p class="mb-1"><strong>Source:</strong> {{ marketplaceProviderLabel(selectedOrder()!) }}</p>
+              @if (selectedOrder()!.marketplace?.externalOrderId) {
+                <p class="mb-1"><strong>External Order:</strong> {{ selectedOrder()!.marketplace?.externalOrderId }}</p>
+              }
+              <p class="mb-1">
+                <strong>Sync:</strong>
+                <span class="badge marketplace-sync ms-1" [class]="marketplaceSyncClass(selectedOrder()!)">
+                  {{ marketplaceSyncLabel(selectedOrder()!) }}
+                </span>
+              </p>
+              @if (selectedOrder()!.marketplace?.lastPushAt) {
+                <p class="mb-1 text-muted small">
+                  Last sync: {{ selectedOrder()!.marketplace!.lastPushAt | date:'short' }}
+                </p>
+              }
+              @if (selectedOrder()!.marketplace?.lastPushError) {
+                <p class="mb-1 marketplace-sync-error">{{ selectedOrder()!.marketplace?.lastPushError }}</p>
+              }
+              @if (marketplaceSyncNotice()) {
+                <p class="mb-1 small marketplace-sync-notice">{{ marketplaceSyncNotice() }}</p>
+              }
+              @if (marketplaceSyncState(selectedOrder()!) === 'FAILED' && canManageMarketplaceSync()) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-warning mt-1"
+                  [disabled]="isRetryingMarketplaceSync()"
+                  (click)="retryMarketplaceSync(selectedOrder()!)"
+                >
+                  @if (isRetryingMarketplaceSync()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                  }
+                  Retry Marketplace Sync
+                </button>
+              }
+            }
+            @if (selectedOrder()!.customer?.firstName || selectedOrder()!.customer?.lastName) {
+              <p class="mb-1"><strong>Customer:</strong> {{ selectedOrder()!.customer?.firstName }} {{ selectedOrder()!.customer?.lastName }}</p>
+            }
+            @if (selectedOrder()!.customer?.phone) {
+              <p class="mb-1"><strong>Phone:</strong> {{ selectedOrder()!.customer?.phone }}</p>
+            }
+            @if (selectedOrder()!.table) {
+              <p class="mb-1"><strong>Table:</strong> {{ selectedOrder()!.table!.name }}</p>
+            }
+          </div>
+
+          <!-- Dining Details -->
+          @if (selectedOrder()!.deliveryInfo || selectedOrder()!.curbsideInfo || selectedOrder()!.cateringInfo) {
+            <div class="section dining-details mb-3">
+              <h6>Dining Details</h6>
+              @if (selectedOrder()!.deliveryInfo; as di) {
+                <p class="mb-1"><strong>Delivery:</strong> {{ di.address }}@if (di.address2) {, {{ di.address2 }}}@if (di.city) {, {{ di.city }}, {{ di.state }} {{ di.zip }}}</p>
+                @if (di.deliveryNotes) {
+                  <p class="mb-1 fst-italic text-warning small">{{ di.deliveryNotes }}</p>
+                }
+                <p class="mb-1"><strong>Status:</strong>
+                  <span class="badge" [class.delivery-preparing]="di.deliveryState === 'PREPARING'"
+                    [class.delivery-out]="di.deliveryState === 'OUT_FOR_DELIVERY'"
+                    [class.delivery-done]="di.deliveryState === 'DELIVERED'">
+                    {{ getDeliveryStateLabel(di.deliveryState) }}
+                  </span>
+                </p>
+              }
+              @if (selectedOrder()!.curbsideInfo; as ci) {
+                <p class="mb-1"><strong>Vehicle:</strong> {{ ci.vehicleDescription }}</p>
+                @if (ci.arrivalNotified) {
+                  <span class="badge bg-success">Customer Arrived</span>
+                }
+              }
+              @if (selectedOrder()!.cateringInfo; as cat) {
+                <p class="mb-1"><strong>Event:</strong> {{ cat.eventType ?? 'Event' }} &mdash; {{ cat.headcount }} {{ cat.headcount === 1 ? 'guest' : 'guests' }}</p>
+                @if (cat.eventDate) {
+                  <p class="mb-1"><strong>Date:</strong> {{ cat.eventDate | date:'mediumDate' }}@if (cat.eventTime) { at {{ cat.eventTime }}}</p>
+                }
+                @if (cat.setupRequired) {
+                  <span class="badge bg-info me-1">Setup Required</span>
+                }
+                @if (cat.depositPaid) {
+                  <span class="badge bg-success">Deposit Paid</span>
+                }
+              }
+            </div>
+          }
+
+          <!-- Order Items -->
+          <div class="section mb-3">
+            <h6>Items</h6>
+            @for (sel of selectedOrder()!.checks[0]?.selections ?? []; track sel.guid) {
+              <div class="order-item d-flex justify-content-between mb-2">
+                <div>
+                  <span class="fw-bold">{{ sel.quantity }}x</span>
+                  {{ sel.menuItemName }}
+                  @if (sel.isRemake) {
+                    <span class="badge bg-warning text-dark ms-1">Remake</span>
+                  }
+                  @if (sel.fractionNumerator && sel.fractionDenominator) {
+                    <span class="badge bg-info ms-1">{{ sel.fractionNumerator }}/{{ sel.fractionDenominator }}</span>
+                  }
+                  @if (sel.modifiers && sel.modifiers.length > 0) {
+                    <div class="modifiers small text-muted ps-3">
+                      @for (mod of sel.modifiers; track mod.guid) {
+                        <span class="d-block">
+                          + {{ mod.name }}
+                          @if (mod.isTextModifier && mod.textValue) {
+                            : {{ mod.textValue }}
+                          }
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+                <span>{{ sel.totalPrice | currency }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Special Instructions -->
+          @if (selectedOrder()!.specialInstructions) {
+            <div class="section mb-3">
+              <h6>Special Instructions</h6>
+              <p class="mb-0">{{ selectedOrder()!.specialInstructions }}</p>
+            </div>
+          }
+
+          <!-- Profit Insight -->
+          <div class="section mb-3">
+            @if (getInsight(selectedOrder()!.guid); as insight) {
+              <h6>Profit Insight</h6>
+              <div class="d-flex flex-wrap gap-3 mb-2">
+                <div>
+                  <span class="text-muted small">Cost</span>
+                  <div class="fw-bold">{{ insight.totalCost | currency }}</div>
+                </div>
+                <div>
+                  <span class="text-muted small">Revenue</span>
+                  <div class="fw-bold">{{ insight.totalRevenue | currency }}</div>
+                </div>
+                <div>
+                  <span class="text-muted small">Margin</span>
+                  <div class="fw-bold" [class.text-success]="insight.profitMargin >= 60" [class.text-warning]="insight.profitMargin >= 40 && insight.profitMargin < 60" [class.text-danger]="insight.profitMargin < 40">
+                    {{ insight.profitMargin }}%
+                  </div>
+                </div>
+              </div>
+              @if (insight.starItem) {
+                <div class="small mb-1">
+                  <span class="text-warning">&#9733;</span> Star Item: <strong>{{ insight.starItem }}</strong>
+                </div>
+              }
+              <p class="small text-muted mb-1">{{ insight.insightText }}</p>
+              <p class="small mb-0" style="color: var(--os-primary); font-style: italic;">{{ insight.quickTip }}</p>
+            } @else {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-info"
+                (click)="fetchProfitInsight(selectedOrder()!)"
+              >
+                View Profit Insight
+              </button>
+            }
+          </div>
+
+          <!-- Totals -->
+          <div class="section">
+            <hr />
+            <div class="d-flex justify-content-between mb-1">
+              <span>Subtotal</span>
+              <span>{{ selectedOrder()!.subtotal | currency }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1 text-muted small">
+              <span>Tax</span>
+              <span>{{ selectedOrder()!.taxAmount | currency }}</span>
+            </div>
+            @if (selectedOrder()!.tipAmount > 0) {
+              <div class="d-flex justify-content-between mb-1 text-muted small">
+                <span>Tip</span>
+                <span>{{ selectedOrder()!.tipAmount | currency }}</span>
+              </div>
+            }
+            @if (selectedOrder()!.loyaltyPointsEarned && selectedOrder()!.loyaltyPointsEarned! > 0) {
+              <div class="d-flex justify-content-between mb-1 small" style="color: #28a745;">
+                <span>Points Earned</span>
+                <span>+{{ selectedOrder()!.loyaltyPointsEarned }}</span>
+              </div>
+            }
+            @if (selectedOrder()!.loyaltyPointsRedeemed && selectedOrder()!.loyaltyPointsRedeemed! > 0) {
+              <div class="d-flex justify-content-between mb-1 small" style="color: #ffc107;">
+                <span>Points Redeemed</span>
+                <span>-{{ selectedOrder()!.loyaltyPointsRedeemed }}</span>
+              </div>
+            }
+            <hr />
+            <div class="d-flex justify-content-between fw-bold">
+              <span>Total</span>
+              <span class="total">{{ selectedOrder()!.totalAmount | currency }}</span>
+            </div>
+          </div>
+
+          <!-- Payment & Refund -->
+          <div class="section mt-3">
+            <h6>Payment</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge" [class]="getPaymentBadgeClass(selectedOrder()!.checks[0]?.paymentStatus ?? 'OPEN')">
+                {{ getPaymentLabel(selectedOrder()!.checks[0]?.paymentStatus ?? 'OPEN') }}
+              </span>
+              @if (selectedOrder()!.checks[0]?.payments?.[0]?.paymentMethod) {
+                <span class="text-muted small">via {{ selectedOrder()!.checks[0]!.payments[0].paymentMethod }}</span>
+              }
+            </div>
+            @if (refundSuccess()) {
+              <div class="alert alert-success small mb-2">
+                Refund processed successfully.
+                <button type="button" class="btn-close btn-sm float-end" (click)="dismissRefundStatus()"></button>
+              </div>
+            }
+            @if (refundError()) {
+              <div class="alert alert-danger small mb-2">
+                {{ refundError() }}
+                <button type="button" class="btn-close btn-sm float-end" (click)="dismissRefundStatus()"></button>
+              </div>
+            }
+            @if (selectedOrder()!.checks[0]?.paymentStatus === 'PAID') {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                [disabled]="isRefunding()"
+                (click)="refundOrder(selectedOrder()!)"
+              >
+                @if (isRefunding()) {
+                  <span class="spinner-border spinner-border-sm me-1"></span>
+                  Processing...
+                } @else {
+                  Refund {{ selectedOrder()!.totalAmount | currency }}
+                }
+              </button>
+            }
+          </div>
+
+          <!-- Order Notes -->
+          <div class="section mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">Notes</h6>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                (click)="toggleNoteForm()"
+              >
+                @if (showNoteForm()) {
+                  Cancel
+                } @else {
+                  <i class="bi bi-plus-lg me-1"></i>Add Note
+                }
+              </button>
+            </div>
+            @if (showNoteForm()) {
+              <div class="note-form mb-3">
+                <div class="d-flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-secondary]="noteType() === 'internal'"
+                    [class.btn-outline-secondary]="noteType() !== 'internal'"
+                    (click)="setNoteType('internal')"
+                  >Internal</button>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-warning]="noteType() === 'kitchen'"
+                    [class.btn-outline-warning]="noteType() !== 'kitchen'"
+                    (click)="setNoteType('kitchen')"
+                  >Kitchen</button>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-info]="noteType() === 'customer'"
+                    [class.btn-outline-info]="noteType() !== 'customer'"
+                    (click)="setNoteType('customer')"
+                  >Customer</button>
+                </div>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    placeholder="Add a note..."
+                    aria-label="Add a note"
+                    [value]="noteText()"
+                    (input)="setNoteText($any($event.target).value)"
+                    (keyup.enter)="submitNote()"
+                  />
+                  <button
+                    class="btn btn-sm btn-primary"
+                    type="button"
+                    [disabled]="isAddingNote() || !noteText().trim()"
+                    (click)="submitNote()"
+                  >
+                    @if (isAddingNote()) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      Send
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+            @if (selectedOrder()!.notes && selectedOrder()!.notes!.length > 0) {
+              @for (note of selectedOrder()!.notes!; track note.id) {
+                <div class="order-note mb-2" [class]="'note-' + note.noteType">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="badge" [class.bg-secondary]="note.noteType === 'internal'" [class.bg-warning]="note.noteType === 'kitchen'" [class.bg-info]="note.noteType === 'customer'">{{ note.noteType }}</span>
+                    <small class="text-muted">{{ note.createdBy }} &middot; {{ note.createdAt | date:'short' }}</small>
+                  </div>
+                  <p class="mb-0 small">{{ note.text }}</p>
+                </div>
+              }
+            } @else if (!showNoteForm()) {
+              <p class="text-muted small mb-0">No notes</p>
+            }
+          </div>
+
+          <!-- Activity Log -->
+          <div class="section mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">Activity Log</h6>
+              @if (!activityLoaded()) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  [disabled]="activityLoading()"
+                  (click)="loadActivity(selectedOrder()!)"
+                >
+                  @if (activityLoading()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                  }
+                  Load Activity
+                </button>
+              }
+            </div>
+            @if (activityLoaded()) {
+              <div class="activity-timeline">
+                @for (event of getActivity(); track event.id) {
+                  <div class="activity-event">
+                    <div class="activity-icon">
+                      <i class="bi" [class]="getActivityIcon(event.eventType)"></i>
+                    </div>
+                    <div class="activity-content">
+                      <div class="activity-description">{{ event.description }}</div>
+                      <div class="activity-meta">
+                        @if (event.performedBy) {
+                          <span>{{ event.performedBy }}</span>
+                          <span class="mx-1">&middot;</span>
+                        }
+                        <span>{{ event.createdAt | date:'short' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="text-muted small mb-0">No activity recorded</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

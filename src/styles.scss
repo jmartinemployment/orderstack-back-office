@@ -1,1 +1,435 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'bootstrap/scss/bootstrap';
+@use "bootstrap-icons/font/bootstrap-icons.scss";
+// Typography
+@font-face {
+  font-family: "Roboto-Italic";
+  src: url("/public/assets/fonts/Roboto/Roboto-Italic.woff2") format("woff2"),
+       url("/public/assets/fonts/Roboto/Roboto-Italic.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("/src/assets/fonts/Roboto/Roboto-Regular.woff2") format("woff2"),
+       url("/src/assets/fonts/Roboto/Roboto-Regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+@font-face {
+  font-family: "Open-Sans";
+  src: url("src/assets/fonts/Open_Sans/OpenSans-Regular.woff2") format("woff2"),
+       url("src/assets/fonts/Open_Sans/OpenSans-Regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+@font-face {
+  font-family: "Open-Sans-Italic";
+  src: url("src/assets/fonts/Open_Sans/OpenSans-Italic.woff2") format("woff2"),
+       url("src/assets/fonts/Open_Sans/OpenSans-Italic.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+@font-face {
+  font-family: "Quicksand";
+  src: url("src/assets/fonts/Quicksand/Quicksand-Light.woff2") format("woff2"),
+       url("src/assets/fonts/Quicksand/Quicksand-Light.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+@font-face {
+  font-family: "Inter";
+  src: url("src/assets/fonts/Inter/Inter-Regular.woff2") format("woff2"),
+       url("src/assets/fonts//Inter/Inter-Regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+@font-face {
+  font-family: "Inter-Italic";
+  src: url("src/assets/fonts/Inter/Inter-Italic.woff2") format("woff2"),
+       url("src/assets/fonts//Inter/Inter-Italic.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; // Recommended for performance
+}
+$font-family-sans-serif: 'Open-Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-family-base: 'Open-Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+:root {
+  --os-primary: #006aff;
+  --os-primary-rgb: 0, 106, 255;
+  --os-primary-hover: #0055cc;
+  --os-primary-light: #eef2ff;
+  --os-success: #00a67e;
+  --os-warning: #f5a623;
+  --os-danger: #e53e3e;
+  --os-info: #0891b2;
+  --os-order-dinein: #e07b00;
+  --os-catering: #7c3aed;
+  --os-marketplace: #0891b2;
+  --os-doordash: #ff3008;
+  --os-text-primary: #1a1a2e;
+  --os-text-secondary: #6b7280;
+  --os-text-muted: #9ca3af;
+  --os-border: #e8e8e8;
+  --os-bg: #f9fafb;
+  --os-bg-card: #ffffff;
+  --os-radius: 8px;
+  --os-radius-lg: 12px;
+  --os-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --os-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --os-shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Bootstrap btn-outline-light is invisible on a light theme (white-on-white).
+// Remap it to use the design system's secondary text and border colors.
+.btn-outline-light {
+  --bs-btn-color: var(--os-text-secondary);
+  --bs-btn-border-color: var(--os-border);
+  --bs-btn-hover-color: var(--os-text-primary);
+  --bs-btn-hover-bg: var(--os-bg);
+  --bs-btn-hover-border-color: var(--os-text-muted);
+  --bs-btn-active-color: var(--os-text-primary);
+  --bs-btn-active-bg: var(--os-bg);
+  --bs-btn-active-border-color: var(--os-text-secondary);
+}
+
+html, body {
+  height: 100%;
+  font-family: $font-family-sans-serif;
+  font-size: 14px;
+  color: var(--os-text-primary);
+  background: var(--os-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Card component
+.os-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  padding: 24px;
+  box-shadow: var(--os-shadow-sm);
+}
+
+// Page header
+.os-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  background: var(--os-bg-card);
+  border-bottom: 1px solid var(--os-border);
+
+  h1 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    margin: 0;
+  }
+}
+
+// Page content wrapper
+.os-page-content {
+  padding: 24px 32px;
+
+  @media (max-width: 767.98px) {
+    padding: 16px;
+  }
+}
+
+// KPI cards
+.os-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.os-kpi-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 16px;
+
+  .kpi-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--os-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+
+  .kpi-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+  }
+
+  .kpi-change {
+    font-size: 0.75rem;
+    margin-top: 4px;
+
+    &.positive { color: var(--os-success); }
+    &.negative { color: var(--os-danger); }
+  }
+}
+
+// Buttons
+.btn-os-primary {
+  background: var(--os-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--os-radius);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--os-primary-hover);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-os-secondary {
+  background: var(--os-bg-card);
+  color: var(--os-text-primary);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 10px 20px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--os-bg);
+  }
+}
+
+// Tables
+.os-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--os-text-secondary);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--os-border);
+    text-align: left;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--os-border);
+    font-size: 0.875rem;
+  }
+
+  tr:hover td {
+    background: var(--os-bg);
+  }
+}
+
+// Tabs
+.os-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--os-border);
+  gap: 0;
+  overflow-x: auto;
+
+  .os-tab {
+    padding: 12px 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--os-text-secondary);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: var(--os-text-primary);
+    }
+
+    &.active {
+      color: var(--os-primary);
+      border-bottom-color: var(--os-primary);
+      font-weight: 600;
+    }
+  }
+}
+
+// Badge
+.os-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.success { background: #dcfce7; color: #166534; }
+  &.warning { background: #fef3c7; color: #92400e; }
+  &.danger { background: #fee2e2; color: #991b1b; }
+  &.info { background: var(--os-primary-light); color: var(--os-primary); }
+  &.neutral { background: #f3f4f6; color: var(--os-text-secondary); }
+}
+
+// Empty state
+.os-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--os-text-secondary);
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 0.875rem;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+// Modal
+.os-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 24px;
+}
+
+.os-modal {
+  background: var(--os-bg-card);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  .os-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--os-border);
+
+    h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--os-text-secondary);
+      cursor: pointer;
+      padding: 4px;
+
+      &:hover { color: var(--os-text-primary); }
+    }
+  }
+
+  .os-modal-body {
+    padding: 24px;
+  }
+
+  .os-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+// Form inputs
+.os-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  font-size: 0.875rem;
+  color: var(--os-text-primary);
+  background: var(--os-bg-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 3px rgba(0, 106, 255, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+}
+
+.os-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--os-text-primary);
+  margin-bottom: 6px;
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

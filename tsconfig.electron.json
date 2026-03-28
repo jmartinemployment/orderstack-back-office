@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/electron",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "types": ["node"],
+    "isolatedModules": false
+  },
+  "include": [
+    "electron/**/*.ts"
+  ],
+  "exclude": [
+    "electron/**/*.spec.ts"
+  ]
+}

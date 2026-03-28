@@ -1,0 +1,53 @@
+.loyalty-settings {
+  color: var(--os-text-primary);
+}
+
+.setting-group {
+  padding: 1rem;
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+}
+
+.tier-label {
+  font-weight: 600;
+
+  &.silver { color: #8a8a8a; }
+  &.gold { color: #c5a000; }
+  &.platinum { color: #7a7a7a; }
+}
+
+.form-control,
+.form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 106, 255, 0.15);
+  }
+}
+
+.form-check-input {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}

@@ -1,0 +1,198 @@
+<div class="auth-layout">
+  <div class="promo-panel">
+    <div class="promo-inner">
+      <div class="promo-brand">
+        <i class="bi bi-stack"></i> OrderStack
+      </div>
+      <h2 class="promo-heading">Welcome back</h2>
+      <div class="promo-features">
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-tv"></i></div>
+          <div>
+            <strong>Point of Sale</strong>
+            <span>Fast checkout with mode-aware POS terminals</span>
+          </div>
+        </div>
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-display"></i></div>
+          <div>
+            <strong>Order Display</strong>
+            <span>Real-time order routing to prep stations</span>
+          </div>
+        </div>
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-globe"></i></div>
+          <div>
+            <strong>Online Ordering</strong>
+            <span>Your own branded ordering page, no commissions</span>
+          </div>
+        </div>
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-graph-up"></i></div>
+          <div>
+            <strong>Analytics</strong>
+            <span>Sales, labor, and operations — all in one place</span>
+          </div>
+        </div>
+      </div>
+      <p class="promo-tagline">Trusted by businesses of all sizes.</p>
+    </div>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-inner">
+      <h1 class="form-heading">
+        Sign in to <span class="highlight">OrderStack</span>
+      </h1>
+      <p class="form-subtitle">Enter your email and password to access your dashboard.</p>
+
+      @if (sessionExpiredMessage()) {
+        <div class="alert alert-warning" role="alert">
+          <i class="bi bi-clock-history"></i>
+          {{ sessionExpiredMessage() }}
+        </div>
+      }
+
+
+      @if (error()) {
+        <os-error-display
+          [message]="error()!"
+          title="Error"
+          (dismissed)="clearError()"
+        />
+      }
+
+      <form [formGroup]="form">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            formControlName="email"
+            placeholder="name@example.com"
+            autocomplete="email"
+            [class.is-invalid]="emailControl?.touched && emailControl?.invalid"
+            (keydown.enter)="onSignIn()"
+          />
+          @if (emailControl?.touched && emailControl?.errors?.['required']) {
+            <div class="invalid-feedback d-block">Email is required</div>
+          }
+          @if (emailControl?.touched && emailControl?.errors?.['email']) {
+            <div class="invalid-feedback d-block">Please enter a valid email</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <div class="password-header">
+            <label for="password">Password</label>
+            <button type="button" class="forgot-link" (click)="openForgotPassword()">Forgot password?</button>
+          </div>
+          <div class="input-group">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control"
+              id="password"
+              formControlName="password"
+              placeholder="Your password"
+              autocomplete="current-password"
+              [class.is-invalid]="passwordControl?.touched && passwordControl?.invalid"
+              (keydown.enter)="onSignIn()"
+            />
+            <button
+              type="button"
+              class="btn-toggle-pw"
+              (click)="togglePasswordVisibility()"
+              aria-label="Toggle password visibility"
+            >
+              <i class="bi" [class.bi-eye]="!showPassword()" [class.bi-eye-slash]="showPassword()"></i>
+            </button>
+          </div>
+          @if (passwordControl?.touched && passwordControl?.errors?.['required']) {
+            <div class="invalid-feedback d-block">Password is required</div>
+          }
+          @if (passwordControl?.touched && passwordControl?.errors?.['minlength']) {
+            <div class="invalid-feedback d-block">Minimum 12 characters</div>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-signin w-100"
+          [disabled]="isLoading()"
+          (click)="onSignIn()"
+        >
+          @if (isLoading()) {
+            <output class="spinner-border spinner-border-sm"></output>
+          }
+          Sign In
+        </button>
+
+        <p class="signup-link">
+          Don't have an account? <a routerLink="/signup">Create one</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+@if (showForgotModal()) {
+  <div class="modal-backdrop" (click)="closeForgotPassword()" (keydown.enter)="closeForgotPassword()" aria-hidden="true"></div>
+  <dialog class="modal-dialog" open aria-labelledby="forgotModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="forgotModalTitle" class="modal-title">Reset your password</h3>
+        <button type="button" class="modal-close" (click)="closeForgotPassword()" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      @if (forgotSuccess()) {
+        <div class="modal-body">
+          <div class="success-message">
+            <i class="bi bi-envelope-check"></i>
+            <p>If an account exists with that email, we've sent a reset link. Check your inbox.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary w-100" (click)="closeForgotPassword()">Back to sign in</button>
+        </div>
+      } @else {
+        <div class="modal-body">
+          <p class="modal-description">Enter your email address and we'll send you a link to reset your password.</p>
+          @if (forgotError()) {
+            <div class="alert alert-danger">{{ forgotError() }}</div>
+          }
+          <div class="form-group mb-0">
+            <label for="forgotEmail">Email address</label>
+            <input
+              type="email"
+              class="form-control modal-input"
+              id="forgotEmail"
+              placeholder="name@example.com"
+              autocomplete="email"
+              [value]="forgotEmail()"
+              (input)="onForgotEmailInput($event)"
+              (keydown.enter)="submitForgotPassword()"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeForgotPassword()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="forgotLoading() || forgotEmail().trim().length === 0"
+            (click)="submitForgotPassword()"
+          >
+            @if (forgotLoading()) {
+              <output class="spinner-border spinner-border-sm"></output>
+            }
+            Send Reset Link
+          </button>
+        </div>
+      }
+    </div>
+  </dialog>
+}

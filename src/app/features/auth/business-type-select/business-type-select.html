@@ -1,0 +1,76 @@
+<div class="bts-page">
+  <header class="bts-header">
+    <div class="bts-brand">
+      <i class="bi bi-stack"></i>
+      <span>OrderStack</span>
+    </div>
+    <button
+      class="bts-next-btn"
+      [disabled]="!canProceed()"
+      (click)="next()"
+    >
+      @if (isSubmitting()) {
+        <span class="bts-spinner"></span>
+      }
+      Continue
+    </button>
+  </header>
+
+  <main class="bts-content">
+    @if (error()) {
+      <div class="bts-error">
+        <i class="bi bi-exclamation-circle"></i>
+        {{ error() }}
+      </div>
+    }
+
+    <h1 class="bts-heading">What kind of business?</h1>
+    <p class="bts-subtitle">We'll personalize OrderStack for your business type.</p>
+
+    <div class="bts-section">
+      <div class="bts-options">
+        <button
+          class="bts-card"
+          [class.bts-card--selected]="selected() === 'catering'"
+          (click)="select('catering')"
+        >
+          <div class="bts-card-icon">
+            <i class="bi bi-calendar-event"></i>
+          </div>
+          <div class="bts-card-body">
+            <h3 class="bts-card-title">Catering</h3>
+            <p class="bts-card-desc">Event-based food service, off-premise catering, and private dining</p>
+          </div>
+          <div class="bts-card-check">
+            @if (selected() === 'catering') {
+              <i class="bi bi-check-circle-fill"></i>
+            } @else {
+              <i class="bi bi-circle"></i>
+            }
+          </div>
+        </button>
+
+        <button
+          class="bts-card"
+          [class.bts-card--selected]="selected() === 'full_service'"
+          (click)="select('full_service')"
+        >
+          <div class="bts-card-icon">
+            <i class="bi bi-shop"></i>
+          </div>
+          <div class="bts-card-body">
+            <h3 class="bts-card-title">Full Restaurant Service</h3>
+            <p class="bts-card-desc">Dine-in, takeout, delivery, and everything in between</p>
+          </div>
+          <div class="bts-card-check">
+            @if (selected() === 'full_service') {
+              <i class="bi bi-check-circle-fill"></i>
+            } @else {
+              <i class="bi bi-circle"></i>
+            }
+          </div>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>

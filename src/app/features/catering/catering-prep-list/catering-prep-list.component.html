@@ -1,0 +1,150 @@
+<!-- Controls — hidden when printing -->
+<div class="toolbar no-print d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex align-items-center gap-2">
+    <input
+      type="date"
+      class="form-control form-control-sm"
+      [ngModel]="selectedDate()"
+      (ngModelChange)="onDateChange($event)"
+      aria-label="Select date"
+      style="width: 180px;"
+    />
+    <button class="btn btn-sm btn-primary" (click)="loadDate()">
+      <i class="bi bi-arrow-clockwise me-1"></i> Load
+    </button>
+  </div>
+  <button class="btn btn-sm btn-outline-primary" (click)="print()">
+    <i class="bi bi-printer me-1"></i> Print
+  </button>
+</div>
+
+@if (isLoading()) {
+  <div class="d-flex justify-content-center align-items-center py-5">
+    <output class="spinner-border text-primary">
+      <span class="visually-hidden">Loading...</span>
+    </output>
+  </div>
+} @else if (prepList(); as pl) {
+  <div class="prep-document">
+    <!-- Header -->
+    <header class="prep-header text-center mb-4">
+      <h1 class="prep-title">PREP LIST</h1>
+      <h2 class="prep-date">{{ pl.date | date:'fullDate' }}</h2>
+      <p class="text-muted mb-0">{{ pl.jobCount }} job(s) &mdash; {{ pl.totalGuests }} total {{ pl.totalGuests === 1 ? 'guest' : 'guests' }}</p>
+    </header>
+
+    <hr />
+
+    @if (pl.jobs.length === 0) {
+      <div class="text-center py-5">
+        <i class="bi bi-calendar-x fs-1 text-muted"></i>
+        <p class="mt-3 text-muted">No jobs scheduled for this date.</p>
+      </div>
+    } @else {
+      @for (job of pl.jobs; track job.id; let idx = $index) {
+        @if (idx > 0) {
+          <hr class="job-separator" />
+        }
+
+        <section class="prep-job mb-4">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h3 class="job-title mb-0">{{ job.title }}</h3>
+              <small class="text-muted">Start: {{ formatTime(job.startTime) }}</small>
+            </div>
+            <span class="badge bg-primary fs-6">{{ job.headcount }} {{ job.headcount === 1 ? 'guest' : 'guests' }}</span>
+          </div>
+
+          <!-- Selected Package -->
+          @if (selectedPackageForJob(job); as pkg) {
+            <div class="package-info mb-3">
+              <h5 class="mb-1">Package: {{ pkg.name }}</h5>
+              <p class="text-muted mb-0">
+                <span class="text-capitalize">{{ pkg.tier }}</span>
+                &mdash;
+                <span class="text-capitalize">{{ pkg.pricingModel.replaceAll('_', ' ') }}</span>
+                @if (pkg.description) {
+                  &mdash; {{ pkg.description }}
+                }
+              </p>
+            </div>
+          }
+
+          <!-- Dietary Requirements -->
+          @if (dietaryEntriesForJob(job).length > 0) {
+            <div class="dietary-info mb-3">
+              <h5>Dietary Requirements</h5>
+              <table class="table table-sm table-bordered mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col">Requirement</th>
+                    <th scope="col" class="text-end">Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of dietaryEntriesForJob(job); track entry.label) {
+                    <tr>
+                      <td>{{ entry.label }}</td>
+                      <td class="text-end">
+                        @if (entry.count > 0) {
+                          {{ entry.count }}
+                        } @else {
+                          <em class="text-muted">See notes</em>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- Delivery Details (off-site) -->
+          @if (job.deliveryDetails; as dd) {
+            <div class="delivery-info mb-3">
+              <h5>Delivery Logistics</h5>
+              <table class="table table-sm mb-0">
+                <tbody>
+                  @if (dd.loadTime) {
+                    <tr>
+                      <th scope="row"><i class="bi bi-box-seam me-1"></i> Load</th>
+                      <td>{{ dd.loadTime }}</td>
+                    </tr>
+                  }
+                  @if (dd.departureTime) {
+                    <tr>
+                      <th scope="row"><i class="bi bi-truck me-1"></i> Depart</th>
+                      <td>{{ dd.departureTime }}</td>
+                    </tr>
+                  }
+                  @if (dd.arrivalTime) {
+                    <tr>
+                      <th scope="row"><i class="bi bi-geo-alt me-1"></i> Arrive</th>
+                      <td>{{ dd.arrivalTime }}</td>
+                    </tr>
+                  }
+                  @if (dd.setupTime) {
+                    <tr>
+                      <th scope="row"><i class="bi bi-tools me-1"></i> Setup</th>
+                      <td>{{ dd.setupTime }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+    }
+
+    <!-- Footer -->
+    <footer class="prep-footer text-center text-muted mt-4 pt-3 border-top">
+      <small>Prep list generated by OrderStack Catering</small>
+    </footer>
+  </div>
+} @else {
+  <div class="text-center py-5">
+    <i class="bi bi-clipboard-x fs-1 text-muted"></i>
+    <p class="mt-3 text-muted">No prep list available. Select a date and click Load.</p>
+  </div>
+}

@@ -1,0 +1,72 @@
+<div class="control-panel px-2">
+  @if (isAuthenticated()) {
+    <h2 class="mb-3">Control Panel</h2>
+    <ul class="nav nav-tabs mb-3">
+      @for (tab of visibleTabs(); track tab.key) {
+        <li class="nav-item">
+          <button
+            class="nav-link"
+            [class.active]="activeTab() === tab.key"
+            (click)="setTab(tab.key)">
+            {{ tab.label }}
+          </button>
+        </li>
+      }
+    </ul>
+    @if (activeTab() === 'general') {
+      <os-general-settings />
+    }
+    @if (activeTab() === 'hardware') {
+      <os-device-hub />
+    }
+    @if (activeTab() === 'ai-settings') {
+      <os-ai-settings />
+    }
+    @if (activeTab() === 'kitchen-orders') {
+      <os-kitchen-orders />
+    }
+    @if (activeTab() === 'bar') {
+      <os-bar-settings />
+    }
+    @if (activeTab() === 'online-pricing') {
+      <os-online-pricing />
+    }
+    @if (activeTab() === 'payments') {
+      <os-payment-settings />
+    }
+    @if (activeTab() === 'tip-management') {
+      <os-tip-management />
+    }
+    @if (activeTab() === 'loyalty') {
+      <os-loyalty-settings />
+    }
+    @if (activeTab() === 'delivery') {
+      <os-delivery-settings />
+    }
+    @if (activeTab() === 'gift-cards') {
+      <os-gift-card-management />
+    }
+    @if (activeTab() === 'suppliers') {
+      <os-supplier-settings />
+    }
+    @if (activeTab() === 'staff') {
+      <os-staff-management />
+    }
+    @if (activeTab() === 'time-clock-config') {
+      <os-break-config />
+    }
+    @if (activeTab() === 'notifications') {
+      <os-notification-settings />
+    }
+    @if (activeTab() === 'account-billing') {
+      <os-account-billing />
+    }
+    @if (activeTab() === 'security') {
+      <os-mfa-settings />
+    }
+  } @else {
+    <div class="text-center text-muted py-5">
+      <p>Please log in and select a restaurant to access settings.</p>
+    </div>
+  }
+</div>

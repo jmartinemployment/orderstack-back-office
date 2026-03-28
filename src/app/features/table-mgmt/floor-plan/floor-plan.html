@@ -1,0 +1,456 @@
+<os-clock-out (clockedOut)="onShiftEnd()" (userSwitched)="onShiftEnd()" />
+
+<os-top-navigation
+  [tabs]="topTabs"
+  [activeTab]="'favorites'"
+  (tabChange)="onTopTabChange($event)" />
+
+<os-floor-plan-navigation
+  [activeView]="activeView()"
+  (viewChange)="setView($event)" />
+
+<div class="floor-plan px-2">
+  <!-- KPI Strip -->
+  <div class="kpi-strip mb-3">
+    <div class="kpi-card">
+      <span class="kpi-value">{{ tables().length }}</span>
+      <span class="kpi-label">Areas</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">{{ totalCapacity() }}</span>
+      <span class="kpi-label">Total Seats</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value text-success">{{ statusCounts().available }}</span>
+      <span class="kpi-label">Available</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value text-danger">{{ statusCounts().occupied }}</span>
+      <span class="kpi-label">Occupied</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value text-warning">{{ statusCounts().reserved }}</span>
+      <span class="kpi-label">Reserved</span>
+    </div>
+  </div>
+
+  <!-- Section Filter -->
+  @if (sections().length > 0) {
+    <div class="section-filter mb-3">
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <button type="button" class="btn btn-sm" [class.btn-primary]="sectionFilter() === 'all'" [class.btn-outline-light]="sectionFilter() !== 'all'" (click)="setSectionFilter('all')">
+          All Sections
+        </button>
+        @for (section of sections(); track section) {
+          <button type="button" class="btn btn-sm" [class.btn-primary]="sectionFilter() === section" [class.btn-outline-light]="sectionFilter() !== section" (click)="setSectionFilter(section)">
+            {{ section }}
+          </button>
+        }
+        <button type="button" class="btn btn-sm btn-primary ms-auto" (click)="openAddForm()">+ Add Area</button>
+      </div>
+    </div>
+  }
+
+  @if (error()) {
+    <os-error-display [message]="error()!" [retryable]="true" (retry)="retry()" />
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading areas..." />
+    </div>
+  } @else {
+    <!-- Floor Plan View -->
+    @if (activeView() === 'floor') {
+      <div class="floor-plan-container">
+        <!-- Legend -->
+        <div class="legend mb-2">
+          <span class="legend-item"><span class="legend-dot status-available"></span> Available</span>
+          <span class="legend-item"><span class="legend-dot status-occupied"></span> Occupied</span>
+          <span class="legend-item"><span class="legend-dot status-reserved"></span> Reserved</span>
+          <span class="legend-item"><span class="legend-dot status-dirty"></span> Dirty</span>
+          <span class="legend-item"><span class="legend-dot status-maintenance"></span> Maintenance</span>
+          <span class="legend-item"><span class="legend-dot status-closing"></span> Closing</span>
+        </div>
+
+        <!-- Canvas -->
+        <div
+          class="canvas"
+          #floorCanvas
+          (pointermove)="onDragMove($event)"
+          (pointerup)="onDragEnd()"
+          (pointerleave)="onDragEnd()"
+        >
+          <div class="canvas-inner" [style]="canvasInnerStyle()">
+          <div class="canvas-grid"></div>
+
+          @for (table of placedTables(); track table.id) {
+            <button
+              type="button"
+              class="table-node"
+              [class.status-available]="table.status === 'available'"
+              [class.status-occupied]="table.status === 'occupied'"
+              [class.status-reserved]="table.status === 'reserved'"
+              [class.status-dirty]="table.status === 'dirty'"
+              [class.status-maintenance]="table.status === 'maintenance'"
+              [class.status-closing]="table.status === 'closing'"
+              [class.dragging]="dragTableId() === table.id"
+              [class.selected]="selectedTable()?.id === table.id"
+              [style]="getTableStyle(table)"
+              (pointerdown)="onDragStart(table, $event)"
+              (dblclick)="onTableTap(table, $event)"
+              (click)="selectTable(table)"
+              (keydown.enter)="selectTable(table)"
+              [attr.aria-label]="'Area ' + table.tableNumber + ', ' + table.status"
+            >
+              <span class="table-number">{{ table.tableNumber }}</span>
+              @if (table.status === 'occupied' && getTableOrders(table.id).length > 0) {
+                <span class="table-meta">
+                  {{ getTableElapsedMinutes(table.id) }}m · {{ getTableOrderTotal(table.id) | currency:'USD':'symbol':'1.0-0' }}
+                </span>
+              } @else if (getTableReservation(table.tableNumber); as res) {
+                <span class="table-guest-name">{{ res.customerName.split(' ')[0] }}</span>
+              } @else {
+                <span class="table-capacity">{{ table.capacity }} seats</span>
+              }
+              @if (getTableOrders(table.id).length > 0) {
+                <span class="table-order-badge">{{ getTableOrders(table.id).length }}</span>
+              }
+              @if (getTableServerName(table); as serverName) {
+                <span class="table-server-badge">{{ serverName.charAt(0) }}</span>
+              }
+            </button>
+          } @empty {
+            @if (unplacedTables().length === 0) {
+              <div class="canvas-empty">
+                <p class="text-muted mb-1">No areas yet</p>
+                <button type="button" class="btn btn-sm btn-primary" (click)="openAddForm()">Add your first area</button>
+              </div>
+            }
+          }
+          </div>
+        </div>
+
+        <!-- Unplaced Tables -->
+        @if (unplacedTables().length > 0) {
+          <div class="unplaced-panel mt-3">
+            <h6 class="panel-title">Unplaced Areas <span class="badge bg-secondary ms-1">{{ unplacedTables().length }}</span></h6>
+            <div class="d-flex flex-wrap gap-2">
+              @for (table of unplacedTables(); track table.id) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-light unplaced-btn"
+                  (click)="placeTableOnCanvas(table)"
+                >
+                  #{{ table.tableNumber }}
+                  <span class="small text-muted">({{ table.capacity }})</span>
+                </button>
+              }
+            </div>
+            <p class="small text-muted mt-1 mb-0">Click an area to place it on the floor plan. Drag to reposition.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- List View -->
+    @if (activeView() === 'list') {
+      <div class="table-list">
+        <div class="list-header">
+          <span class="col-num">#</span>
+          <span class="col-name">Name</span>
+          <span class="col-capacity">Seats</span>
+          <span class="col-section">Section</span>
+          <span class="col-status">Status</span>
+          <span class="col-orders">Orders</span>
+          <span class="col-actions">Actions</span>
+        </div>
+        @for (table of filteredTables(); track table.id) {
+          <button type="button" class="list-row" [class.selected]="selectedTable()?.id === table.id" (click)="selectTable(table)" (keydown.enter)="selectTable(table)">
+            <span class="col-num fw-bold">{{ table.tableNumber }}</span>
+            <span class="col-name">
+              {{ table.tableName ?? '—' }}
+              @if (getTableReservation(table.tableNumber); as res) {
+                <span class="reservation-guest-badge">{{ res.customerName }}</span>
+              }
+            </span>
+            <span class="col-capacity">{{ table.capacity }}</span>
+            <span class="col-section">{{ table.section ?? '—' }}</span>
+            <span class="col-status">
+              <span class="badge" [class.bg-success]="table.status === 'available'" [class.bg-danger]="table.status === 'occupied'" [class.bg-warning]="table.status === 'reserved'" [class.text-dark]="table.status === 'reserved'" [class.bg-secondary]="table.status === 'dirty'" [class.bg-info]="table.status === 'maintenance'" [class.bg-closing]="table.status === 'closing'">{{ table.status }}</span>
+            </span>
+            <span class="col-orders">
+              @if (getTableOrders(table.id).length > 0) {
+                <span class="badge bg-info">{{ getTableOrders(table.id).length }} active</span>
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </span>
+            <span class="col-actions">
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-light" (click)="openEditForm(table); $event.stopPropagation()">Edit</button>
+                <div class="position-relative">
+                  <button type="button" class="btn btn-sm btn-outline-info" (click)="toggleStatusMenu(table.id, $event)">Status</button>
+                  @if (showStatusMenu() === table.id) {
+                    <div class="status-dropdown">
+                      @for (opt of statusOptions; track opt.value) {
+                        <button type="button" class="dropdown-item" [class.active]="table.status === opt.value" (click)="setTableStatus(table.id, opt.value)">
+                          {{ opt.label }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (showDeleteConfirm() === table.id) {
+                  <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-sm btn-danger" (click)="deleteTable(table.id)">Yes</button>
+                    <button type="button" class="btn btn-sm btn-outline-light" (click)="cancelDelete()">No</button>
+                  </div>
+                } @else {
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="confirmDelete(table.id, $event)">Del</button>
+                }
+              </div>
+            </span>
+          </button>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted mb-0">No areas found</p>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Table Detail Panel -->
+  @if (selectedTable(); as table) {
+    <div class="detail-panel">
+      <div class="detail-header">
+        <h5 class="mb-0">Area #{{ table.tableNumber }}</h5>
+        <button type="button" class="btn-close btn-close" (click)="deselectTable()"></button>
+      </div>
+      <div class="detail-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="badge" [class.bg-success]="table.status === 'available'" [class.bg-danger]="table.status === 'occupied'" [class.bg-warning]="table.status === 'reserved'" [class.text-dark]="table.status === 'reserved'" [class.bg-secondary]="table.status === 'dirty'" [class.bg-info]="table.status === 'maintenance'" [class.bg-closing]="table.status === 'closing'">{{ table.status }}</span>
+          <div class="d-flex gap-1">
+            @for (opt of statusOptions; track opt.value) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-outline-light]="table.status !== opt.value"
+                [class.btn-primary]="table.status === opt.value"
+                [disabled]="table.status === opt.value"
+                (click)="setTableStatus(table.id, opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="detail-info mb-3">
+          @if (table.tableName) {
+            <p class="mb-1"><strong>Name:</strong> {{ table.tableName }}</p>
+          }
+          <p class="mb-1"><strong>Capacity:</strong> {{ table.capacity }} seats</p>
+          @if (table.section) {
+            <p class="mb-1"><strong>Section:</strong> {{ table.section }}</p>
+          }
+          @if (table.posX !== null && table.posY !== null) {
+            <p class="mb-1"><strong>Position:</strong> ({{ table.posX }}, {{ table.posY }})</p>
+          }
+        </div>
+
+        <!-- Reservation Info -->
+        @if (getTableReservation(table.tableNumber); as res) {
+          <div class="reservation-card mb-3">
+            <h6>Reservation</h6>
+            <div class="reservation-card-body">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold">{{ res.customerName }}</span>
+                <span class="badge" [class.bg-warning]="res.status === 'confirmed'" [class.text-dark]="res.status === 'confirmed'" [class.bg-danger]="res.status === 'seated'">{{ res.status }}</span>
+              </div>
+              <div class="d-flex gap-3 text-muted small mb-1">
+                <span><i class="bi bi-people-fill me-1"></i>{{ res.partySize }} {{ res.partySize === 1 ? 'guest' : 'guests' }}</span>
+                <span><i class="bi bi-clock me-1"></i>{{ res.reservationTime | date:'shortTime' }}</span>
+              </div>
+              @if (res.customerPhone) {
+                <div class="text-muted small mb-1">
+                  <i class="bi bi-telephone me-1"></i>{{ res.customerPhone }}
+                </div>
+              }
+              @if (res.specialRequests) {
+                <div class="text-muted small fst-italic">
+                  <i class="bi bi-chat-left-text me-1"></i>{{ res.specialRequests }}
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Active Orders -->
+        <div class="detail-orders">
+          <h6>Active Orders</h6>
+          @for (order of getTableOrders(table.id); track order.guid) {
+            <div class="order-mini-card mb-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold">#{{ order.orderNumber || order.guid.slice(-4).toUpperCase() }}</span>
+                <span class="badge" [class.bg-warning]="order.guestOrderStatus === 'RECEIVED'" [class.text-dark]="order.guestOrderStatus === 'RECEIVED'" [class.bg-danger]="order.guestOrderStatus === 'IN_PREPARATION'" [class.bg-success]="order.guestOrderStatus !== 'RECEIVED' && order.guestOrderStatus !== 'IN_PREPARATION'">
+                  {{ order.guestOrderStatus }}
+                </span>
+              </div>
+              <div class="d-flex justify-content-between mt-1">
+                <span class="text-muted small">{{ order.checks[0]?.selections?.length ?? 0 }} items</span>
+                <span class="fw-bold">{{ order.totalAmount | currency }}</span>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-muted small mb-0">No active orders</p>
+          }
+        </div>
+
+        <!-- POS Quick Actions -->
+        <div class="pos-actions mt-3">
+          @if (table.status === 'available') {
+            <button type="button" class="btn btn-sm btn-success w-100 mb-2" (click)="onNewOrder(table, $event)">
+              <i class="bi bi-plus-circle me-1"></i> New Order
+            </button>
+          }
+          @if (table.status === 'occupied') {
+            <button type="button" class="btn btn-sm btn-primary w-100 mb-2" (click)="onTableTap(table, $event)">
+              <i class="bi bi-pencil-square me-1"></i> Open in POS
+            </button>
+          }
+          @if (table.status === 'closing') {
+            <button type="button" class="btn btn-sm btn-outline-light w-100 mb-2" (click)="onTableTap(table, $event)">
+              <i class="bi bi-eye me-1"></i> View Order
+            </button>
+          }
+          @if (table.status === 'dirty') {
+            <button type="button" class="btn btn-sm btn-info w-100 mb-2" (click)="onBusTable(table, $event)">
+              <i class="bi bi-check2-circle me-1"></i> Bus Area (Mark Available)
+            </button>
+          }
+        </div>
+
+        <div class="detail-actions mt-2 d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="openEditForm(table)">Edit Area</button>
+          <button type="button" class="btn btn-sm btn-outline-info" (click)="showTableQr(table)">
+            <i class="bi bi-qr-code me-1"></i>QR Code
+          </button>
+          @if (table.posX !== null && table.posY !== null) {
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="removeFromCanvas(table, $event)">Remove from Plan</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- QR Code Modal -->
+  @if (showQrModal() && qrTable(); as qrT) {
+    <div class="modal-overlay" (click)="closeQrModal()" (keydown.enter)="closeQrModal()" aria-hidden="true">
+      <div class="modal-content card qr-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">QR Code — Area #{{ qrT.tableNumber }}</h5>
+          <button type="button" class="btn-close btn-close" (click)="closeQrModal()"></button>
+        </div>
+        <div class="card-body text-center">
+          <img [src]="getQrImageUrl(qrT.tableNumber)" alt="QR Code for Area" class="qr-image mb-3" />
+          <p class="small text-muted mb-2">Scan to order from this area</p>
+          <p class="qr-url small">{{ getQrUrl(qrT.tableNumber) }}</p>
+          <button type="button" class="btn btn-sm btn-primary" (click)="printQrCodes()">
+            <i class="bi bi-printer me-1"></i>Print All QR Codes
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add/Edit Modal -->
+  @if (showAddForm()) {
+    <div class="modal-overlay" (click)="closeForm()" (keydown.enter)="closeForm()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{{ editingTable() ? 'Edit Area' : 'Add Area' }}</h5>
+          <button type="button" class="btn-close btn-close" (click)="closeForm()"></button>
+        </div>
+        <div class="card-body">
+          @if (actionError()) {
+            <div class="alert alert-danger small mb-3">{{ actionError() }}</div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label small" for="fp-area-number">Area Number <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              id="fp-area-number"
+              class="form-control form-control-sm"
+              [value]="formNumber()"
+              (input)="setFormNumber($any($event.target).value)"
+              placeholder="e.g. 1, A1, B2"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small" for="fp-display-name">Display Name</label>
+            <input
+              type="text"
+              id="fp-display-name"
+              class="form-control form-control-sm"
+              [value]="formName()"
+              (input)="setFormName($any($event.target).value)"
+              placeholder="e.g. Window Seat, Patio Corner"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small" for="fp-capacity">Capacity (seats)</label>
+            <input
+              type="number"
+              id="fp-capacity"
+              class="form-control form-control-sm"
+              [value]="formCapacity()"
+              (input)="setFormCapacity(+$any($event.target).value)"
+              min="1"
+              max="20"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small" for="fp-section">Section</label>
+            <input
+              type="text"
+              id="fp-section"
+              class="form-control form-control-sm"
+              [value]="formSection()"
+              (input)="setFormSection($any($event.target).value)"
+              placeholder="e.g. Main, Patio, Bar"
+              list="sectionOptions"
+            />
+            <datalist id="sectionOptions">
+              @for (section of sections(); track section) {
+                <option [value]="section"></option>
+              }
+            </datalist>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="isSubmitting()"
+              (click)="submitForm()"
+            >
+              @if (isSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+              }
+              {{ editingTable() ? 'Update' : 'Create' }}
+            </button>
+            <button type="button" class="btn btn-outline-light btn-sm" (click)="closeForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<os-bottom-navigation />

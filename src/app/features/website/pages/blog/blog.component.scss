@@ -1,0 +1,282 @@
+:host {
+  display: block;
+}
+
+// Featured card — full-width hero-style card
+.mkt-featured-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--os-shadow-lg);
+    transform: translateY(-2px);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  @media (max-width: 767.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mkt-featured-card__image {
+  position: relative;
+  min-height: 280px;
+  background: linear-gradient(135deg, var(--os-primary), #1a3a5c);
+
+  @media (max-width: 767.98px) {
+    min-height: 200px;
+  }
+}
+
+.mkt-featured-card__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.mkt-featured-card__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--os-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mkt-featured-card__body {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.mkt-featured-card__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--os-text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.mkt-featured-card__desc {
+  font-size: 0.9375rem;
+  color: var(--os-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+// Category pills
+.mkt-category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+  justify-content: center;
+}
+
+.mkt-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--os-border);
+  border-radius: 100px;
+  background: var(--os-bg-card);
+  color: var(--os-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--os-primary);
+    color: var(--os-primary);
+  }
+
+  &--active {
+    background: var(--os-primary);
+    border-color: var(--os-primary);
+    color: #fff;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  i {
+    font-size: 0.875rem;
+  }
+}
+
+// Blog category badge
+.mkt-blog-category {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--os-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Blog meta line
+.mkt-blog-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--os-text-secondary);
+}
+
+.mkt-blog-meta__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--os-text-secondary);
+  opacity: 0.5;
+}
+
+// Blog post grid
+.mkt-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  @media (max-width: 991.98px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 575.98px) {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+    margin-inline: auto;
+  }
+}
+
+// Blog card
+.mkt-blog-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--os-shadow-lg);
+    transform: translateY(-2px);
+    color: inherit;
+    text-decoration: none;
+
+    .mkt-blog-card__link {
+      color: var(--os-primary);
+    }
+  }
+}
+
+.mkt-blog-card__image {
+  position: relative;
+  height: 180px;
+  background: linear-gradient(135deg, #2d5a87, #1a3a5c);
+}
+
+.mkt-blog-card__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.mkt-blog-card__body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.mkt-blog-card__title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.mkt-blog-card__desc {
+  font-size: 0.875rem;
+  color: var(--os-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  flex: 1;
+}
+
+.mkt-blog-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--os-text-secondary);
+  margin-top: 4px;
+  transition: color 0.15s ease;
+
+  i {
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+  }
+
+  .mkt-blog-card:hover & i {
+    transform: translateX(3px);
+  }
+}
+
+// Empty state
+.mkt-blog-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--os-text-secondary);
+
+  i {
+    font-size: 2.5rem;
+    opacity: 0.4;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  p {
+    font-size: 1rem;
+    margin: 0;
+  }
+}

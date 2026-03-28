@@ -1,0 +1,227 @@
+<div class="combo-management px-2">
+  @if (!isAuthenticated()) {
+    <div class="text-center text-muted py-5">
+      <p>Please log in to manage combos.</p>
+    </div>
+  } @else {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">Combos &amp; Bundles</h2>
+      <button type="button" class="btn btn-primary btn-sm" (click)="openNewCombo()">
+        <i class="bi bi-plus-lg me-1"></i>New Combo
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-danger mb-3">{{ error() }}</div>
+    }
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip mb-3">
+      <div class="kpi-card">
+        <div class="kpi-value">{{ combos().length }}</div>
+        <div class="kpi-label">Total Combos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ activeCombos().length }}</div>
+        <div class="kpi-label">Active</div>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <os-loading-spinner message="Loading combos..." />
+    } @else if (combos().length === 0) {
+      <div class="empty-state text-center py-5">
+        <div class="empty-icon mb-3"><i class="bi bi-box-seam"></i></div>
+        <h5>No combos yet</h5>
+        <p class="text-muted">Bundle menu items together at a discounted price.</p>
+        <button type="button" class="btn btn-primary btn-sm" (click)="openNewCombo()">Create Combo</button>
+      </div>
+    } @else {
+      <div class="combo-grid">
+        @for (combo of combos(); track combo.id) {
+          <div class="combo-card" [class.inactive]="!combo.isActive">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="combo-name">{{ combo.name }}</div>
+                @if (combo.description) {
+                  <div class="combo-desc small text-muted">{{ combo.description }}</div>
+                }
+              </div>
+              <div class="combo-pricing text-end">
+                <div class="combo-price">{{ combo.basePrice | currency }}</div>
+                @if (combo.savings > 0) {
+                  <div class="combo-savings small text-success">Save {{ combo.savings | currency }}</div>
+                  <div class="combo-regular small text-muted"><s>{{ combo.regularPrice | currency }}</s></div>
+                }
+              </div>
+            </div>
+
+            <div class="combo-items mb-2">
+              @for (item of combo.items; track item.menuItemId) {
+                <span class="combo-item-tag">
+                  {{ item.quantity > 1 ? item.quantity + 'x ' : '' }}{{ item.menuItemName }}
+                  @if (!item.isRequired) {
+                    <span class="optional-badge">opt</span>
+                  }
+                </span>
+              }
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex gap-1">
+                <span class="badge" [class.bg-success]="combo.isActive" [class.bg-secondary]="!combo.isActive">
+                  {{ combo.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-light" (click)="toggleActive(combo)">
+                  {{ combo.isActive ? 'Deactivate' : 'Activate' }}
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light" (click)="openEditCombo(combo)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                @if (confirmDelete() === combo.id) {
+                  <button type="button" class="btn btn-sm btn-danger" (click)="confirmDeleteCombo(combo.id)">Confirm</button>
+                  <button type="button" class="btn btn-sm btn-outline-light" (click)="cancelDelete()">Cancel</button>
+                } @else {
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="requestDelete(combo.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- CREATE/EDIT FORM MODAL -->
+    @if (showForm()) {
+      <div class="modal-backdrop" (click)="closeForm()" (keydown.escape)="closeForm()" aria-hidden="true"></div>
+      <div class="form-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">{{ editingCombo() ? 'Edit Combo' : 'New Combo' }}</h4>
+          <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close"></button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="comboName">Combo Name *</label>
+          <input type="text" class="form-control" id="comboName" [value]="formName()" (input)="onFormField('name', $event)" placeholder="e.g., Family Meal Deal" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="comboDescription">Description</label>
+          <textarea class="form-control" id="comboDescription" rows="2" [value]="formDescription()" (input)="onFormField('description', $event)" placeholder="What's included..."></textarea>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label" for="comboPrice">Combo Price *</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control" id="comboPrice" [value]="formBasePrice()" (input)="onFormField('basePrice', $event)" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="comboCategory">Category</label>
+            <select class="form-select" id="comboCategory" [value]="formCategoryId()" (change)="onFormField('categoryId', $event)">
+              <option value="">No category</option>
+              @for (cat of categories(); track cat.id) {
+                <option [value]="cat.id">{{ cat.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Pricing Preview -->
+        @if (formItems().length >= 2) {
+          <div class="pricing-preview mb-3">
+            <div class="d-flex justify-content-between small">
+              <span>Items at regular price</span>
+              <span>{{ regularPrice() | currency }}</span>
+            </div>
+            <div class="d-flex justify-content-between small fw-bold">
+              <span>Combo price</span>
+              <span>{{ formBasePrice() | currency }}</span>
+            </div>
+            @if (savings() > 0) {
+              <div class="d-flex justify-content-between small text-success fw-bold">
+                <span>Customer saves</span>
+                <span>{{ savings() | currency }} ({{ savingsPercent() }}%)</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Selected Items -->
+        <div class="mb-3">
+          <span class="form-label">Combo Items (min. 2) *</span>
+          @if (formItems().length > 0) {
+            <div class="selected-items mb-2">
+              @for (fi of formItems(); track fi.menuItemId) {
+                <div class="selected-item d-flex align-items-center gap-2 mb-1">
+                  <input
+                    type="number"
+                    class="form-control form-control-sm qty-input"
+                    [value]="fi.quantity"
+                    (input)="updateItemQuantity(fi.menuItemId, $event)"
+                    min="1"
+                    aria-label="Quantity"
+                  />
+                  <span class="flex-grow-1">{{ getMenuItemName(fi.menuItemId) }}</span>
+                  <span class="small text-muted">{{ getMenuItemPrice(fi.menuItemId) | currency }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-outline-light]="fi.isRequired"
+                    [class.btn-warning]="!fi.isRequired"
+                    (click)="toggleItemRequired(fi.menuItemId)"
+                    title="Toggle required/optional"
+                  >{{ fi.isRequired ? 'Req' : 'Opt' }}</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeItemFromCombo(fi.menuItemId)">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Item Search & Add -->
+          <input
+            type="text"
+            class="form-control form-control-sm mb-2"
+            placeholder="Search menu items to add..."
+            aria-label="Search menu items to add"
+            [value]="itemSearch()"
+            (input)="onFormField('itemSearch', $event)"
+          />
+          <div class="item-picker">
+            @for (item of filteredMenuItems(); track item.id) {
+              <button
+                type="button"
+                class="item-pick-btn"
+                [class.selected]="isItemInCombo(item.id)"
+                (click)="addItemToCombo(item)"
+              >
+                <span class="item-pick-name">{{ item.name }}</span>
+                <span class="item-pick-price">{{ item.price | currency }}</span>
+              </button>
+            } @empty {
+              <div class="small text-muted p-2">No items found</div>
+            }
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary" [disabled]="!canSave() || isSaving()" (click)="saveCombo()">
+            @if (isSaving()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            {{ editingCombo() ? 'Update Combo' : 'Create Combo' }}
+          </button>
+          <button type="button" class="btn btn-outline-light" (click)="closeForm()">Cancel</button>
+        </div>
+      </div>
+    }
+  }
+</div>

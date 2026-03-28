@@ -1,0 +1,89 @@
+<div class="proposals-page px-2">
+  <!-- Header -->
+  <div class="os-page-header">
+    <div>
+      <h1>Proposals</h1>
+      <p class="text-muted small mb-0">Estimates awaiting client approval</p>
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="goToJobs()">
+      <i class="bi bi-briefcase me-1"></i>
+      All Jobs
+    </button>
+  </div>
+
+  <!-- Toast -->
+  @if (_toastMessage()) {
+    <div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-3">
+      <i class="bi bi-check-circle-fill"></i>
+      {{ _toastMessage() }}
+    </div>
+  }
+
+  @if (proposals().length === 0) {
+    <!-- Empty State -->
+    <div class="text-center py-5 mt-3">
+      <i class="bi bi-file-earmark-check display-4 text-muted mb-3 d-block" style="opacity:.35"></i>
+      @if (hasAnyJobs()) {
+        <h5 class="fw-semibold mb-1">No proposals awaiting approval</h5>
+        <p class="text-muted mb-3">All sent proposals have been actioned or approved.</p>
+      } @else {
+        <h5 class="fw-semibold mb-1">No proposals sent yet</h5>
+        <p class="text-muted mb-3">Create a job and send a proposal to your client to get started.</p>
+      }
+      <button type="button" class="btn btn-primary" (click)="goToJobs()">
+        <i class="bi bi-briefcase me-1"></i>
+        Go to Jobs
+      </button>
+    </div>
+  } @else {
+    <!-- Proposal Cards -->
+    <div class="proposals-list mt-3">
+      @for (job of proposals(); track job.id) {
+        <div class="card mb-2">
+          <div class="card-body d-flex align-items-start gap-3 flex-wrap">
+
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ job.clientName }}
+                @if (job.companyName) {
+                  <span class="text-muted fw-normal small ms-1">· {{ job.companyName }}</span>
+                }
+              </div>
+              <div class="text-muted small mb-1">{{ job.title }}
+                @if (job.eventType) {
+                  <span class="badge bg-light text-secondary border ms-1">{{ job.eventType }}</span>
+                }
+              </div>
+              <div class="text-muted small d-flex gap-3">
+                <span><i class="bi bi-calendar3 me-1"></i>{{ job.fulfillmentDate | date:'mediumDate':'UTC' }}</span>
+                <span><i class="bi bi-people-fill me-1"></i>{{ job.headcount }} {{ job.headcount === 1 ? 'guest' : 'guests' }}</span>
+              </div>
+            </div>
+
+            <div class="text-end flex-shrink-0">
+              <div class="fw-bold fs-6">{{ job.totalCents / 100 | currency:'USD' }}</div>
+              @if (job.proposalSentAt) {
+                <div class="text-muted small mb-2">Sent {{ daysSinceSent(job.proposalSentAt) }}d ago</div>
+              }
+              <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="viewJob(job.id)">
+                  <i class="bi bi-eye me-1"></i>View
+                </button>
+                <button type="button" class="btn btn-sm btn-primary"
+                  [disabled]="_resendingId() === job.id"
+                  (click)="resendProposal(job.id)">
+                  @if (_resendingId() === job.id) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                  } @else {
+                    <i class="bi bi-send me-1"></i>
+                  }
+                  Resend
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

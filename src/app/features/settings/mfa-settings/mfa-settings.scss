@@ -1,0 +1,131 @@
+:host {
+  display: block;
+}
+
+.mfa-settings {
+  max-width: 640px;
+
+  &__heading {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  &__description {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.mfa-status-card {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-danger, #dc3545);
+
+    &--enabled {
+      color: var(--bs-success, #198754);
+    }
+  }
+}
+
+.mfa-setup-step {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+
+  &__number {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 0.5rem;
+  }
+
+  &__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.mfa-verify-input {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.4rem;
+  text-align: center;
+  max-width: 200px;
+}
+
+.mfa-disable-confirm {
+  max-width: 480px;
+}
+
+// Trusted Devices
+.trusted-devices {
+  &__heading {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+.trusted-device-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+
+  &--expired {
+    opacity: 0.6;
+    border-color: var(--bs-danger, #dc3545);
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  &__user {
+    margin-top: 0.125rem;
+  }
+
+  &__meta {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+  }
+
+  &__revoke {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

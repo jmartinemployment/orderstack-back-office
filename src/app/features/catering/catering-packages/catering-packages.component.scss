@@ -1,0 +1,476 @@
+$blue: #006aff;
+$blue-light: rgba(0, 106, 255, 0.08);
+$green: #00b23b;
+$purple: #7c3aed;
+$purple-light: rgba(124, 58, 237, 0.08);
+$amber: #f59e0b;
+$amber-light: rgba(245, 158, 11, 0.08);
+$red: #cc0023;
+$text-primary: #1a1a1a;
+$text-secondary: #6e6e6e;
+$text-tertiary: #999;
+$border-color: #e0dfde;
+$bg-card: #fff;
+$bg-page: #f7f6f5;
+$radius-sm: 8px;
+$radius-md: 12px;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+.packages-page {
+  font-family: $font-family;
+  color: $text-primary;
+  padding: 0 0.5rem;
+}
+
+.packages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.packages-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.packages-subtitle {
+  color: $text-secondary;
+  font-size: 0.9375rem;
+  margin: 0.25rem 0 0;
+}
+
+.btn-new {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: $blue;
+  color: #fff;
+  border: none;
+  border-radius: $radius-sm;
+  font-family: $font-family;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: darken($blue, 8%); }
+}
+
+// Info Callout
+.info-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: $blue-light;
+  border: 1px solid rgba($blue, 0.15);
+  border-radius: $radius-sm;
+  font-size: 0.8125rem;
+  color: $text-secondary;
+  margin-bottom: 1.25rem;
+
+  i { color: $blue; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+}
+
+// Empty State
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 2rem;
+  text-align: center;
+
+  h3 { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.5rem; }
+  p { color: $text-secondary; font-size: 0.9375rem; margin: 0 0 1.25rem; }
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: $bg-page;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  color: $text-tertiary;
+  margin-bottom: 1.25rem;
+}
+
+.btn-new-empty {
+  @extend .btn-new;
+}
+
+// Form Panel
+.form-panel {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  margin-bottom: 1.25rem;
+}
+
+.form-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $border-color;
+
+  h3 { font-size: 1rem; font-weight: 700; margin: 0; }
+}
+
+.btn-close-form {
+  border: none;
+  background: transparent;
+  color: $text-tertiary;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+
+  &:hover { color: $text-primary; }
+}
+
+.form-body {
+  padding: 1.25rem;
+}
+
+.form-field {
+  margin-bottom: 0.875rem;
+
+  label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $text-tertiary;
+    margin-bottom: 0.25rem;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid $border-color;
+    border-radius: 6px;
+    font-family: $font-family;
+    font-size: 0.875rem;
+    background: $bg-card;
+    transition: border-color 0.15s;
+
+    &:focus { outline: none; border-color: $blue; }
+  }
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Item Picker
+.price-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  background: $blue-light;
+  border-radius: $radius-sm;
+  font-size: 0.8125rem;
+
+  .suggestion-label {
+    color: $text-secondary;
+    flex: 1;
+  }
+
+  .suggestion-amount {
+    font-weight: 700;
+    color: $blue;
+  }
+
+  .btn-use-suggestion {
+    background: $blue;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: darken($blue, 8%);
+    }
+  }
+}
+
+.item-search {
+  margin-bottom: 0.5rem;
+}
+
+.item-picker {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.item-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-radius: 4px;
+
+  &:hover { background: $bg-page; }
+
+  input[type="checkbox"] {
+    width: auto;
+    accent-color: $blue;
+  }
+}
+
+.no-items {
+  font-size: 0.8125rem;
+  color: $text-tertiary;
+  padding: 0.5rem;
+  margin: 0;
+}
+
+.form-error {
+  color: $red;
+  font-size: 0.8125rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba($red, 0.06);
+  border-radius: $radius-sm;
+  border-left: 3px solid $red;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.btn-cancel {
+  padding: 0.5rem 1rem;
+  border: 1.5px solid $border-color;
+  border-radius: $radius-sm;
+  background: $bg-card;
+  font-family: $font-family;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $text-secondary;
+  cursor: pointer;
+
+  &:hover { background: $bg-page; }
+}
+
+.btn-save {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: $radius-sm;
+  background: $blue;
+  color: #fff;
+  font-family: $font-family;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { background: darken($blue, 8%); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+// Package Cards Grid
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.package-card {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  padding: 1.25rem;
+  box-shadow: $shadow-sm;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.pkg-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tier-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.125rem 0.5rem;
+  border-radius: 100px;
+}
+
+.tier-standard { background: $bg-page; color: $text-secondary; }
+.tier-premium { background: $amber-light; color: darken($amber, 10%); }
+.tier-custom { background: $purple-light; color: $purple; }
+
+.card-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.pricing-label {
+  font-size: 0.75rem;
+  color: $text-tertiary;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pricing-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.card-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: $text-secondary;
+  margin-bottom: 0.5rem;
+}
+
+.card-desc {
+  font-size: 0.8125rem;
+  color: $text-secondary;
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
+// Expand Items
+.btn-expand {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0;
+  border: none;
+  background: transparent;
+  font-family: $font-family;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $blue;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.items-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.5rem 0;
+}
+
+.item-tag {
+  padding: 0.125rem 0.5rem;
+  background: $bg-page;
+  border: 1px solid $border-color;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+// Card Actions
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid $border-color;
+}
+
+.btn-edit, .btn-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  border: 1.5px solid $border-color;
+  border-radius: 6px;
+  background: $bg-card;
+  font-family: $font-family;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-edit {
+  color: $blue;
+  &:hover { border-color: $blue; background: $blue-light; }
+}
+
+.btn-delete {
+  color: $red;
+  &:hover { border-color: $red; background: rgba($red, 0.08); }
+}
+
+.confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.btn-confirm-yes, .btn-confirm-no {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  background: $bg-card;
+  font-family: $font-family;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-confirm-yes {
+  color: $red;
+  &:hover { background: rgba($red, 0.08); }
+}
+
+.btn-confirm-no {
+  color: $text-secondary;
+  &:hover { background: $bg-page; }
+}

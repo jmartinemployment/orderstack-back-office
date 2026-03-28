@@ -1,0 +1,44 @@
+@if (visible()) {
+  <div class="mkt-exit-backdrop" (click)="onBackdropClick($event)" (keydown.escape)="close()" aria-hidden="true">
+    <dialog class="mkt-exit-modal" aria-modal="true" aria-label="Special offer">
+      <button class="mkt-exit-modal__close" (click)="close()" aria-label="Close popup">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+
+      @if (!submitted()) {
+        <h2 class="mkt-exit-modal__headline">{{ config.headline }}</h2>
+        <p class="mkt-exit-modal__subtext">{{ config.subtext }}</p>
+        <form class="mkt-exit-modal__form" (submit)="onSubmit($event)">
+          <input
+            type="email"
+            placeholder="you@restaurant.com"
+            [value]="email()"
+            (input)="onInput($event)"
+            (blur)="touched.set(true)"
+            [class.mkt-exit-modal__input--error]="showError()"
+            aria-label="Email address"
+            required />
+          @if (showError()) {
+            <span class="mkt-exit-modal__error">Please enter a valid email</span>
+          }
+          <button
+            type="submit"
+            class="mkt-exit-modal__btn"
+            [disabled]="!emailValid() || submitting()">
+            @if (submitting()) {
+              Sending...
+            } @else {
+              {{ config.buttonLabel }}
+            }
+          </button>
+        </form>
+        <p class="mkt-exit-modal__disclaimer">{{ config.disclaimer }}</p>
+      } @else {
+        <div class="mkt-exit-modal__thanks">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <p>{{ config.thankYou }}</p>
+        </div>
+      }
+    </dialog>
+  </div>
+}

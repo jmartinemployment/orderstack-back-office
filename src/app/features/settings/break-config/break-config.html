@@ -1,0 +1,205 @@
+<div class="break-config">
+  @if (successMessage()) {
+    <div class="alert alert-success mb-3">{{ successMessage() }}</div>
+  }
+
+  <!-- Break Types Section -->
+  <div class="section mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0">Break Types</h6>
+      <button class="btn btn-primary btn-sm" (click)="openCreateBreakType()">
+        <i class="bi bi-plus-lg me-1"></i> Add Break Type
+      </button>
+    </div>
+
+    @if (activeBreakTypes().length > 0 || inactiveBreakTypes().length > 0) {
+      <div class="break-type-grid">
+        @for (bt of breakTypes(); track bt.id) {
+          <div class="break-type-card" [class.inactive]="!bt.isActive">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="mb-1">{{ bt.name }}</h6>
+                <div class="d-flex gap-2 align-items-center">
+                  <span class="badge bg-secondary">{{ bt.expectedMinutes }} min</span>
+                  @if (bt.isPaid) {
+                    <span class="badge badge-paid">Paid</span>
+                  } @else {
+                    <span class="badge badge-unpaid">Unpaid</span>
+                  }
+                  @if (!bt.isActive) {
+                    <span class="badge bg-danger">Inactive</span>
+                  }
+                </div>
+              </div>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-light" (click)="openEditBreakType(bt)" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-secondary" (click)="toggleBreakTypeActive(bt)" [title]="bt.isActive ? 'Deactivate' : 'Activate'">
+                  <i class="bi" [class.bi-toggle-on]="bt.isActive" [class.bi-toggle-off]="!bt.isActive"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state text-center py-3">
+        <p class="text-muted mb-0">No break types configured. Add one to enable break tracking.</p>
+      </div>
+    }
+  </div>
+
+  <!-- Workweek Configuration Section -->
+  <div class="section">
+    <h6 class="mb-3">Workweek Configuration</h6>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label for="wwStartDay" class="form-label">Week Starts On</label>
+        <select id="wwStartDay" class="form-select" [value]="wwStartDay()" (change)="setWwStartDay(+$any($event.target).value)">
+          @for (day of dayLabels; track $index) {
+            <option [value]="$index">{{ day }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="wwStartTime" class="form-label">Day Starts At</label>
+        <input id="wwStartTime" type="time" class="form-control" [value]="wwStartTime()" (input)="setWwStartTime($any($event.target).value)">
+      </div>
+      <div class="col-md-4">
+        <label for="wwOtThreshold" class="form-label">Overtime After (hours/week)</label>
+        <input id="wwOtThreshold" type="number" class="form-control" [value]="wwOtThreshold()" (input)="setWwOtThreshold(+$any($event.target).value)" min="20" max="60" step="1">
+      </div>
+    </div>
+    @if (wwIsDirty()) {
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary btn-sm" (click)="saveWorkweekConfig()" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Save
+        </button>
+        <button class="btn btn-outline-light btn-sm" (click)="discardWorkweekChanges()">Discard</button>
+      </div>
+    }
+  </div>
+
+  <!-- Schedule Enforcement Section -->
+  <div class="section mb-4">
+    <h6 class="mb-3">Schedule Enforcement</h6>
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="tcScheduleEnforcement" [checked]="tcScheduleEnforcement()" (change)="toggleScheduleEnforcement()">
+      <label class="form-check-label" for="tcScheduleEnforcement">Block clock-in without scheduled shift</label>
+    </div>
+
+    @if (tcScheduleEnforcement()) {
+      <div class="row g-3 ms-3">
+        <div class="col-md-6">
+          <label for="tcEarlyGrace" class="form-label">Early clock-in grace (minutes)</label>
+          <input id="tcEarlyGrace" type="number" class="form-control" [value]="tcEarlyGraceMinutes()" (input)="setTcEarlyGrace(+$any($event.target).value)" min="0" max="60">
+          <div class="text-muted small mt-1">Allow clock-in this many minutes before shift start.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="tcLateThreshold" class="form-label">Late clock-in threshold (minutes)</label>
+          <input id="tcLateThreshold" type="number" class="form-control" [value]="tcLateThresholdMinutes()" (input)="setTcLateThreshold(+$any($event.target).value)" min="1" max="60">
+          <div class="text-muted small mt-1">Flag clock-ins this many minutes after shift start.</div>
+        </div>
+      </div>
+      <div class="form-check form-switch mt-3 ms-3">
+        <input class="form-check-input" type="checkbox" id="tcAllowManagerOverride" [checked]="tcAllowManagerOverride()" (change)="toggleManagerOverride()">
+        <label class="form-check-label" for="tcAllowManagerOverride">Allow manager override for schedule enforcement</label>
+      </div>
+    }
+  </div>
+
+  <!-- Auto Clock-Out Section -->
+  <div class="section mb-4">
+    <h6 class="mb-3">Auto Clock-Out</h6>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label for="tcAutoClockOutMode" class="form-label">Auto clock-out mode</label>
+        <select id="tcAutoClockOutMode" class="form-select" [value]="tcAutoClockOutMode()" (change)="setAutoClockOutMode($any($event.target).value)">
+          <option value="never">Never</option>
+          <option value="after_shift_end">After shift end</option>
+          <option value="business_day_cutoff">Business day cutoff</option>
+        </select>
+      </div>
+
+      @if (tcAutoClockOutMode() === 'after_shift_end') {
+        <div class="col-md-6">
+          <label for="tcAutoClockOutDelay" class="form-label">Delay after shift end (minutes)</label>
+          <input id="tcAutoClockOutDelay" type="number" class="form-control" [value]="tcAutoClockOutDelay()" (input)="setAutoClockOutDelay(+$any($event.target).value)" min="5" max="120">
+        </div>
+      }
+
+      @if (tcAutoClockOutMode() === 'business_day_cutoff') {
+        <div class="col-md-6">
+          <label for="tcBusinessDayCutoff" class="form-label">Business day cutoff time</label>
+          <input id="tcBusinessDayCutoff" type="time" class="form-control" [value]="tcBusinessDayCutoff()" (input)="setBusinessDayCutoff($any($event.target).value)">
+        </div>
+      }
+    </div>
+
+    <div class="form-check form-switch mt-3">
+      <input class="form-check-input" type="checkbox" id="tcAlertOpenTimecards" [checked]="tcAlertOpenTimecards()" (change)="toggleAlertOpenTimecards()">
+      <label class="form-check-label" for="tcAlertOpenTimecards">Alert managers of open timecards at end of day</label>
+    </div>
+  </div>
+
+  @if (tcIsDirty()) {
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-primary btn-sm" (click)="saveTimeclockSettings()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Save Time Clock Settings
+      </button>
+      <button class="btn btn-outline-light btn-sm" (click)="discardTimeclockChanges()">Discard</button>
+    </div>
+  }
+
+  <!-- Break Type Form Modal -->
+  @if (showBreakTypeForm()) {
+    <button type="button" class="modal-backdrop" (click)="closeBreakTypeForm()" (keydown.enter)="closeBreakTypeForm()"></button>
+    <div class="modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingBreakType() ? 'Edit' : 'Add' }} Break Type</h5>
+          <button class="btn-close" (click)="closeBreakTypeForm()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="btName">Name *</label>
+            <input type="text" class="form-control" id="btName" [value]="btName()" (input)="setBtField('name', $any($event.target).value)" placeholder="e.g., Lunch Break, Short Break">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="btExpectedMinutes">Expected Duration (minutes)</label>
+            <input type="number" class="form-control" id="btExpectedMinutes" [value]="btExpectedMinutes()" (input)="setBtMinutes(+$any($event.target).value)" min="1" max="120">
+          </div>
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="btIsPaid" [checked]="btIsPaid()" (change)="toggleBtPaid()">
+              <label class="form-check-label" for="btIsPaid">Paid Break</label>
+            </div>
+            <div class="text-muted small mt-1">Paid breaks count toward total paid hours.</div>
+          </div>
+          @if (editingBreakType()) {
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="btIsActive" [checked]="btIsActive()" (change)="toggleBtActive()">
+              <label class="form-check-label" for="btIsActive">Active</label>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-light" (click)="closeBreakTypeForm()">Cancel</button>
+          <button class="btn btn-primary" (click)="saveBreakType()" [disabled]="isSaving() || !btName()">
+            @if (isSaving()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            {{ editingBreakType() ? 'Update' : 'Create' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,134 @@
+:host {
+  display: block;
+}
+
+.guest-portal {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.portal-header {
+  h2 {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.portal-card {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+
+  .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--bs-emphasis-color);
+
+    i {
+      opacity: 0.6;
+    }
+  }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+}
+
+.detail-value {
+  font-size: 0.9375rem;
+  color: var(--bs-emphasis-color);
+}
+
+.signed-badge {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.signature-record {
+  margin-bottom: 0.75rem;
+}
+
+.signature-record-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bs-secondary-color, #6c757d);
+  margin-bottom: 0.375rem;
+}
+
+.signature-record-img {
+  display: block;
+  max-width: 300px;
+  max-height: 100px;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 6px;
+  background: #fff;
+  padding: 0.375rem;
+}
+
+.audit-row {
+  font-size: 0.8rem;
+}
+
+.milestone-list {
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.milestone-item {
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.dietary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .badge {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+.progress {
+  border-radius: 0.5rem;
+}
+
+.progress-bar {
+  border-radius: 0.5rem;
+  transition: width 0.4s ease;
+}
+
+.error-state {
+  i {
+    opacity: 0.5;
+  }
+
+  h3 {
+    font-weight: 600;
+  }
+}

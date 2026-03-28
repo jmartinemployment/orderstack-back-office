@@ -1,0 +1,834 @@
+.staff-scheduling {
+  color: var(--os-text-primary);
+}
+
+// Tabs
+.nav-tabs {
+  border-bottom-color: var(--os-border);
+
+  .nav-link {
+    color: var(--os-text-secondary);
+    border: none;
+    font-size: 0.875rem;
+
+    &:hover { color: var(--os-text-primary); }
+
+    &.active {
+      background-color: var(--os-primary);
+      color: #fff;
+      border-radius: 0.375rem;
+    }
+  }
+}
+
+// KPI Cards
+.kpi-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+
+  .kpi-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--os-primary);
+  }
+
+  .kpi-label {
+    font-size: 0.7rem;
+    color: var(--os-text-muted);
+    text-transform: uppercase;
+  }
+}
+
+// === Live Labor Gauge ===
+.live-labor-gauge {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.gauge-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+
+  i { color: var(--os-primary); }
+
+  .gauge-title {
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+
+  .gauge-clocked {
+    margin-left: auto;
+    color: var(--os-text-muted);
+    font-size: 0.75rem;
+  }
+}
+
+.gauge-bar-track {
+  height: 8px;
+  background-color: var(--os-bg);
+  border-radius: 4px;
+  position: relative;
+  overflow: visible;
+  margin-bottom: 0.5rem;
+}
+
+.gauge-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease, background-color 0.3s;
+
+  &.gauge-good { background: linear-gradient(90deg, #00a67e, #34d058); }
+  &.gauge-warning { background: linear-gradient(90deg, #f0ad4e, #f5a623); }
+  &.gauge-critical { background: linear-gradient(90deg, #e53e3e, #e74c3c); }
+}
+
+.gauge-threshold {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background-color: var(--os-border);
+
+  &.gauge-threshold-warn {
+    background-color: rgba(229, 62, 62, 0.4);
+  }
+}
+
+.gauge-stats {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.gauge-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.gauge-stat-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+
+  &.gauge-good { color: var(--os-success); }
+  &.gauge-warning { color: var(--os-warning); }
+  &.gauge-critical { color: var(--os-danger); }
+}
+
+.gauge-stat-label {
+  font-size: 0.65rem;
+  color: var(--os-text-muted);
+  text-transform: uppercase;
+}
+
+// === Template Toolbar ===
+.template-toolbar {
+  align-items: center;
+}
+
+.template-dropdown-wrapper {
+  position: relative;
+}
+
+.template-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 260px;
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0;
+  margin-top: 0.25rem;
+  box-shadow: var(--os-shadow-lg);
+}
+
+.template-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  color: var(--os-text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--os-bg);
+    color: var(--os-text-primary);
+  }
+
+  i { font-size: 0.85rem; }
+}
+
+.template-dropdown-divider {
+  height: 1px;
+  background-color: var(--os-border);
+  margin: 0.25rem 0;
+}
+
+.template-dropdown-label {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.template-dropdown-empty {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--os-text-muted);
+  font-style: italic;
+}
+
+.btn-template-delete {
+  background: none;
+  border: none;
+  color: var(--os-text-muted);
+  padding: 0.125rem 0.25rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: color 0.15s;
+
+  &:hover { color: var(--os-danger); }
+}
+
+.save-template-form {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+// Schedule Grid
+.schedule-grid-wrapper {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 140px repeat(7, minmax(100px, 1fr));
+  gap: 1px;
+  background-color: var(--os-border);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.grid-header {
+  background-color: var(--os-bg);
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--os-text-secondary);
+}
+
+.grid-cell-staff {
+  background-color: var(--os-bg-card);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  .staff-name {
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+}
+
+.grid-cell {
+  background-color: var(--os-bg-card);
+  padding: 0.25rem;
+  min-height: 50px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--os-bg);
+  }
+}
+
+// Shift blocks
+.shift-block {
+  background-color: var(--os-bg);
+  border-left: 3px solid #6c757d;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.375rem;
+  margin-bottom: 0.125rem;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--os-border);
+  }
+
+  .shift-time {
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+
+  .shift-position {
+    color: var(--os-text-muted);
+    font-size: 0.65rem;
+  }
+}
+
+// Time clock
+.list-group-item {
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary) !important;
+  }
+}
+
+// Labor report
+.sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: var(--os-primary);
+  }
+}
+
+.overtime-row {
+  background-color: rgba(229, 62, 62, 0.06) !important;
+}
+
+.labor-good { color: var(--os-success); }
+.labor-warning { color: var(--os-warning); }
+.labor-critical { color: var(--os-danger); }
+
+// Daily breakdown bars
+.daily-bar-row {
+  gap: 0.5rem;
+}
+
+.daily-bar-label {
+  width: 80px;
+  font-size: 0.75rem;
+  color: var(--os-text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.daily-bar-track {
+  height: 16px;
+  background-color: var(--os-bg);
+  border-radius: 0.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--os-primary), #339dff);
+  border-radius: 0.25rem;
+  transition: width 0.3s ease;
+}
+
+.daily-bar-target {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--os-warning);
+}
+
+.daily-bar-value {
+  width: 50px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+// Recommendations
+.recommendation-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-left: 3px solid #6c757d;
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+
+  .rec-icon {
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+  }
+}
+
+// Workweek info
+.workweek-info {
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.375rem 0.5rem;
+  }
+}
+
+// Labor vs Sales
+.labor-vs-sales {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.lvs-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.lvs-label {
+  width: 70px;
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.lvs-bars {
+  flex-grow: 1;
+  height: 18px;
+  position: relative;
+  background-color: var(--os-bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.lvs-revenue-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 9px;
+  background: linear-gradient(90deg, var(--os-primary), #3a8fd4);
+  border-radius: 3px 3px 0 0;
+}
+
+.lvs-cost-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 9px;
+  background: linear-gradient(90deg, #e67e22, #d95a2a);
+  border-radius: 0 0 3px 3px;
+}
+
+.lvs-values {
+  width: 140px;
+  font-size: 0.7rem;
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.lvs-revenue { color: var(--os-primary); }
+.lvs-separator { color: var(--os-text-muted); }
+.lvs-cost { color: #e67e22; }
+.lvs-pct { font-weight: 600; min-width: 30px; text-align: right; }
+
+.lvs-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.lvs-legend-revenue { background: var(--os-primary); }
+.lvs-legend-cost { background: #e67e22; }
+
+// Edit requests
+.edit-request-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+}
+
+.edit-values {
+  background-color: var(--os-bg);
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.5rem;
+}
+
+// === Section Divider ===
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--os-border), transparent);
+}
+
+// === PTO Request Cards ===
+.pto-request-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-left: 3px solid var(--os-primary);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+}
+
+.pto-dates {
+  font-size: 0.85rem;
+}
+
+// === Payroll ===
+.generate-payroll-form {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.payroll-period-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: rgba(0, 106, 255, 0.4);
+  }
+
+  &.expanded {
+    border-color: var(--os-primary);
+  }
+}
+
+.payroll-period-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--os-bg);
+  }
+}
+
+.payroll-summary-stat {
+  white-space: nowrap;
+}
+
+.payroll-period-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--os-border);
+}
+
+.payroll-kpi {
+  background-color: var(--os-bg);
+  border-radius: 0.375rem;
+  padding: 0.625rem;
+  text-align: center;
+}
+
+.payroll-kpi-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+.payroll-kpi-label {
+  font-size: 0.65rem;
+  color: var(--os-text-muted);
+  text-transform: uppercase;
+  margin-top: 0.125rem;
+}
+
+.payroll-member-row {
+  cursor: pointer;
+  transition: background-color 0.1s;
+
+  &:hover {
+    background-color: var(--os-bg) !important;
+  }
+}
+
+.job-breakdown-row {
+  background-color: var(--os-bg) !important;
+
+  td {
+    border-top: none !important;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+  }
+}
+
+.payroll-totals-row {
+  border-top: 2px solid var(--os-border) !important;
+
+  td {
+    border-top: 2px solid var(--os-border) !important;
+  }
+}
+
+// === Commission Rules ===
+.commission-form {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.commission-rule-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.625rem 1rem;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+}
+
+// Modal
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  width: 100%;
+  max-width: 480px;
+  padding: 1rem;
+}
+
+.modal-content {
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled { opacity: 0.6; }
+}
+
+// Compliance
+.compliance-stat {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+
+  .compliance-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .compliance-stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+    margin-top: 0.25rem;
+  }
+}
+
+.compliance-alert-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+
+  &.resolved {
+    opacity: 0.5;
+  }
+}
+
+.compliance-alert-icon {
+  font-size: 1.25rem;
+  margin-top: 0.125rem;
+}
+
+// Forecasting
+.forecast-summary {
+  .forecast-stat {
+    background-color: var(--os-bg-card);
+    border: 1px solid var(--os-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+
+    &.over-budget {
+      border-color: var(--os-danger);
+
+      .forecast-stat-value { color: var(--os-danger); }
+    }
+
+    &.under-budget {
+      border-color: var(--os-success);
+
+      .forecast-stat-value { color: var(--os-success); }
+    }
+  }
+
+  .forecast-stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+  }
+
+  .forecast-stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+}
+
+.forecast-bars {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.forecast-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--os-border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.forecast-bar-label {
+  font-size: 0.7rem;
+  color: var(--os-text-muted);
+  min-width: 80px;
+  text-align: right;
+}
+
+.forecast-bar-track {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.forecast-bar-scheduled,
+.forecast-bar-recommended {
+  height: 12px;
+  border-radius: 2px;
+  font-size: 0.6rem;
+  line-height: 12px;
+  padding-left: 4px;
+  color: #fff;
+  min-width: 16px;
+  transition: width 0.3s;
+}
+
+.forecast-bar-scheduled {
+  background-color: var(--os-primary);
+}
+
+.forecast-bar-recommended {
+  background-color: rgba(0, 166, 126, 0.6);
+}
+
+.forecast-bar-delta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 36px;
+  text-align: center;
+
+  &.over { color: var(--os-warning); }
+  &.under { color: var(--os-danger); }
+}
+
+.forecast-legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+
+  &.scheduled { background-color: var(--os-primary); }
+  &.recommended { background-color: rgba(0, 166, 126, 0.6); }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .schedule-grid {
+    grid-template-columns: 100px repeat(7, minmax(80px, 1fr));
+  }
+
+  .gauge-stats {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .gauge-stat {
+    min-width: 70px;
+  }
+
+  .payroll-period-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .payroll-summary-stat {
+    font-size: 0.8rem;
+  }
+}

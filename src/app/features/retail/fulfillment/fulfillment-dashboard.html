@@ -1,0 +1,272 @@
+<div class="fulfillment-dashboard px-2">
+<div class="page-header">
+  <h1>Fulfillment</h1>
+  <p class="page-subtitle">Manage orders from pick to ship</p>
+</div>
+
+@if (isLoading()) {
+  <os-loading-spinner />
+} @else {
+  <!-- KPI Bar -->
+  <div class="kpi-bar">
+    <button type="button" class="kpi-chip" [class.active]="activeTab() === 'pending'" (click)="setTab('pending')">
+      <span class="kpi-count">{{ pendingCount() }}</span>
+      <span class="kpi-label">Pending</span>
+    </button>
+    <button type="button" class="kpi-chip" [class.active]="activeTab() === 'processing'" (click)="setTab('processing')">
+      <span class="kpi-count">{{ processingCount() }}</span>
+      <span class="kpi-label">Processing</span>
+    </button>
+    <button type="button" class="kpi-chip" [class.active]="activeTab() === 'pickup'" (click)="setTab('pickup')">
+      <span class="kpi-count">{{ pickupCount() }}</span>
+      <span class="kpi-label">Ready</span>
+    </button>
+    <button type="button" class="kpi-chip" [class.active]="activeTab() === 'shipped'" (click)="setTab('shipped')">
+      <span class="kpi-count">{{ shippedCount() }}</span>
+      <span class="kpi-label">Shipped</span>
+    </button>
+    <button type="button" class="kpi-chip" [class.active]="activeTab() === 'completed'" (click)="setTab('completed')">
+      <span class="kpi-count">{{ completedCount() }}</span>
+      <span class="kpi-label">Completed</span>
+    </button>
+  </div>
+
+  <!-- Orders + Detail Panel -->
+  <div class="fulfillment-layout" [class.has-detail]="selectedOrder()">
+    <!-- Order List -->
+    <div class="order-list">
+      @if (filteredOrders().length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-inbox"></i>
+          <p>No orders in this stage</p>
+        </div>
+      } @else {
+        @for (order of filteredOrders(); track order.id) {
+          <button
+            type="button"
+            class="order-card"
+            [class.selected]="selectedOrder()?.id === order.id"
+            (click)="selectOrder(order)"
+          >
+            <div class="order-card-header">
+              <span class="order-number">#{{ order.orderNumber }}</span>
+              <span class="order-time">{{ getTimeSince(order.createdAt) }}</span>
+            </div>
+            <div class="order-card-body">
+              <div class="customer-name">{{ order.customerName }}</div>
+              <div class="order-meta">
+                <span class="fulfillment-type">
+                  <i class="{{ getFulfillmentIcon(order.fulfillmentType) }}"></i>
+                  {{ getFulfillmentLabel(order.fulfillmentType) }}
+                </span>
+                <span class="item-count">{{ order.items.length }} item{{ order.items.length !== 1 ? 's' : '' }}</span>
+              </div>
+            </div>
+            <div class="order-card-footer">
+              <span class="status-badge {{ getStatusClass(order.fulfillmentStatus) }}">
+                {{ getStatusLabel(order.fulfillmentStatus) }}
+              </span>
+              <span class="order-total">{{ order.total | currency }}</span>
+            </div>
+          </button>
+        }
+      }
+    </div>
+
+    <!-- Detail Panel -->
+    @if (selectedOrder(); as order) {
+      <div class="detail-panel">
+        <div class="detail-header">
+          <h2>Order #{{ order.orderNumber }}</h2>
+          <button class="close-detail" (click)="closeDetail()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- Status + Actions -->
+        <div class="detail-status">
+          <span class="status-badge {{ getStatusClass(order.fulfillmentStatus) }}">
+            {{ getStatusLabel(order.fulfillmentStatus) }}
+          </span>
+          <span class="fulfillment-type-badge">
+            <i class="{{ getFulfillmentIcon(order.fulfillmentType) }}"></i>
+            {{ getFulfillmentLabel(order.fulfillmentType) }}
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="detail-actions">
+          @if (order.fulfillmentStatus === 'pending') {
+            <button class="action-btn primary" [disabled]="isProcessing()" (click)="startProcessing(order.id)">
+              <i class="bi bi-play-fill"></i> Start Processing
+            </button>
+            <button class="action-btn danger" [disabled]="isProcessing()" (click)="cancelOrder(order.id)">
+              Cancel
+            </button>
+          }
+          @if (order.fulfillmentStatus === 'processing') {
+            @if (order.fulfillmentType === 'pickup' || order.fulfillmentType === 'curbside') {
+              <button class="action-btn primary" [disabled]="isProcessing()" (click)="markReadyForPickup(order.id)">
+                <i class="bi bi-check-circle"></i> Mark Ready for Pickup
+              </button>
+            } @else {
+              <div class="tracking-input-group">
+                <input
+                  type="text"
+                  placeholder="Tracking number (optional)"
+                  [ngModel]="trackingInput()"
+                  (ngModelChange)="trackingInput.set($event)"
+                  aria-label="Tracking number"
+                />
+                <button class="action-btn primary" [disabled]="isProcessing()" (click)="markShipped(order.id)">
+                  <i class="bi bi-truck"></i> Mark Shipped
+                </button>
+              </div>
+            }
+          }
+          @if (order.fulfillmentStatus === 'ready_for_pickup') {
+            <button class="action-btn primary" [disabled]="isProcessing()" (click)="markDelivered(order.id)">
+              <i class="bi bi-bag-check"></i> Mark Picked Up
+            </button>
+          }
+          @if (order.fulfillmentStatus === 'shipped') {
+            <button class="action-btn primary" [disabled]="isProcessing()" (click)="markOutForDelivery(order.id)">
+              <i class="bi bi-bicycle"></i> Out for Delivery
+            </button>
+            <button class="action-btn" [disabled]="isProcessing()" (click)="markDelivered(order.id)">
+              <i class="bi bi-check2-all"></i> Mark Delivered
+            </button>
+          }
+          @if (order.fulfillmentStatus === 'out_for_delivery') {
+            <button class="action-btn primary" [disabled]="isProcessing()" (click)="markDelivered(order.id)">
+              <i class="bi bi-check2-all"></i> Mark Delivered
+            </button>
+          }
+        </div>
+
+        <!-- Customer -->
+        <div class="detail-section">
+          <h3>Customer</h3>
+          <div class="detail-field">
+            <span class="field-label">Name</span>
+            <span class="field-value">{{ order.customerName }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="field-label">Email</span>
+            <span class="field-value">{{ order.customerEmail }}</span>
+          </div>
+        </div>
+
+        <!-- Shipping Address -->
+        @if (order.shippingAddress) {
+          <div class="detail-section">
+            <h3>{{ order.fulfillmentType === 'local_delivery' ? 'Delivery Address' : 'Shipping Address' }}</h3>
+            <div class="address-block">
+              <div>{{ order.shippingAddress.fullName }}</div>
+              <div>{{ order.shippingAddress.line1 }}</div>
+              @if (order.shippingAddress.line2) {
+                <div>{{ order.shippingAddress.line2 }}</div>
+              }
+              <div>{{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} {{ order.shippingAddress.postalCode }}</div>
+              @if (order.shippingAddress.phone) {
+                <div class="address-phone">{{ order.shippingAddress.phone }}</div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Tracking -->
+        @if (order.trackingNumber) {
+          <div class="detail-section">
+            <h3>Tracking</h3>
+            <div class="tracking-info">
+              <span class="tracking-number">{{ order.trackingNumber }}</span>
+              @if (order.trackingUrl) {
+                <a [href]="order.trackingUrl" target="_blank" class="tracking-link">
+                  Track Package <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Items (Pick List) -->
+        <div class="detail-section">
+          <h3>Items</h3>
+          <div class="pick-list">
+            @for (item of order.items; track $index) {
+              <div class="pick-item">
+                @if (item.imageUrl) {
+                  <img [src]="item.imageUrl" [alt]="item.name" class="pick-item-image" />
+                } @else {
+                  <div class="pick-item-image placeholder"><i class="bi bi-image"></i></div>
+                }
+                <div class="pick-item-info">
+                  <div class="pick-item-name">{{ item.name }}</div>
+                  @if (item.variationName) {
+                    <div class="pick-item-variant">{{ item.variationName }}</div>
+                  }
+                  <div class="pick-item-sku">SKU: {{ item.sku }}</div>
+                </div>
+                <div class="pick-item-qty">x{{ item.quantity }}</div>
+                <div class="pick-item-total">{{ item.lineTotal | currency }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Order Totals -->
+        <div class="detail-section">
+          <h3>Totals</h3>
+          <div class="totals-grid">
+            <div class="total-line">
+              <span>Subtotal</span>
+              <span>{{ order.subtotal | currency }}</span>
+            </div>
+            @if (order.shippingCost > 0) {
+              <div class="total-line">
+                <span>Shipping</span>
+                <span>{{ order.shippingCost | currency }}</span>
+              </div>
+            }
+            <div class="total-line">
+              <span>Tax</span>
+              <span>{{ order.taxTotal | currency }}</span>
+            </div>
+            @if (order.discountTotal > 0) {
+              <div class="total-line discount">
+                <span>Discount</span>
+                <span>-{{ order.discountTotal | currency }}</span>
+              </div>
+            }
+            <div class="total-line total">
+              <span>Total</span>
+              <span>{{ order.total | currency }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        @if (order.notes) {
+          <div class="detail-section">
+            <h3>Notes</h3>
+            <p class="order-notes">{{ order.notes }}</p>
+          </div>
+        }
+
+        <!-- Timestamps -->
+        <div class="detail-section">
+          <div class="detail-field">
+            <span class="field-label">Created</span>
+            <span class="field-value">{{ order.createdAt | date:'medium' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="field-label">Updated</span>
+            <span class="field-value">{{ order.updatedAt | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}
+</div>

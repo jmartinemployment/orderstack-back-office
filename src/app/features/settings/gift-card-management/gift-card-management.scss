@@ -1,0 +1,244 @@
+.gift-card-management {
+  color: var(--os-text-primary);
+}
+
+// KPI
+.gc-kpi {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+
+  .gc-kpi-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--os-primary);
+  }
+
+  .gc-kpi-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+  }
+}
+
+// Balance check
+.balance-check-section {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.balance-result {
+  padding: 0.5rem;
+  background-color: var(--os-bg);
+  border-radius: 0.25rem;
+}
+
+// Inputs
+.gc-input {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+
+  &::placeholder { color: var(--os-text-muted); }
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 2px rgba(0, 106, 255, 0.15);
+    color: var(--os-text-primary);
+  }
+}
+
+.gc-input-addon {
+  background-color: var(--os-bg);
+  border-color: var(--os-border);
+  color: var(--os-text-muted);
+}
+
+// Card list
+.gc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gc-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+
+  &:hover { border-color: var(--os-primary); }
+}
+
+.gc-code {
+  font-size: 0.8rem;
+  color: var(--os-primary);
+  background-color: rgba(0, 106, 255, 0.06);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.gc-code-large {
+  font-size: 1.25rem;
+  color: var(--os-primary);
+  background-color: rgba(0, 106, 255, 0.06);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  letter-spacing: 0.1em;
+}
+
+.gc-balance {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--os-success);
+}
+
+.gc-bar {
+  height: 4px;
+  background-color: var(--os-bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.gc-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--os-primary), var(--os-success));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+// Status badges
+.gc-status-active { background-color: var(--os-success); color: #fff; }
+.gc-status-redeemed { background-color: #6c757d; color: #fff; }
+.gc-status-expired { background-color: #fd7e14; color: #000; }
+.gc-status-disabled { background-color: var(--os-danger); color: #fff; }
+
+// Amount buttons
+.gc-amount-btn {
+  border: 1px solid var(--os-border);
+  color: var(--os-text-secondary);
+  min-width: 60px;
+
+  &:hover {
+    border-color: var(--os-primary);
+    color: var(--os-text-primary);
+  }
+
+  &.active {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+    color: #fff;
+  }
+}
+
+// Empty state
+.empty-state {
+  background-color: var(--os-bg-card);
+  border: 1px dashed var(--os-border);
+  border-radius: 0.375rem;
+}
+
+// Modal
+.gc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.gc-modal {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--os-text-primary);
+}
+
+.gc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--os-border);
+}
+
+.gc-modal-body {
+  padding: 1rem;
+}
+
+.gc-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--os-border);
+}
+
+// Detail
+.gc-balance-display {
+  .gc-balance-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--os-success);
+  }
+}
+
+.gc-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.gc-detail-item {
+  .gc-detail-label {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+  }
+}
+
+.gc-redemptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.gc-redemption-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0.5rem;
+  background-color: var(--os-bg);
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled { opacity: 0.6; }
+}

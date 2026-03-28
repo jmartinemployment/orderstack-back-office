@@ -1,0 +1,43 @@
+<footer class="mkt-footer">
+  <div class="container">
+    <div class="mkt-footer__grid">
+      <!-- Brand column -->
+      <div class="mkt-footer__brand-col">
+        <div class="mkt-footer__brand">
+          <i class="bi bi-stack" aria-hidden="true"></i>
+          <span>{{ copy.brand }}</span>
+        </div>
+        <p class="mkt-footer__tagline">{{ copy.tagline }}</p>
+        <a class="btn btn-os-primary btn-sm mt-3" [routerLink]="cta.route">
+          {{ cta.label }}
+        </a>
+      </div>
+
+      @for (col of columns; track col.title) {
+        <div class="mkt-footer__col">
+          <h4 class="mkt-footer__col-title">{{ col.title }}</h4>
+          @for (link of col.links; track link.route) {
+            @if (link.external) {
+              <a class="mkt-footer__link" [href]="link.route" target="_blank" rel="noopener">
+                {{ link.label }} <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+              </a>
+            } @else {
+              <a class="mkt-footer__link" [routerLink]="link.route">{{ link.label }}</a>
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <div class="mkt-footer__bottom">
+      <div class="mkt-footer__social">
+        @for (s of social; track s.url) {
+          <a [href]="s.url" target="_blank" rel="noopener" [attr.aria-label]="s.label">
+            <i [class]="'bi ' + s.icon" aria-hidden="true"></i>
+          </a>
+        }
+      </div>
+      <p class="mkt-footer__copyright">{{ copy.copyright }}</p>
+    </div>
+  </div>
+</footer>

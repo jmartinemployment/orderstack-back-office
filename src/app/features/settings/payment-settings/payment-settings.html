@@ -1,0 +1,329 @@
+<div class="payment-settings">
+  <!-- Connection Status Section -->
+  <div class="connect-section mb-4">
+    <h5 class="mb-3">Payment Processor Connection</h5>
+    <p class="text-muted small mb-3">
+      Connect a payment processor to accept card payments. Your platform fee is included in each transaction.
+    </p>
+
+    <div class="connect-cards">
+      <!-- PayPal -->
+      <div class="connect-card" [class.connected]="paypalStatus() === 'connected'">
+        <div class="connect-card-header">
+          <div class="connect-logo paypal">
+            <i class="bi bi-paypal"></i>
+          </div>
+          <div class="connect-info">
+            <strong>PayPal</strong>
+            <span>2.29% + 9 cents per transaction</span>
+          </div>
+          @if (paypalStatus() === 'connected') {
+            <span class="connect-badge connected">
+              <i class="bi bi-check-circle-fill"></i> Connected
+            </span>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              [disabled]="isConnecting()"
+              (click)="connectPayPal()">
+              @if (isConnecting()) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+              }
+              Connect
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (connectError()) {
+      <div class="alert alert-danger mt-2 small">{{ connectError() }}</div>
+    }
+  </div>
+
+  <h5 class="mb-3">Payment Processor</h5>
+  <p class="text-muted small mb-3">
+    Select how your restaurant processes payments. Changes take effect immediately for new orders.
+  </p>
+
+  <div class="processor-options mb-4">
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="radio"
+        name="processor"
+        id="processorNone"
+        value="none"
+        [checked]="processor() === 'none'"
+        (change)="onProcessorChange($event)"
+      />
+      <label class="form-check-label" for="processorNone">
+        <strong>No Payment Processing</strong>
+        <span class="d-block text-muted small">Orders are sent to the kitchen without collecting payment. Settle at the register.</span>
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="radio"
+        name="processor"
+        id="processorPaypal"
+        value="paypal"
+        [checked]="processor() === 'paypal'"
+        (change)="onProcessorChange($event)"
+      />
+      <label class="form-check-label" for="processorPaypal">
+        <strong>PayPal Zettle</strong>
+        <span class="d-block text-muted small">2.29% + $0.09 per transaction. PayPal, Venmo, and card payments. $0 monthly fees.</span>
+      </label>
+    </div>
+
+  </div>
+
+  @if (processor() !== 'none') {
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="requirePayment"
+        [checked]="requirePayment()"
+        (change)="onRequirePaymentChange($event)"
+      />
+      <label class="form-check-label" for="requirePayment">
+        Require payment before sending to kitchen
+      </label>
+    </div>
+  }
+
+  <!-- Surcharge Section -->
+  <div class="surcharge-section mb-4">
+    <h6 class="mb-2">Credit Card Surcharge</h6>
+    <p class="text-muted small mb-3">
+      Pass processing fees to customers paying by card. Cash and other payment methods are not surcharged.
+    </p>
+    <div class="form-check mb-2">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="surchargeEnabled"
+        [checked]="surchargeEnabled()"
+        (change)="onSurchargeEnabledChange($event)"
+      />
+      <label class="form-check-label" for="surchargeEnabled">
+        Enable credit card surcharge
+      </label>
+    </div>
+    @if (surchargeEnabled()) {
+      <div class="d-flex align-items-center gap-2 ms-4">
+        <label class="form-label mb-0 small" for="surchargePercent">Rate:</label>
+        <input
+          type="number"
+          class="form-control form-control-sm surcharge-input"
+          id="surchargePercent"
+          [value]="surchargePercent()"
+          (input)="onSurchargePercentChange($event)"
+          min="0"
+          max="10"
+          step="0.1"
+        />
+        <span class="small text-muted">%</span>
+      </div>
+      <p class="text-muted small mt-1 ms-4">
+        Typical range: 2.5% – 4%. Check local regulations for surcharge limits.
+      </p>
+    }
+  </div>
+
+  <div class="d-flex gap-2 mb-4">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="!isDirty() || isSaving()"
+      (click)="save()"
+    >
+      @if (isSaving()) {
+        <span class="spinner-border spinner-border-sm me-1"></span>
+        Saving...
+      } @else {
+        Save
+      }
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-light"
+      [disabled]="!isDirty()"
+      (click)="discard()"
+    >
+      Discard
+    </button>
+    @if (saved()) {
+      <span class="text-success small align-self-center ms-2">Saved</span>
+    }
+  </div>
+
+  <!-- ==================== Scan to Pay Section ==================== -->
+  <div class="stp-settings-section">
+    <div class="stp-settings-header">
+      <div>
+        <h5 class="mb-1">
+          <i class="bi bi-qr-code me-2"></i>Scan to Pay
+        </h5>
+        <p class="text-muted small mb-0">
+          Guests scan a QR code to view their check, add a tip, and pay from their phone.
+        </p>
+      </div>
+      <div class="form-check form-switch">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="stpEnabled"
+          [checked]="stpEnabled()"
+          (change)="onStpEnabledChange($event)"
+          aria-label="Enable Scan to Pay"
+        />
+      </div>
+    </div>
+
+    @if (stpEnabled()) {
+      <div class="stp-settings-body">
+        <!-- Tip Percentages -->
+        <div class="stp-field">
+          <span class="form-label" id="stp-tip-percentages-label">Default Tip Percentages</span>
+          <div class="stp-tip-chips">
+            @for (pct of stpTipPercentages(); track pct; let i = $index) {
+              <span class="stp-tip-chip">
+                {{ pct }}%
+                <button type="button" class="stp-chip-remove" [attr.aria-label]="'Remove ' + pct + '% tip option'" (click)="removeTipPercentage(i)">
+                  <i class="bi bi-x"></i>
+                </button>
+              </span>
+            }
+            <div class="stp-add-tip">
+              <input
+                type="number"
+                class="form-control form-control-sm stp-tip-input"
+                placeholder="%"
+                aria-label="Custom tip percentage"
+                min="1"
+                max="100"
+                [value]="stpCustomTip()"
+                (input)="setStpCustomTip($any($event.target).value)"
+                (keydown.enter)="addTipPercentage()"
+              />
+              <button type="button" class="btn btn-sm btn-outline-primary" aria-label="Add tip percentage" (click)="addTipPercentage()">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+          </div>
+          <small class="text-muted">Guests will see these preset tip options when paying.</small>
+        </div>
+
+        <!-- Token Expiration -->
+        <div class="stp-field">
+          <label class="form-label" for="stpExpiration">QR Code Expiration</label>
+          <div class="d-flex align-items-center gap-2">
+            <input
+              type="number"
+              class="form-control form-control-sm stp-expiration-input"
+              id="stpExpiration"
+              [value]="stpTokenExpiration()"
+              (input)="onStpTokenExpirationChange($event)"
+              min="15"
+              max="1440"
+            />
+            <span class="small text-muted">minutes</span>
+          </div>
+          <small class="text-muted">Time before the QR payment link expires. Default: 120 minutes (2 hours).</small>
+        </div>
+
+        <!-- Toggles -->
+        <div class="stp-toggles">
+          <div class="form-check mb-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="stpAutoClose"
+              [checked]="stpAutoClose()"
+              (change)="onStpAutoCloseChange($event)"
+            />
+            <label class="form-check-label" for="stpAutoClose">
+              Auto-close check when fully paid
+              <span class="d-block text-muted small">When disabled, server must manually close the check after QR payment.</span>
+            </label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="stpAllowSplit"
+              [checked]="stpAllowSplit()"
+              (change)="onStpAllowSplitChange($event)"
+            />
+            <label class="form-check-label" for="stpAllowSplit">
+              Allow split pay via QR
+              <span class="d-block text-muted small">Multiple guests can scan the same QR and each pay for their items.</span>
+            </label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="stpQrOnReceipts"
+              [checked]="stpQrOnReceipts()"
+              (change)="onStpQrOnReceiptsChange($event)"
+            />
+            <label class="form-check-label" for="stpQrOnReceipts">
+              Include QR code on printed receipts
+              <span class="d-block text-muted small">Automatically adds a payment QR code to every printed check.</span>
+            </label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="stpEmailReceipt"
+              [checked]="stpEmailReceipt()"
+              (change)="onStpEmailReceiptChange($event)"
+            />
+            <label class="form-check-label" for="stpEmailReceipt">
+              Email receipt option
+              <span class="d-block text-muted small">After paying, guests can enter their email to receive a digital receipt.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!stpIsDirty() || isSaving()"
+            (click)="saveScanToPay()"
+          >
+            @if (isSaving()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Saving...
+            } @else {
+              Save Scan to Pay
+            }
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-light"
+            [disabled]="!stpIsDirty()"
+            (click)="discardScanToPay()"
+          >
+            Discard
+          </button>
+          @if (stpSaved()) {
+            <span class="text-success small align-self-center ms-2">Saved</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

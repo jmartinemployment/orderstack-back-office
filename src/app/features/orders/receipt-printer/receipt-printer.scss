@@ -1,0 +1,87 @@
+.receipt-printer {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.receipt {
+  background-color: #fff;
+  color: #000;
+  padding: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  border: 1px solid var(--os-border);
+  border-radius: 4px;
+}
+
+.restaurant-name {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.divider {
+  border-top: 1px dashed #000;
+  margin: 0.5rem 0;
+}
+
+.order-info {
+  font-size: 11px;
+}
+
+.receipt-items {
+  .receipt-item {
+    .item-modifiers,
+    .item-note {
+      font-size: 10px;
+    }
+  }
+}
+
+.receipt-totals {
+  .total {
+    font-size: 14px;
+  }
+}
+
+.receipt-footer {
+  font-size: 11px;
+}
+
+// Print styles
+@media print {
+  .d-print-none {
+    display: none !important;
+  }
+
+  .receipt-printer {
+    max-width: 100%;
+    width: 80mm; // Standard receipt width
+  }
+
+  .receipt {
+    border: none;
+    padding: 0;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}

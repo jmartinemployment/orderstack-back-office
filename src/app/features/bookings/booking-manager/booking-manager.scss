@@ -1,0 +1,823 @@
+.booking-manager {
+  h2 { color: var(--os-text-primary); font-weight: 600; }
+}
+
+// KPI strip
+.kpi-strip {
+  .kpi-chip {
+    background-color: var(--os-bg-card);
+    border: 1px solid var(--os-border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .kpi-chip-label {
+      font-size: 0.75rem;
+      color: var(--os-text-muted);
+      text-transform: uppercase;
+    }
+
+    .kpi-chip-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--os-text-primary);
+    }
+
+    &.kpi-chip-warning {
+      border-color: var(--os-warning);
+      .kpi-chip-value { color: var(--os-warning); }
+    }
+  }
+}
+
+// Tabs
+.res-tabs {
+  .nav-link {
+    color: var(--os-text-secondary);
+    font-size: 0.875rem;
+    &:hover { color: var(--os-text-primary); }
+    &.active { background-color: var(--os-primary); color: #fff; }
+    .badge { font-size: 0.65rem; }
+  }
+}
+
+// Reservation cards
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.res-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  color: var(--os-text-primary);
+
+  &:hover { border-color: var(--os-primary); }
+
+  &.res-past { opacity: 0.7; }
+}
+
+.res-time {
+  font-weight: 700;
+  color: var(--os-primary);
+  font-size: 1rem;
+}
+
+.res-date {
+  color: var(--os-text-secondary);
+  font-size: 0.85rem;
+}
+
+.res-name {
+  font-weight: 600;
+  color: var(--os-text-primary);
+}
+
+// Status badges
+.status-pending { background-color: #6c757d; color: #fff; }
+.status-confirmed { background-color: var(--os-success); color: #fff; }
+.status-seated { background-color: var(--os-primary); color: #fff; }
+.status-completed { background-color: var(--os-primary-hover); color: #fff; }
+.status-cancelled { background-color: var(--os-danger); color: #fff; }
+.status-noshow { background-color: #a34f00; color: #fff; }
+
+// Empty state
+.empty-state {
+  background-color: var(--os-bg-card);
+  border: 1px dashed var(--os-border);
+  border-radius: 0.5rem;
+}
+
+// Modal
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  &.modal-wide { max-width: 700px; }
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+    h4 { color: var(--os-text-primary); font-weight: 600; }
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+// Form
+.form-label {
+  color: var(--os-text-secondary);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.form-control,
+.form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &::placeholder { color: var(--os-text-muted); }
+
+  &:focus {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-primary);
+    color: var(--os-text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 106, 255, 0.15);
+  }
+
+  option { background-color: var(--os-bg-card); }
+}
+
+// Detail grid
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.detail-item {
+  .detail-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+    display: block;
+  }
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--os-text-muted);
+}
+
+.section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--os-text-muted);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+// Waitlist
+.waitlist-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.waitlist-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s;
+  color: var(--os-text-primary);
+
+  &:hover { border-color: var(--os-primary); }
+
+  &.waitlist-notified {
+    border-left: 3px solid var(--os-success);
+  }
+
+  &.waitlist-on-my-way {
+    border-left: 3px solid var(--os-info, #0dcaf0);
+    background-color: rgba(13, 202, 240, 0.03);
+  }
+}
+
+.waitlist-position {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(245, 166, 35, 0.1);
+  color: var(--os-warning);
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.waitlist-wait-time {
+  color: var(--os-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled { opacity: 0.5; }
+}
+
+// ─── Recurring Reservations (Phase 2) ───
+
+.badge-recurring {
+  background-color: rgba(0, 106, 255, 0.1);
+  color: var(--os-primary);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.recurring-section {
+  .recurring-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recurring-card {
+    background-color: var(--os-bg-card);
+    border: 1px solid var(--os-border);
+    border-left: 3px solid var(--os-primary);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+.recurring-options {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+}
+
+// ─── Timeline View (Phase 2) ───
+
+.timeline-date-picker {
+  max-width: 200px;
+}
+
+.capacity-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+
+  .capacity-strip-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+    width: 120px;
+    text-align: right;
+    padding-bottom: 2px;
+    flex-shrink: 0;
+  }
+
+  .capacity-strip-bar {
+    display: flex;
+    gap: 1px;
+    flex: 1;
+    height: 24px;
+    background-color: var(--os-bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .capacity-cell {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    background-color: var(--os-bg-card);
+
+    .capacity-fill {
+      width: 100%;
+      border-radius: 2px 2px 0 0;
+      transition: height 0.3s;
+    }
+  }
+}
+
+.timeline-container {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.timeline-header {
+  display: flex;
+  border-bottom: 1px solid var(--os-border);
+  position: sticky;
+  top: 0;
+  background-color: var(--os-bg-card);
+  z-index: 2;
+}
+
+.timeline-label-col {
+  width: 120px;
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  border-right: 1px solid var(--os-border);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  .table-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .table-capacity {
+    font-size: 0.65rem;
+    color: var(--os-text-muted);
+  }
+}
+
+.timeline-grid-area {
+  flex: 1;
+  position: relative;
+  min-width: 900px;
+  height: 36px;
+  display: flex;
+}
+
+.timeline-hour-mark {
+  flex: 1;
+  border-left: 1px solid var(--os-border);
+  padding: 0.25rem 0.35rem;
+  font-size: 0.65rem;
+  color: var(--os-text-muted);
+  white-space: nowrap;
+}
+
+.timeline-row {
+  display: flex;
+  border-bottom: 1px solid var(--os-border);
+
+  &:last-child { border-bottom: none; }
+
+  .timeline-grid-area {
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent calc(100% / 15 - 1px),
+      var(--os-border) calc(100% / 15 - 1px),
+      var(--os-border) calc(100% / 15)
+    );
+  }
+}
+
+.timeline-block {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 4px;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  z-index: 1;
+  transition: opacity 0.2s;
+
+  &:hover { opacity: 0.85; }
+
+  .block-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .block-size {
+    opacity: 0.8;
+    font-size: 0.6rem;
+  }
+
+  &.block-pending {
+    background-color: #6c757d;
+    color: #fff;
+  }
+
+  &.block-confirmed {
+    background-color: var(--os-success);
+    color: #fff;
+  }
+
+  &.block-seated {
+    background-color: var(--os-primary);
+    color: #fff;
+  }
+
+  &.block-completed {
+    background-color: var(--os-primary-hover);
+    color: #fff;
+    opacity: 0.6;
+  }
+}
+
+.current-time-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--os-danger);
+  z-index: 3;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--os-danger);
+  }
+}
+
+// ─── Events (Phase 2) ───
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.event-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  color: var(--os-text-primary);
+
+  &:hover { border-color: var(--os-primary); }
+}
+
+.badge-event-type {
+  background-color: #f0ecf8;
+  color: #5b21b6;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.badge-published {
+  background-color: var(--os-success);
+  color: #fff;
+  font-size: 0.65rem;
+}
+
+.badge-draft {
+  background-color: #6c757d;
+  color: #fff;
+  font-size: 0.65rem;
+}
+
+.badge-checked-in {
+  background-color: var(--os-success);
+  color: #fff;
+  font-size: 0.65rem;
+}
+
+.badge-success { background-color: var(--os-success); color: #fff; }
+.badge-warning { background-color: var(--os-warning); color: #fff; }
+.badge-secondary { background-color: #6c757d; color: #fff; }
+
+.attendees-section {
+  .attendee-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .attendee-row {
+    background-color: var(--os-bg);
+    border: 1px solid var(--os-border);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+// ─── Guest Preferences (Phase 2) ───
+
+.pref-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.badge-pref {
+  background-color: rgba(0, 106, 255, 0.08);
+  color: var(--os-primary);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+.badge-celebration {
+  background-color: #fcebf3;
+  color: #9d174d;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.badge-dietary {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: var(--os-success);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+.preferences-section {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.dietary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dietary-chip {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--os-border);
+  border-radius: 2rem;
+  background-color: var(--os-bg-card);
+  color: var(--os-text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary);
+    color: var(--os-primary);
+  }
+
+  &.dietary-active {
+    background-color: rgba(0, 106, 255, 0.1);
+    border-color: var(--os-primary);
+    color: var(--os-primary);
+    font-weight: 600;
+  }
+}
+
+.form-check-input {
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+// ─── Google Calendar Sync (Phase 3) ───
+
+.calendar-settings-panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+
+  h6 {
+    color: var(--os-text-primary);
+    font-weight: 600;
+  }
+}
+
+.calendar-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2rem;
+
+  &.status-connected {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--os-success);
+  }
+
+  &.status-syncing {
+    background-color: rgba(0, 106, 255, 0.1);
+    color: var(--os-primary);
+  }
+
+  &.status-error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--os-danger);
+  }
+
+  &.status-disconnected {
+    background-color: #f0f1f2;
+    color: #5a6270;
+  }
+}
+
+.calendar-connected-info {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.calendar-toggles {
+  .form-check-label {
+    font-size: 0.875rem;
+    color: var(--os-text-primary);
+  }
+}
+
+.calendar-blocks {
+  .calendar-block-card {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 0.375rem;
+    margin-bottom: 0.25rem;
+
+    &:last-child { margin-bottom: 0; }
+  }
+}
+
+// ─── Waitlist SMS & On My Way (Phase 3) ───
+
+.badge-on-my-way {
+  background-color: rgba(13, 202, 240, 0.1);
+  color: var(--os-info, #0dcaf0);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.on-my-way-section {
+  .on-my-way-card {
+    background-color: var(--os-bg-card);
+    border: 1px solid var(--os-info, #0dcaf0);
+    border-left: 3px solid var(--os-info, #0dcaf0);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+
+    &:last-child { margin-bottom: 0; }
+
+    i.bi-geo-alt-fill {
+      color: var(--os-info, #0dcaf0);
+    }
+  }
+}
+
+.virtual-waitlist-bar {
+  background-color: rgba(0, 106, 255, 0.04);
+  border: 1px solid rgba(0, 106, 255, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+
+  i.bi-qr-code {
+    color: var(--os-primary);
+  }
+}
+
+// ─── Waitlist Analytics (Phase 3) ───
+
+.waitlist-analytics-panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+
+  h6 {
+    color: var(--os-text-primary);
+    font-weight: 600;
+  }
+}
+
+.analytics-kpis {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.analytics-kpi {
+  text-align: center;
+
+  .analytics-kpi-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+  }
+
+  .analytics-kpi-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  .analytics-success { color: var(--os-success); }
+  .analytics-danger { color: var(--os-danger); }
+  .analytics-warning { color: var(--os-warning); }
+}
+
+.analytics-chart-section {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.analytics-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .bar-label {
+    width: 48px;
+    font-size: 0.75rem;
+    color: var(--os-text-secondary);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 16px;
+    background-color: var(--os-bg-card);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background-color: var(--os-primary);
+    border-radius: 3px;
+    min-width: 2px;
+    transition: width 0.3s;
+  }
+
+  .bar-fill-alt {
+    background-color: var(--os-success);
+  }
+
+  .bar-value {
+    width: 80px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    flex-shrink: 0;
+  }
+}
+
+// ─── Virtual Waitlist Config (Phase 3) ───
+
+.qr-placeholder {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+}
+
+.qr-code-img {
+  max-width: 180px;
+  height: auto;
+}

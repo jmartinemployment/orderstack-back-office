@@ -1,0 +1,272 @@
+<div class="purchase-orders px-2">
+  <div class="page-header">
+    <h1>Purchase Orders</h1>
+    <button class="btn-primary" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg"></i> New PO
+    </button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-strip">
+    <div class="kpi-chip">
+      <span class="kpi-num">{{ orderCountByStatus().all }}</span>
+      <span class="kpi-label">Total POs</span>
+    </div>
+    <div class="kpi-chip kpi-info">
+      <span class="kpi-num">{{ orderCountByStatus().submitted }}</span>
+      <span class="kpi-label">Open</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-num">${{ totalOpenValue() | number:'1.2-2' }}</span>
+      <span class="kpi-label">Open Value</span>
+    </div>
+  </div>
+
+  <!-- Filter Pills -->
+  <div class="filter-pills">
+    @for (filter of statusFilters; track filter.value) {
+      <button class="pill" [class.active]="activeFilter() === filter.value" (click)="setFilter(filter.value)">
+        {{ filter.label }}
+        @if (orderCountByStatus()[filter.value] > 0) {
+          <span class="pill-count">{{ orderCountByStatus()[filter.value] }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- PO List -->
+  <div class="po-list">
+    @for (po of filteredOrders(); track po.id) {
+      <div class="po-card">
+        <button type="button" class="po-header" (click)="toggleExpanded(po.id)">
+          <div class="po-info">
+            <span class="po-id">PO-{{ po.id.substring(0, 8) }}</span>
+            <span class="po-vendor">{{ getVendorName(po.vendorId) }}</span>
+          </div>
+          <div class="po-right">
+            <span class="po-total">${{ po.total | number:'1.2-2' }}</span>
+            <span class="badge" [class]="getStatusClass(po.status)">
+              {{ po.status === 'partially_received' ? 'Partial' : (po.status | titlecase) }}
+            </span>
+            <i class="bi" [class.bi-chevron-down]="expandedPOId() !== po.id" [class.bi-chevron-up]="expandedPOId() === po.id"></i>
+          </div>
+        </button>
+
+        <div class="po-meta">
+          <span>{{ po.lineItems.length }} items</span>
+          <span>Created {{ po.createdAt | date:'mediumDate' }}</span>
+          @if (po.expectedDeliveryDate) {
+            <span>Expected {{ po.expectedDeliveryDate | date:'mediumDate' }}</span>
+          }
+        </div>
+
+        @if (expandedPOId() === po.id) {
+          <div class="po-detail">
+            <table class="line-items-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Unit Cost</th>
+                  <th>Received</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (li of po.lineItems; track li.inventoryItemId) {
+                  <tr>
+                    <td>{{ li.itemName }}</td>
+                    <td>{{ li.quantity }}</td>
+                    <td>${{ li.unitCost | number:'1.2-2' }}</td>
+                    <td>
+                      @if (po.status === 'received' || po.status === 'partially_received') {
+                        <span [class.text-success]="(li.receivedQuantity ?? 0) >= li.quantity"
+                              [class.text-warning]="(li.receivedQuantity ?? 0) > 0 && (li.receivedQuantity ?? 0) < li.quantity">
+                          {{ li.receivedQuantity ?? 0 }} / {{ li.quantity }}
+                        </span>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>${{ li.quantity * li.unitCost | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+
+            @if (po.notes) {
+              <div class="po-notes">
+                <strong>Notes:</strong> {{ po.notes }}
+              </div>
+            }
+
+            <div class="po-actions">
+              @if (po.status === 'draft') {
+                <button class="btn-primary btn-sm" (click)="submitPO(po.id)">
+                  <i class="bi bi-send"></i> Submit
+                </button>
+                <button class="btn-outline btn-sm" (click)="cancelPO(po.id)">Cancel</button>
+              }
+              @if (po.status === 'submitted' || po.status === 'partially_received') {
+                <button class="btn-primary btn-sm" (click)="openReceiveModal(po)">
+                  <i class="bi bi-box-arrow-in-down"></i> Receive
+                </button>
+                @if (po.status === 'submitted') {
+                  <button class="btn-outline btn-sm" (click)="cancelPO(po.id)">Cancel</button>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <i class="bi bi-clipboard-check"></i>
+        <p>No purchase orders yet. Create your first PO to manage vendor orders.</p>
+        <button class="btn-primary" (click)="openCreateModal()">
+          <i class="bi bi-plus-lg"></i> New PO
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Create PO Modal -->
+  @if (showCreateModal()) {
+    <div class="modal-backdrop" (click)="closeCreateModal()" (keydown.enter)="closeCreateModal()" aria-hidden="true">
+      <div class="modal-content modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>New Purchase Order</h3>
+          <button class="btn-close" (click)="closeCreateModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="po-vendor">Vendor *</label>
+              <select id="po-vendor" [ngModel]="formVendorId()" (ngModelChange)="updateFormVendor($event)">
+                <option value="">Select vendor...</option>
+                @for (vendor of vendors(); track vendor.id) {
+                  @if (vendor.isActive) {
+                    <option [value]="vendor.id">{{ vendor.name }}</option>
+                  }
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="po-expected-delivery">Expected Delivery</label>
+              <input id="po-expected-delivery" type="date" [ngModel]="formExpectedDate()" (ngModelChange)="updateFormDate($event)" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <p class="form-label">Line Items</p>
+            @for (li of formLineItems(); track $index) {
+              <div class="line-item-row">
+                <label [for]="'po-line-item-' + $index" class="visually-hidden">Line item {{ $index + 1 }}</label>
+                <select [id]="'po-line-item-' + $index" [ngModel]="li.inventoryItemId" (ngModelChange)="updateLineItemId($index, $event)">
+                  <option value="">Select item...</option>
+                  @for (item of catalogService.activeItems(); track item.id) {
+                    <option [value]="item.id">{{ item.name }}</option>
+                  }
+                </select>
+                <input
+                  type="number"
+                  min="1"
+                  aria-label="Line item quantity"
+                  [ngModel]="li.quantity"
+                  (ngModelChange)="updateLineItemQty($index, $event)"
+                  placeholder="Qty"
+                  class="qty-input"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  aria-label="Line item unit cost"
+                  [ngModel]="li.unitCost"
+                  (ngModelChange)="updateLineItemCost($index, $event)"
+                  placeholder="Cost"
+                  class="cost-input"
+                />
+                <span class="line-total">${{ li.quantity * li.unitCost | number:'1.2-2' }}</span>
+                <button class="btn-icon btn-remove-icon" (click)="removeLineItem($index)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            }
+            <button class="btn-text" (click)="addLineItem()">
+              <i class="bi bi-plus-lg"></i> Add Item
+            </button>
+          </div>
+
+          <div class="form-total">
+            PO Total: <strong>${{ getFormTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="form-group">
+            <label for="po-notes">Notes</label>
+            <textarea id="po-notes" [ngModel]="formNotes()" (ngModelChange)="updateFormNotes($event)" rows="2" placeholder="Optional notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeCreateModal()">Cancel</button>
+          <button
+            class="btn-primary"
+            (click)="createPO()"
+            [disabled]="!formVendorId() || formLineItems().length === 0"
+          >
+            Create PO
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Receive Modal -->
+  @if (showReceiveModal() && receivePO(); as po) {
+    <div class="modal-backdrop" (click)="closeReceiveModal()" (keydown.enter)="closeReceiveModal()" aria-hidden="true">
+      <div class="modal-content modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Receive PO-{{ po.id.substring(0, 8) }}</h3>
+          <button class="btn-close" (click)="closeReceiveModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <table class="line-items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Ordered</th>
+                <th>Previously Received</th>
+                <th>Receiving Now</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (li of po.lineItems; track $index) {
+                <tr>
+                  <td>{{ li.itemName }}</td>
+                  <td>{{ li.quantity }}</td>
+                  <td>{{ li.receivedQuantity }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      [max]="li.quantity - (li.receivedQuantity ?? 0)"
+                      class="receive-input"
+                      aria-label="Receiving quantity for {{ li.itemName }}"
+                      [ngModel]="receiveItems()[$index]?.receivedQuantity ?? 0"
+                      (ngModelChange)="updateReceiveQty($index, $event)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeReceiveModal()">Cancel</button>
+          <button class="btn-primary" (click)="submitReceive()">
+            <i class="bi bi-check-lg"></i> Confirm Received
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

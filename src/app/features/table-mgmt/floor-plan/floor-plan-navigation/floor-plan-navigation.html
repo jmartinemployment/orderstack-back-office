@@ -1,0 +1,16 @@
+<nav class="floor-plan-nav">
+  <button
+    type="button"
+    class="nav-item"
+    [class.active]="activeView() === 'floor'"
+    (click)="viewChange.emit('floor')">
+    <i class="bi bi-grid-3x3-gap me-1"></i>Floor Plan
+  </button>
+  <button
+    type="button"
+    class="nav-item"
+    [class.active]="activeView() === 'list'"
+    (click)="viewChange.emit('list')">
+    <i class="bi bi-list-ul me-1"></i>List View
+  </button>
+</nav>

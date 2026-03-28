@@ -1,0 +1,167 @@
+<div class="guest-check">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary mb-3"></div>
+      <p>Loading your check...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <i class="bi bi-exclamation-circle"></i>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (checkData(); as data) {
+    <!-- Header -->
+    <div class="check-header">
+      <h1>{{ data.restaurantName }}</h1>
+      <p class="order-number">Order #{{ data.orderNumber }}</p>
+      @if (data.tableName) {
+        <p class="table-info">Table {{ data.tableName }} &middot; Server: {{ data.serverName }}</p>
+      }
+    </div>
+
+    <!-- Split Mode Toggle -->
+    <div class="split-toggle">
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-primary]="splitMode()"
+        [class.btn-outline-secondary]="!splitMode()"
+        (click)="toggleSplitMode()"
+      >
+        <i class="bi bi-scissors me-1"></i>
+        {{ splitMode() ? 'Cancel Split' : 'Split My Share' }}
+      </button>
+      @if (splitMode()) {
+        <span class="split-hint">Select the items that are yours</span>
+      }
+    </div>
+
+    <!-- Items -->
+    <div class="check-items">
+      @for (sel of data.check.selections; track sel.guid) {
+        <div
+          class="check-item"
+          [class.selectable]="splitMode()"
+          [class.selected]="splitMode() && isItemSelected(sel.guid)"
+          (click)="splitMode() ? toggleItemSelection(sel.guid) : null"
+          (keydown.enter)="splitMode() ? toggleItemSelection(sel.guid) : null"
+          [attr.tabindex]="splitMode() ? 0 : null"
+          [attr.role]="splitMode() ? 'button' : null"
+        >
+          <div class="item-info">
+            @if (splitMode()) {
+              <i class="bi me-2" [class.bi-check-circle-fill]="isItemSelected(sel.guid)" [class.bi-circle]="!isItemSelected(sel.guid)"></i>
+            }
+            <span class="item-qty">{{ sel.quantity }}x</span>
+            <span class="item-name">{{ sel.menuItemName }}</span>
+          </div>
+          <span class="item-price">{{ sel.totalPrice | currency }}</span>
+        </div>
+        @if (sel.modifiers && sel.modifiers.length > 0) {
+          <div class="item-modifiers">
+            @for (mod of sel.modifiers; track mod.guid) {
+              <span class="modifier">
+                + {{ mod.name }}
+                @if (mod.priceAdjustment > 0) {
+                  ({{ mod.priceAdjustment | currency }})
+                }
+              </span>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Totals -->
+    <div class="check-totals">
+      <div class="total-row">
+        <span>Subtotal</span>
+        <span>{{ displaySubtotal() | currency }}</span>
+      </div>
+      <div class="total-row">
+        <span>Tax</span>
+        <span>{{ displayTax() | currency }}</span>
+      </div>
+      <div class="total-row tip-row">
+        <span>Tip</span>
+        <span>{{ tipAmount() | currency }}</span>
+      </div>
+      <div class="total-row grand-total">
+        <span>Total</span>
+        <span>{{ displayTotal() | currency }}</span>
+      </div>
+    </div>
+
+    <!-- Tip Selection -->
+    <div class="tip-section">
+      <h3>Add a tip</h3>
+      <div class="tip-presets">
+        @for (pct of tipPresets; track pct) {
+          <button
+            type="button"
+            class="tip-btn"
+            [class.active]="tipPercent() === pct && !showCustomTip()"
+            (click)="selectTipPercent(pct)"
+          >
+            {{ pct }}%
+          </button>
+        }
+        <button
+          type="button"
+          class="tip-btn"
+          [class.active]="showCustomTip()"
+          (click)="showCustomTipInput()"
+        >
+          Custom
+        </button>
+        <button
+          type="button"
+          class="tip-btn no-tip"
+          [class.active]="tipPercent() === null && !showCustomTip()"
+          (click)="selectNoTip()"
+        >
+          No Tip
+        </button>
+      </div>
+      @if (showCustomTip()) {
+        <div class="custom-tip-input">
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              class="form-control"
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+              aria-label="Custom tip amount"
+              [value]="customTipAmount()"
+              (input)="setCustomTip($any($event.target).value)"
+            />
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Request Server -->
+    <div class="actions">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-lg w-100 mb-2"
+        [disabled]="requestingServer() || serverRequested()"
+        (click)="requestServer()"
+      >
+        @if (serverRequested()) {
+          <i class="bi bi-check-lg me-1"></i> Server Notified
+        } @else if (requestingServer()) {
+          <span class="spinner-border spinner-border-sm me-1"></span> Requesting...
+        } @else {
+          <i class="bi bi-bell me-1"></i> Request Server
+        }
+      </button>
+    </div>
+
+    <div class="powered-by">
+      Powered by GetOrderStack
+    </div>
+  }
+</div>

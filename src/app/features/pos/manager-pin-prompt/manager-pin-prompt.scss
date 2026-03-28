@@ -1,0 +1,145 @@
+@use 'sass:color';
+
+$bg-dark: #1a1a2e;
+$bg-card: #16213e;
+$accent: #7c5cfc;
+$danger: #e74c3c;
+
+.pin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.pin-modal {
+  background: $bg-card;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 340px;
+  max-width: 95vw;
+  color: #e0e0e0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.pin-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+
+  h5 {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .text-muted {
+    font-size: 0.85rem;
+    color: #8892b0 !important;
+  }
+}
+
+.pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #4a4a6a;
+  transition: all 0.15s ease;
+
+  &.filled {
+    background: $accent;
+    border-color: $accent;
+    box-shadow: 0 0 8px rgba($accent, 0.4);
+  }
+}
+
+.pin-error {
+  text-align: center;
+  color: $danger;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.pin-key {
+  height: 56px;
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  background: #1e1e36;
+  color: #e8e8e8;
+  font-size: 1.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #4a4a6a;
+  }
+
+  &:active:not(:disabled) {
+    background: rgba($accent, 0.2);
+    transform: scale(0.96);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.pin-key-action {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #b0b8d0;
+  }
+}
+
+.pin-actions {
+  display: flex;
+  gap: 12px;
+
+  .btn {
+    flex: 1;
+    padding: 0.65rem;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .btn-primary {
+    background: $accent;
+    border-color: $accent;
+
+    &:hover:not(:disabled) {
+      background: color.adjust($accent, $lightness: -8%);
+    }
+  }
+
+  .btn-outline-secondary {
+    border-color: #4a4a6a;
+    color: #8892b0;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+}

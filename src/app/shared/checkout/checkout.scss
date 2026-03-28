@@ -1,0 +1,395 @@
+// ===== Checkout Overlay =====
+
+:host {
+  display: contents;
+}
+
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.checkout-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s ease;
+
+  > .btn-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1;
+  }
+}
+
+.checkout-step {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  &.checkout-step-centered {
+    min-height: 280px;
+    justify-content: center;
+  }
+}
+
+.checkout-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.checkout-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: #6b6b6b;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.checkout-amount {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 300;
+  color: #1a1a1a;
+}
+
+.checkout-order-number {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 2px;
+}
+
+// --- Dining Options ---
+
+.dining-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.dining-option-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  background: #fff;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #006aff;
+    box-shadow: 0 4px 12px rgba(0, 106, 255, 0.12);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.dining-option-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f0f5ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 24px;
+    color: #006aff;
+  }
+}
+
+.dining-option-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.dining-option-desc {
+  font-size: 13px;
+  color: #6b6b6b;
+  text-align: center;
+}
+
+// --- Table Selection ---
+
+.table-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.table-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  background: #fff;
+  border: 2px solid #e8e8e8;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #006aff;
+    background: #f0f5ff;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.table-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.table-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b6b6b;
+}
+
+.table-capacity {
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  i {
+    font-size: 11px;
+  }
+}
+
+.no-tables-msg {
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 16px 0;
+}
+
+// --- Checkout Buttons ---
+
+.checkout-step-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.checkout-cancel-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b6b6b;
+  cursor: pointer;
+  margin-top: 8px;
+
+  &:hover {
+    color: #1a1a1a;
+    text-decoration: underline;
+  }
+}
+
+.checkout-skip-btn {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  color: #006aff;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f0f5ff;
+  }
+}
+
+.checkout-continue-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: #006aff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #0055cc;
+  }
+}
+
+.checkout-retry-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: #006aff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #0055cc;
+  }
+}
+
+.checkout-done-btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: #006aff;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #0055cc;
+  }
+}
+
+// --- Customer Info Form ---
+
+.customer-info-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+  }
+
+  .form-control {
+    padding: 12px 14px;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #1a1a1a;
+    transition: border-color 0.15s;
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+
+    &:focus {
+      border-color: #006aff;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 106, 255, 0.1);
+    }
+  }
+}
+
+// --- Success / Failed / Loyalty Icons ---
+
+.success-icon {
+  i {
+    font-size: 64px;
+    color: #22c55e;
+  }
+}
+
+.failed-icon {
+  i {
+    font-size: 64px;
+    color: #ef4444;
+  }
+}
+
+.loyalty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 36px;
+    color: #fff;
+  }
+}
+
+// --- Animations ---
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

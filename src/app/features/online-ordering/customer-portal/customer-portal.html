@@ -1,0 +1,482 @@
+<div class="customer-portal">
+  <!-- Header -->
+  <div class="portal-header">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center py-3">
+        <h4 class="mb-0 fw-bold">My Account</h4>
+        @if (authState() === 'authenticated') {
+          <div class="d-flex align-items-center gap-3">
+            <span class="text-muted">{{ customerName() }}</span>
+            <button class="btn btn-sm btn-outline-secondary" (click)="logout()">Sign Out</button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="container py-4">
+    @switch (authState()) {
+      <!-- Phone Entry -->
+      @case ('phone') {
+        <div class="auth-card mx-auto">
+          <div class="text-center mb-4">
+            <div class="auth-icon mb-3">
+              <i class="bi bi-phone"></i>
+            </div>
+            <h5 class="fw-bold">Sign in to your account</h5>
+            <p class="text-muted small">Enter your phone number to receive a verification code</p>
+          </div>
+
+          @if (otpError()) {
+            <div class="alert alert-danger small mb-3">{{ otpError() }}</div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label small" for="cp-phone">Phone Number</label>
+            <input
+              id="cp-phone"
+              type="tel"
+              class="form-control"
+              placeholder="(555) 123-4567"
+              [value]="phone()"
+              (input)="onPhoneInput($event)"
+              (keydown.enter)="sendOtp()" />
+          </div>
+
+          <button class="btn btn-primary w-100" (click)="sendOtp()"
+            [disabled]="!phone().trim() || isSendingOtp()">
+            @if (isSendingOtp()) {
+              <span class="spinner-border spinner-border-sm me-1"></span> Sending...
+            } @else {
+              Continue
+            }
+          </button>
+        </div>
+      }
+
+      <!-- OTP Verification -->
+      @case ('otp') {
+        <div class="auth-card mx-auto">
+          <div class="text-center mb-4">
+            <div class="auth-icon mb-3">
+              <i class="bi bi-shield-lock"></i>
+            </div>
+            <h5 class="fw-bold">Enter verification code</h5>
+            <p class="text-muted small">We sent a code to {{ phone() }}</p>
+          </div>
+
+          @if (otpError()) {
+            <div class="alert alert-danger small mb-3">{{ otpError() }}</div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label small" for="cp-otp">Verification Code</label>
+            <input
+              id="cp-otp"
+              type="text"
+              class="form-control text-center otp-input"
+              placeholder="000000"
+              maxlength="6"
+              [value]="otpCode()"
+              (input)="onOtpInput($event)"
+              (keydown.enter)="verifyOtp()"
+              autofocus />
+          </div>
+
+          <button class="btn btn-primary w-100 mb-2" (click)="verifyOtp()"
+            [disabled]="!otpCode().trim() || isVerifyingOtp()">
+            @if (isVerifyingOtp()) {
+              <span class="spinner-border spinner-border-sm me-1"></span> Verifying...
+            } @else {
+              Verify
+            }
+          </button>
+
+          <button class="btn btn-link btn-sm w-100 text-muted" (click)="backToPhone()">
+            Use a different phone number
+          </button>
+        </div>
+      }
+
+      <!-- Authenticated -->
+      @case ('authenticated') {
+        @if (isLoading()) {
+          <div class="text-center py-5">
+            <output class="spinner-border text-primary"></output>
+            <p class="text-muted mt-2">Loading your account...</p>
+          </div>
+        } @else {
+          <!-- Tab Navigation -->
+          <ul class="nav nav-pills portal-tabs mb-4">
+            <li class="nav-item">
+              <button class="nav-link" [class.active]="activeTab() === 'orders'" (click)="setTab('orders')">
+                <i class="bi bi-bag me-1"></i> Orders
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" [class.active]="activeTab() === 'loyalty'" (click)="setTab('loyalty')">
+                <i class="bi bi-star me-1"></i> Loyalty
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" [class.active]="activeTab() === 'profile'" (click)="setTab('profile')">
+                <i class="bi bi-person me-1"></i> Profile
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" [class.active]="activeTab() === 'gift-cards'" (click)="setTab('gift-cards')">
+                <i class="bi bi-gift me-1"></i> Gift Cards
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link position-relative" [class.active]="activeTab() === 'reservations'" (click)="setTab('reservations')">
+                <i class="bi bi-calendar-event me-1"></i> Reservations
+                @if (upcomingReservations().length > 0) {
+                  <span class="badge bg-primary ms-1">{{ upcomingReservations().length }}</span>
+                }
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" [class.active]="activeTab() === 'feedback'" (click)="setTab('feedback')">
+                <i class="bi bi-chat-dots me-1"></i> Feedback
+              </button>
+            </li>
+          </ul>
+
+          <!-- Orders Tab -->
+          @if (activeTab() === 'orders') {
+            <div class="tab-content">
+              <h5 class="fw-bold mb-3">Order History</h5>
+              @if (recentOrders().length === 0) {
+                <div class="empty-state text-center py-5">
+                  <i class="bi bi-bag empty-icon"></i>
+                  <p class="text-muted mt-2">No orders yet</p>
+                </div>
+              } @else {
+                <div class="order-list">
+                  @for (order of recentOrders(); track order.guid) {
+                    <div class="order-card">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <span class="fw-bold">Order #{{ order.orderNumber }}</span>
+                          <span class="badge ms-2" [class]="getStatusClass(order.guestOrderStatus)">{{ order.guestOrderStatus }}</span>
+                        </div>
+                        <span class="fw-bold">{{ getOrderTotal(order) | currency }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                          {{ order.timestamps.createdDate | date:'mediumDate' }}
+                          <span class="ms-2">{{ getOrderItemCount(order) }} items</span>
+                        </div>
+                        <span class="badge bg-light text-dark">{{ order.orderSource ?? 'POS' }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Loyalty Tab -->
+          @if (activeTab() === 'loyalty') {
+            <div class="tab-content">
+              @if (loyaltyProfile(); as profile) {
+                <!-- Loyalty Summary Card -->
+                <div class="loyalty-summary-card mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h5 class="fw-bold mb-1">{{ profile.points }} Points</h5>
+                      <span class="badge" [style.background-color]="tierColor()">{{ tierLabel() }}</span>
+                    </div>
+                    @if (profile.nextTier) {
+                      <div class="text-end">
+                        <div class="small text-muted">Next: {{ profile.nextTier }}</div>
+                        <div class="small text-muted">{{ profile.pointsToNextTier }} pts away</div>
+                      </div>
+                    }
+                  </div>
+                  @if (profile.nextTier) {
+                    <div class="progress" style="height: 8px;">
+                      <div class="progress-bar" [style.width.%]="profile.tierProgress" [style.background-color]="tierColor()"></div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Available Rewards -->
+                @if (availableRewards().length > 0) {
+                  <h6 class="fw-bold mb-2">Available Rewards</h6>
+                  <div class="rewards-list mb-4">
+                    @for (reward of availableRewards(); track reward.id) {
+                      <div class="reward-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div class="fw-bold">{{ reward.name }}</div>
+                            <div class="small text-muted">{{ reward.description }}</div>
+                          </div>
+                          <span class="badge bg-primary">{{ reward.pointsCost }} pts</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Transaction History -->
+                <h6 class="fw-bold mb-2">Points History</h6>
+                @if (loyaltyTransactions().length === 0) {
+                  <p class="text-muted small">No transactions yet</p>
+                } @else {
+                  <div class="transaction-list">
+                    @for (tx of loyaltyTransactions(); track tx.id) {
+                      <div class="transaction-row">
+                        <div>
+                          <span class="small">{{ formatTransactionType(tx.type) }}</span>
+                          @if (tx.description) {
+                            <span class="text-muted small ms-1">— {{ tx.description }}</span>
+                          }
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                          <span class="small text-muted">{{ tx.createdAt | date:'shortDate' }}</span>
+                          <span class="fw-bold" [class]="getTransactionClass(tx.type)">
+                            {{ getTransactionSign(tx.type) }}{{ tx.points }}
+                          </span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              } @else {
+                <div class="empty-state text-center py-5">
+                  <i class="bi bi-star empty-icon"></i>
+                  <p class="text-muted mt-2">Loyalty program not available</p>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Profile Tab -->
+          @if (activeTab() === 'profile') {
+            <div class="tab-content">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">My Profile</h5>
+                @if (!isEditingProfile()) {
+                  <button class="btn btn-sm btn-outline-primary" (click)="startEditProfile()">
+                    <i class="bi bi-pencil me-1"></i> Edit
+                  </button>
+                }
+              </div>
+
+              @if (customer(); as c) {
+                @if (isEditingProfile()) {
+                  <div class="profile-form">
+                    <div class="row g-3 mb-3">
+                      <div class="col-6">
+                        <label class="form-label small" for="cp-first-name">First Name</label>
+                        <input id="cp-first-name" type="text" class="form-control" [value]="editFirstName()"
+                          (input)="onProfileField('firstName', $event)" />
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small" for="cp-last-name">Last Name</label>
+                        <input id="cp-last-name" type="text" class="form-control" [value]="editLastName()"
+                          (input)="onProfileField('lastName', $event)" />
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label small" for="cp-email">Email</label>
+                      <input id="cp-email" type="email" class="form-control" [value]="editEmail()"
+                        (input)="onProfileField('email', $event)" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label small" for="cp-birthday">Birthday</label>
+                      <input id="cp-birthday" type="date" class="form-control" [value]="editBirthday()"
+                        (input)="onProfileField('birthday', $event)" />
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-primary" (click)="saveProfile()" [disabled]="isSavingProfile()">
+                        @if (isSavingProfile()) {
+                          <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Save
+                      </button>
+                      <button class="btn btn-outline-secondary" (click)="cancelEditProfile()">Cancel</button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="profile-details">
+                    <div class="profile-row">
+                      <span class="profile-label">Name</span>
+                      <span>{{ customerName() }}</span>
+                    </div>
+                    <div class="profile-row">
+                      <span class="profile-label">Phone</span>
+                      <span>{{ c.phone ?? '—' }}</span>
+                    </div>
+                    <div class="profile-row">
+                      <span class="profile-label">Email</span>
+                      <span>{{ c.email ?? '—' }}</span>
+                    </div>
+                    <div class="profile-row">
+                      <span class="profile-label">Member Since</span>
+                      <span>{{ c.createdAt | date:'mediumDate' }}</span>
+                    </div>
+                    <div class="profile-row">
+                      <span class="profile-label">Total Orders</span>
+                      <span>{{ c.totalOrders }}</span>
+                    </div>
+                    <div class="profile-row">
+                      <span class="profile-label">Total Spent</span>
+                      <span>{{ c.totalSpent | currency }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Saved Addresses -->
+                  @if (savedAddresses().length > 0) {
+                    <h6 class="fw-bold mt-4 mb-2">Saved Addresses</h6>
+                    <div class="address-list">
+                      @for (addr of savedAddresses(); track addr.id) {
+                        <div class="address-card">
+                          <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                              <div class="fw-bold small">{{ addr.label }}</div>
+                              <div class="small text-muted">
+                                {{ addr.address }}@if (addr.address2) {, {{ addr.address2 }}}
+                              </div>
+                              <div class="small text-muted">{{ addr.city }}, {{ addr.state }} {{ addr.zip }}</div>
+                            </div>
+                            @if (addr.isDefault) {
+                              <span class="badge bg-primary">Default</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              }
+            </div>
+          }
+
+          <!-- Gift Cards Tab -->
+          @if (activeTab() === 'gift-cards') {
+            <div class="tab-content">
+              <h5 class="fw-bold mb-3">Gift Card Balance</h5>
+              <div class="gc-check-section">
+                <label class="form-label small" for="cp-gc-code">Enter your gift card code</label>
+                <div class="d-flex gap-2">
+                  <input id="cp-gc-code" type="text" class="form-control" placeholder="Gift card code"
+                    [value]="gcCode()"
+                    (input)="onGcCodeInput($event)"
+                    (keydown.enter)="checkGcBalance()" />
+                  <button class="btn btn-primary" (click)="checkGcBalance()"
+                    [disabled]="!gcCode().trim() || isCheckingGc()">
+                    @if (isCheckingGc()) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      Check
+                    }
+                  </button>
+                </div>
+
+                @if (gcBalance(); as result) {
+                  <div class="gc-result mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <span class="badge" [class]="getStatusClass(result.status)">{{ result.status }}</span>
+                      </div>
+                      <div class="gc-balance-display">{{ result.balance | currency }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Reservations Tab -->
+          @if (activeTab() === 'reservations') {
+            <div class="tab-content">
+              <h5 class="fw-bold mb-3">My Reservations</h5>
+              @if (reservations().length === 0) {
+                <div class="empty-state text-center py-5">
+                  <i class="bi bi-calendar-event empty-icon"></i>
+                  <p class="text-muted mt-2">No reservations</p>
+                </div>
+              } @else {
+                <div class="reservation-list">
+                  @for (res of reservations(); track res.id) {
+                    <div class="reservation-card">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <div class="fw-bold">{{ res.reservationTime | date:'EEEE, MMM d' }}</div>
+                          <div class="text-muted small">{{ res.reservationTime | date:'shortTime' }}</div>
+                        </div>
+                        <span class="badge" [class]="getStatusClass(res.status)">{{ res.status }}</span>
+                      </div>
+                      <div class="d-flex gap-3 small text-muted">
+                        <span><i class="bi bi-people me-1"></i> {{ res.partySize }} {{ res.partySize === 1 ? 'guest' : 'guests' }}</span>
+                        @if (res.tableNumber) {
+                          <span><i class="bi bi-grid me-1"></i> Table {{ res.tableNumber }}</span>
+                        }
+                      </div>
+                      @if (res.specialRequests) {
+                        <div class="small text-muted mt-1">
+                          <i class="bi bi-chat-text me-1"></i> {{ res.specialRequests }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Feedback Tab -->
+          @if (activeTab() === 'feedback') {
+            <div class="tab-content">
+              <h5 class="fw-bold mb-3">My Feedback</h5>
+              @if (feedback().length === 0) {
+                <div class="empty-state text-center py-5">
+                  <i class="bi bi-chat-dots empty-icon"></i>
+                  <p class="text-muted mt-2">No feedback submitted yet</p>
+                </div>
+              } @else {
+                <div class="feedback-list">
+                  @for (fb of feedback(); track fb.id) {
+                    <div class="feedback-card">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex gap-1">
+                          @for (filled of getStarArray(fb.rating); track $index) {
+                            @if (filled) {
+                              <i class="bi bi-star-fill text-warning"></i>
+                            } @else {
+                              <i class="bi bi-star text-muted"></i>
+                            }
+                          }
+                        </div>
+                        <span class="text-muted small">{{ fb.createdAt | date:'mediumDate' }}</span>
+                      </div>
+                      @if (fb.comment) {
+                        <p class="mb-2 small">{{ fb.comment }}</p>
+                      }
+                      @if (fb.categories.length > 0) {
+                        <div class="d-flex gap-1 flex-wrap mb-2">
+                          @for (cat of fb.categories; track cat) {
+                            <span class="badge bg-light text-dark">{{ cat }}</span>
+                          }
+                        </div>
+                      }
+                      @if (fb.responseMessage) {
+                        <div class="feedback-response">
+                          <div class="small text-muted mb-1">Restaurant Response</div>
+                          <p class="small mb-0">{{ fb.responseMessage }}</p>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      }
+    }
+  </div>
+</div>

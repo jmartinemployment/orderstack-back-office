@@ -1,0 +1,191 @@
+<div class="delivery-page">
+  <!-- Header -->
+  <div class="delivery-header">
+    <div>
+      <h1 class="delivery-title">Delivery Schedule</h1>
+      <p class="delivery-subtitle">Off-site events and logistics</p>
+    </div>
+  </div>
+
+  <!-- Date Filter -->
+  <div class="filter-bar">
+    <div class="btn-group-filter">
+      <button type="button" class="filter-btn" [class.active]="_dateFilter() === 'today'" (click)="setDateFilter('today')">Today</button>
+      <button type="button" class="filter-btn" [class.active]="_dateFilter() === 'week'" (click)="setDateFilter('week')">This Week</button>
+      <button type="button" class="filter-btn" [class.active]="_dateFilter() === 'month'" (click)="setDateFilter('month')">This Month</button>
+    </div>
+  </div>
+
+  @if (deliveryJobs().length === 0) {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-truck"></i>
+      </div>
+      <h3>No off-site deliveries scheduled</h3>
+      <p>No deliveries for this period.</p>
+    </div>
+  } @else {
+    <!-- Delivery Cards -->
+    <div class="delivery-list">
+      @for (job of deliveryJobs(); track job.id) {
+        <div class="delivery-card">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <span class="event-title">{{ job.title }}</span>
+              <span class="client-name">{{ job.clientName }}</span>
+            </div>
+            <span class="headcount-badge">
+              <i class="bi bi-people-fill"></i> {{ job.headcount }}
+            </span>
+          </div>
+
+          <div class="card-meta">
+            <span><i class="bi bi-calendar3"></i> {{ job.fulfillmentDate | date:'mediumDate':'UTC' }}</span>
+            @if (job.startTime && job.endTime) {
+              <span><i class="bi bi-clock"></i> {{ formatTime(job.startTime) }} – {{ formatTime(job.endTime) }}</span>
+            }
+            @if (job.locationAddress) {
+              <span><i class="bi bi-geo-alt"></i> {{ job.locationAddress }}</span>
+            }
+          </div>
+
+          <!-- Delivery Details -->
+          @if (_editingJobId() === job.id) {
+            <!-- Inline Edit Form -->
+            <div class="delivery-edit-form">
+              <div class="form-grid">
+                <div class="form-field">
+                  <label for="del-driver-name">Driver</label>
+                  <input id="del-driver-name" type="text" [value]="_editForm().driverName ?? ''" (input)="updateFormField('driverName', $any($event.target).value)" placeholder="Driver name" aria-label="Driver name">
+                </div>
+                <div class="form-field">
+                  <label for="del-driver-phone">Phone</label>
+                  <input id="del-driver-phone" type="tel" [value]="_editForm().driverPhone ?? ''" (input)="updateFormField('driverPhone', $any($event.target).value)" placeholder="Driver phone" aria-label="Driver phone">
+                </div>
+                <div class="form-field">
+                  <label for="del-load-time">Load Time</label>
+                  <input id="del-load-time" type="time" [value]="_editForm().loadTime ?? ''" (input)="updateFormField('loadTime', $any($event.target).value)" aria-label="Load time">
+                </div>
+                <div class="form-field">
+                  <label for="del-departure-time">Departure</label>
+                  <input id="del-departure-time" type="time" [value]="_editForm().departureTime ?? ''" (input)="updateFormField('departureTime', $any($event.target).value)" aria-label="Departure time">
+                </div>
+                <div class="form-field">
+                  <label for="del-arrival-time">Arrival</label>
+                  <input id="del-arrival-time" type="time" [value]="_editForm().arrivalTime ?? ''" (input)="updateFormField('arrivalTime', $any($event.target).value)" aria-label="Arrival time">
+                </div>
+                <div class="form-field">
+                  <label for="del-vehicle">Vehicle</label>
+                  <input id="del-vehicle" type="text" [value]="_editForm().vehicleDescription ?? ''" (input)="updateFormField('vehicleDescription', $any($event.target).value)" placeholder="Vehicle description" aria-label="Vehicle description">
+                </div>
+                <div class="form-field">
+                  <label for="del-setup-time">Setup Time</label>
+                  <input id="del-setup-time" type="time" [value]="_editForm().setupTime ?? ''" (input)="updateFormField('setupTime', $any($event.target).value)" aria-label="Setup time">
+                </div>
+                <div class="form-field">
+                  <label for="del-breakdown-time">Breakdown Time</label>
+                  <input id="del-breakdown-time" type="time" [value]="_editForm().breakdownTime ?? ''" (input)="updateFormField('breakdownTime', $any($event.target).value)" aria-label="Breakdown time">
+                </div>
+              </div>
+              <div class="form-field form-field-wide">
+                <label for="del-route-notes">Route Notes</label>
+                <textarea id="del-route-notes" rows="2" [value]="_editForm().routeNotes ?? ''" (input)="updateFormField('routeNotes', $any($event.target).value)" placeholder="Parking, access codes, delivery entrance..." aria-label="Route notes"></textarea>
+              </div>
+              <div class="form-field form-field-wide">
+                <label for="del-equipment">Equipment (comma-separated)</label>
+                <input id="del-equipment" type="text" [value]="(_editForm().equipmentChecklist ?? []).join(', ')" (input)="updateEquipment($any($event.target).value)" placeholder="Chafing dishes, serving utensils, tablecloths..." aria-label="Equipment checklist">
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+                <button type="button" class="btn-save" [disabled]="_savingId() === job.id" (click)="saveDeliveryDetails(job.id)">
+                  @if (_savingId() === job.id) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                  }
+                  Save
+                </button>
+              </div>
+            </div>
+          } @else if (job.deliveryDetails) {
+            <!-- Delivery Details Display -->
+            <div class="delivery-details">
+              <div class="details-header">
+                <span class="details-label">Delivery Details</span>
+                <button type="button" class="btn-edit-details" (click)="startEdit(job.id, job.deliveryDetails)">
+                  <i class="bi bi-pencil"></i> Edit
+                </button>
+              </div>
+              <div class="details-grid">
+                @if (job.deliveryDetails.driverName) {
+                  <div class="detail-item">
+                    <span class="detail-key">Driver</span>
+                    <span class="detail-val">{{ job.deliveryDetails.driverName }}</span>
+                  </div>
+                }
+                @if (job.deliveryDetails.loadTime) {
+                  <div class="detail-item">
+                    <span class="detail-key">Load</span>
+                    <span class="detail-val">{{ job.deliveryDetails.loadTime }}</span>
+                  </div>
+                }
+                @if (job.deliveryDetails.departureTime) {
+                  <div class="detail-item">
+                    <span class="detail-key">Departure</span>
+                    <span class="detail-val">{{ job.deliveryDetails.departureTime }}</span>
+                  </div>
+                }
+                @if (job.deliveryDetails.arrivalTime) {
+                  <div class="detail-item">
+                    <span class="detail-key">Arrival</span>
+                    <span class="detail-val">{{ job.deliveryDetails.arrivalTime }}</span>
+                  </div>
+                }
+                @if (job.deliveryDetails.setupTime) {
+                  <div class="detail-item">
+                    <span class="detail-key">Setup</span>
+                    <span class="detail-val">{{ job.deliveryDetails.setupTime }}</span>
+                  </div>
+                }
+                @if (job.deliveryDetails.breakdownTime) {
+                  <div class="detail-item">
+                    <span class="detail-key">Breakdown</span>
+                    <span class="detail-val">{{ job.deliveryDetails.breakdownTime }}</span>
+                  </div>
+                }
+              </div>
+              @if (job.deliveryDetails.routeNotes) {
+                <div class="route-notes">
+                  <span class="detail-key">Route Notes</span>
+                  <p>{{ job.deliveryDetails.routeNotes }}</p>
+                </div>
+              }
+              @if (job.deliveryDetails.equipmentChecklist && job.deliveryDetails.equipmentChecklist.length > 0) {
+                <div class="equipment-list">
+                  <span class="detail-key">Equipment</span>
+                  <div class="tag-list">
+                    @for (item of job.deliveryDetails.equipmentChecklist; track item) {
+                      <span class="equipment-tag">{{ item }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <!-- No Details Yet -->
+            <div class="no-details">
+              <button type="button" class="btn-set-details" (click)="startEdit(job.id)">
+                <i class="bi bi-truck"></i> Set delivery details
+              </button>
+            </div>
+          }
+
+          <div class="card-footer-row">
+            <button type="button" class="btn-view-job" (click)="viewJob(job.id)">
+              View Job <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

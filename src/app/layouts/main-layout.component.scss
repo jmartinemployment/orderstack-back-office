@@ -1,0 +1,105 @@
+$mobile-header-height: 56px;
+$text-primary: #1a1a2e;
+$border-color: #e8e8e8;
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// Mobile header
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $mobile-header-height;
+  background: #fff;
+  border-bottom: 1px solid $border-color;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 1001;
+
+  .hamburger {
+    font-size: 1.5rem;
+    color: $text-primary;
+    padding: 4px 8px;
+    text-decoration: none;
+  }
+
+  .brand {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: $text-primary;
+    margin-left: 8px;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+// Sidebar overlay
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1002;
+}
+
+// Main content
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #f9fafb;
+
+  @media (max-width: 767.98px) {
+    padding-top: $mobile-header-height;
+  }
+}
+
+// Session timeout warning overlay
+.session-warning-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.session-warning-modal {
+  background: var(--bs-body-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--bs-warning);
+  }
+
+  p {
+    color: var(--bs-secondary);
+    margin-bottom: 1.5rem;
+
+    strong {
+      color: var(--bs-danger);
+      font-size: 1.1em;
+    }
+  }
+
+  .session-warning-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}

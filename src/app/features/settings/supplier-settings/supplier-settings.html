@@ -1,0 +1,248 @@
+<div class="supplier-settings">
+  <h4 class="section-heading">Supplier API Credentials</h4>
+  <p class="text-muted small mb-4">
+    Connect your supplier ordering accounts to enable direct API ordering from OrderStack.
+    Enter your API credentials from your supplier partnership portal.
+  </p>
+
+  <!-- Notices -->
+  @if (notice(); as noticeText) {
+    <div class="alert alert-success alert-sm mb-3">
+      <i class="bi bi-check-circle me-1"></i> {{ noticeText }}
+    </div>
+  }
+  @if (error(); as errorText) {
+    <div class="alert alert-danger alert-sm mb-3">
+      <i class="bi bi-exclamation-triangle me-1"></i> {{ errorText }}
+    </div>
+  }
+  @if (testResult(); as resultText) {
+    <div class="alert alert-info alert-sm mb-3">
+      <i class="bi bi-plug me-1"></i> {{ resultText }}
+    </div>
+  }
+
+  <!-- Sysco -->
+  <div class="credential-card mb-4">
+    <div class="credential-header">
+      <div class="credential-provider">
+        <i class="bi bi-box-seam"></i>
+        <div>
+          <h5 class="mb-0">Sysco</h5>
+          <span class="text-muted small">Broadline food distribution — API via apic-devportal.sysco.com</span>
+        </div>
+      </div>
+      <div class="credential-status">
+        @if (credentialSummary()?.sysco?.configured) {
+          <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Connected</span>
+        } @else {
+          <span class="badge bg-secondary">Not Configured</span>
+        }
+      </div>
+    </div>
+
+    <div class="credential-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="syscoClientId">Client ID</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            id="syscoClientId"
+            [value]="syscoClientId()"
+            (input)="onSyscoClientIdInput($event)"
+            [placeholder]="credentialSummary()?.sysco?.hasClientId ? '••••••••' : 'Enter Client ID'"
+          />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="syscoClientSecret">Client Secret</label>
+          <input
+            type="password"
+            class="form-control form-control-sm"
+            id="syscoClientSecret"
+            [value]="syscoClientSecret()"
+            (input)="onSyscoClientSecretInput($event)"
+            [placeholder]="credentialSummary()?.sysco?.hasClientSecret ? '••••••••' : 'Enter Client Secret'"
+          />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="syscoCustomerId">Customer ID</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            id="syscoCustomerId"
+            [value]="syscoCustomerId()"
+            (input)="onSyscoCustomerIdInput($event)"
+            [placeholder]="credentialSummary()?.sysco?.hasCustomerId ? '••••••••' : 'Enter Customer ID'"
+          />
+        </div>
+        <div class="col-md-6">
+          <label for="syscoMode" class="form-label">Mode</label>
+          <select class="form-select form-select-sm" id="syscoMode" [value]="syscoMode()" (change)="onSyscoModeChange($event)">
+            <option value="test">Test / Sandbox</option>
+            <option value="production">Production</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="credential-actions mt-3">
+        <button
+          class="btn btn-sm btn-primary"
+          [disabled]="!canSaveSyscoCredentials()"
+          (click)="saveSyscoCredentials()">
+          <i class="bi bi-shield-lock me-1"></i>
+          {{ credentialSummary()?.sysco?.configured ? 'Update Credentials' : 'Save Credentials' }}
+        </button>
+        @if (canTestSysco()) {
+          <button
+            class="btn btn-sm btn-outline-info"
+            [disabled]="isProcessing()"
+            (click)="testSyscoConnection()">
+            <i class="bi bi-plug me-1"></i> Test Connection
+          </button>
+        }
+        @if (canDeleteSyscoCredentials()) {
+          <button
+            class="btn btn-sm btn-outline-danger"
+            [disabled]="isProcessing()"
+            (click)="deleteSyscoCredentials()">
+            <i class="bi bi-trash me-1"></i> Remove
+          </button>
+        }
+      </div>
+
+      @if (credentialSummary()?.sysco?.updatedAt; as updatedAt) {
+        <div class="text-muted small mt-2">
+          <i class="bi bi-clock me-1"></i> Last updated: {{ updatedAt }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- GFS -->
+  <div class="credential-card mb-4">
+    <div class="credential-header">
+      <div class="credential-provider">
+        <i class="bi bi-box-seam"></i>
+        <div>
+          <h5 class="mb-0">Gordon Food Service</h5>
+          <span class="text-muted small">North American foodservice distribution — API via developer.gfs.com</span>
+        </div>
+      </div>
+      <div class="credential-status">
+        @if (credentialSummary()?.gfs?.configured) {
+          <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Connected</span>
+        } @else {
+          <span class="badge bg-secondary">Not Configured</span>
+        }
+      </div>
+    </div>
+
+    <div class="credential-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="gfsClientId">Client ID</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            id="gfsClientId"
+            [value]="gfsClientId()"
+            (input)="onGfsClientIdInput($event)"
+            [placeholder]="credentialSummary()?.gfs?.hasClientId ? '••••••••' : 'Enter Client ID'"
+          />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="gfsClientSecret">Client Secret</label>
+          <input
+            type="password"
+            class="form-control form-control-sm"
+            id="gfsClientSecret"
+            [value]="gfsClientSecret()"
+            (input)="onGfsClientSecretInput($event)"
+            [placeholder]="credentialSummary()?.gfs?.hasClientSecret ? '••••••••' : 'Enter Client Secret'"
+          />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="gfsCustomerId">Customer ID</label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            id="gfsCustomerId"
+            [value]="gfsCustomerId()"
+            (input)="onGfsCustomerIdInput($event)"
+            [placeholder]="credentialSummary()?.gfs?.hasCustomerId ? '••••••••' : 'Enter Customer ID'"
+          />
+        </div>
+        <div class="col-md-6">
+          <label for="gfsMode" class="form-label">Mode</label>
+          <select class="form-select form-select-sm" id="gfsMode" [value]="gfsMode()" (change)="onGfsModeChange($event)">
+            <option value="test">Test / Sandbox</option>
+            <option value="production">Production</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="credential-actions mt-3">
+        <button
+          class="btn btn-sm btn-primary"
+          [disabled]="!canSaveGfsCredentials()"
+          (click)="saveGfsCredentials()">
+          <i class="bi bi-shield-lock me-1"></i>
+          {{ credentialSummary()?.gfs?.configured ? 'Update Credentials' : 'Save Credentials' }}
+        </button>
+        @if (canTestGfs()) {
+          <button
+            class="btn btn-sm btn-outline-info"
+            [disabled]="isProcessing()"
+            (click)="testGfsConnection()">
+            <i class="bi bi-plug me-1"></i> Test Connection
+          </button>
+        }
+        @if (canDeleteGfsCredentials()) {
+          <button
+            class="btn btn-sm btn-outline-danger"
+            [disabled]="isProcessing()"
+            (click)="deleteGfsCredentials()">
+            <i class="bi bi-trash me-1"></i> Remove
+          </button>
+        }
+      </div>
+
+      @if (credentialSummary()?.gfs?.updatedAt; as updatedAt) {
+        <div class="text-muted small mt-2">
+          <i class="bi bi-clock me-1"></i> Last updated: {{ updatedAt }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- How to get credentials -->
+  <div class="help-card">
+    <h5><i class="bi bi-question-circle me-2"></i>How to get API credentials</h5>
+    <div class="help-steps">
+      <div class="help-step">
+        <div class="step-number">1</div>
+        <div>
+          <strong>Sysco:</strong> Visit
+          <a href="https://apic-devportal.sysco.com" target="_blank" rel="noopener">apic-devportal.sysco.com</a>
+          and register as a partner. Once approved, create an application to get your Client ID and Client Secret.
+        </div>
+      </div>
+      <div class="help-step">
+        <div class="step-number">2</div>
+        <div>
+          <strong>Gordon Food Service:</strong> Visit
+          <a href="https://developer.gfs.com" target="_blank" rel="noopener">developer.gfs.com</a>
+          and apply for API access through their developer program.
+        </div>
+      </div>
+      <div class="help-step">
+        <div class="step-number">3</div>
+        <div>
+          Enter your credentials above and click <strong>Test Connection</strong> to verify they work.
+          Once connected, you can place orders directly from the Suppliers page.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

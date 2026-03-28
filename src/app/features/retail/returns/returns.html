@@ -1,0 +1,484 @@
+<div class="returns px-2">
+  <div class="page-header">
+    <h1>Returns & Exchanges</h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab" [class.active]="activeTab() === 'lookup'" (click)="setTab('lookup')">
+      <i class="bi bi-search"></i> Find Transaction
+    </button>
+    <button class="tab" [class.active]="activeTab() === 'process'" (click)="setTab('process')" [disabled]="!selectedTransaction()">
+      <i class="bi bi-arrow-return-left"></i> Process Return
+    </button>
+    <button class="tab" [class.active]="activeTab() === 'exchange'" (click)="setTab('exchange')" [disabled]="!exchangeMode()">
+      <i class="bi bi-arrow-left-right"></i> Exchange
+    </button>
+    <button class="tab" [class.active]="activeTab() === 'policy'" (click)="setTab('policy')">
+      <i class="bi bi-shield-check"></i> Policy
+    </button>
+  </div>
+
+  <!-- Error Banner -->
+  @if (error()) {
+    <div class="error-banner">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{ error() }}
+    </div>
+  }
+
+  <!-- ==================== LOOKUP TAB ==================== -->
+  @if (activeTab() === 'lookup') {
+    <div class="tab-content">
+      <!-- Lookup Method Pills -->
+      <div class="lookup-methods">
+        <button class="pill" [class.active]="lookupMethod() === 'receipt'" (click)="setLookupMethod('receipt')">
+          <i class="bi bi-receipt"></i> Receipt #
+        </button>
+        <button class="pill" [class.active]="lookupMethod() === 'card'" (click)="setLookupMethod('card')">
+          <i class="bi bi-credit-card"></i> Card Last 4
+        </button>
+        <button class="pill" [class.active]="lookupMethod() === 'customer'" (click)="setLookupMethod('customer')">
+          <i class="bi bi-person"></i> Customer
+        </button>
+        <button class="pill" [class.active]="lookupMethod() === 'date'" (click)="setLookupMethod('date')">
+          <i class="bi bi-calendar"></i> Date Range
+        </button>
+      </div>
+
+      <!-- Search Form -->
+      <div class="lookup-form">
+        @if (lookupMethod() === 'receipt') {
+          <div class="lookup-row">
+            <input
+              type="text"
+              placeholder="Scan or enter receipt number..."
+              aria-label="Receipt number"
+              [ngModel]="lookupReceiptNumber()"
+              (ngModelChange)="updateLookupReceiptNumber($event)"
+              (keydown.enter)="searchTransactions()"
+              autofocus
+            />
+            <button class="btn-primary" (click)="searchTransactions()" [disabled]="!lookupReceiptNumber() || isSearching()">
+              Search
+            </button>
+          </div>
+        }
+        @if (lookupMethod() === 'card') {
+          <div class="lookup-row">
+            <input
+              type="text"
+              placeholder="Last 4 digits of card..."
+              aria-label="Card last 4 digits"
+              maxlength="4"
+              [ngModel]="lookupCardLast4()"
+              (ngModelChange)="updateLookupCardLast4($event)"
+              (keydown.enter)="searchTransactions()"
+            />
+            <button class="btn-primary" (click)="searchTransactions()" [disabled]="lookupCardLast4().length < 4 || isSearching()">
+              Search
+            </button>
+          </div>
+        }
+        @if (lookupMethod() === 'customer') {
+          <div class="lookup-row">
+            <input
+              type="text"
+              placeholder="Customer name or phone..."
+              aria-label="Customer name or phone"
+              [ngModel]="lookupCustomerPhone()"
+              (ngModelChange)="updateLookupCustomerPhone($event)"
+              (keydown.enter)="searchTransactions()"
+            />
+            <button class="btn-primary" (click)="searchTransactions()" [disabled]="!lookupCustomerPhone() || isSearching()">
+              Search
+            </button>
+          </div>
+        }
+        @if (lookupMethod() === 'date') {
+          <div class="lookup-row lookup-date-row">
+            <div class="date-field">
+              <label for="ret-date-from">From</label>
+              <input id="ret-date-from" type="date" [ngModel]="lookupDateFrom()" (ngModelChange)="updateLookupDateFrom($event)" />
+            </div>
+            <div class="date-field">
+              <label for="ret-date-to">To</label>
+              <input id="ret-date-to" type="date" [ngModel]="lookupDateTo()" (ngModelChange)="updateLookupDateTo($event)" />
+            </div>
+            <button class="btn-primary" (click)="searchTransactions()" [disabled]="isSearching()">
+              Search
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Search Results -->
+      @if (isSearching()) {
+        <div class="loading-state">Searching...</div>
+      }
+
+      @if (searchResults().length > 0) {
+        <div class="results-list">
+          @for (tx of searchResults(); track tx.id) {
+            <button type="button" class="result-card" (click)="selectTransaction(tx)">
+              <div class="result-card-header">
+                <span class="receipt-num">Receipt #{{ tx.receiptNumber }}</span>
+                <span class="result-date">{{ tx.createdAt | date:'medium' }}</span>
+              </div>
+              <div class="result-card-body">
+                <span class="result-items">{{ tx.items.length }} item(s)</span>
+                <span class="result-total">${{ tx.total | number:'1.2-2' }}</span>
+              </div>
+              <div class="result-card-payments">
+                @for (p of tx.paymentMethods; track $index) {
+                  <span class="payment-badge">{{ p.method }}</span>
+                }
+              </div>
+              @if (!checkoutService.isWithinReturnWindow(tx)) {
+                <div class="out-of-policy-badge">
+                  <i class="bi bi-exclamation-triangle"></i> Outside return window
+                </div>
+              }
+            </button>
+          }
+        </div>
+      } @else if (!isSearching() && lookupReceiptNumber()) {
+        <div class="empty-state">
+          <i class="bi bi-search"></i>
+          <p>No transactions found. Try a different search.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== PROCESS TAB ==================== -->
+  @if (activeTab() === 'process' && selectedTransaction(); as tx) {
+    <div class="tab-content">
+      <!-- Transaction Info -->
+      <div class="transaction-info">
+        <div class="tx-header">
+          <span class="receipt-num">Receipt #{{ tx.receiptNumber }}</span>
+          <span class="tx-date">{{ tx.createdAt | date:'medium' }}</span>
+        </div>
+        <div class="tx-total">
+          Original Total: <strong>${{ tx.total | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <!-- Out of Policy Warning -->
+      @if (isOutOfPolicy()) {
+        <div class="warning-banner">
+          <i class="bi bi-exclamation-triangle"></i>
+          This transaction is outside the {{ returnPolicy()?.returnWindowDays }}-day return window.
+          @if (needsManagerOverride()) {
+            Manager override required.
+          }
+        </div>
+      }
+
+      <!-- Select All / Deselect -->
+      <div class="selection-controls">
+        <button class="btn-text" (click)="selectAllItems()">Select All</button>
+        <button class="btn-text" (click)="deselectAllItems()">Deselect All</button>
+      </div>
+
+      <!-- Items to Return -->
+      <div class="return-items">
+        @for (selection of returnSelections(); track $index) {
+          <div class="return-item" [class.selected]="selection.selected">
+            <div class="return-item-check">
+              <input
+                type="checkbox"
+                aria-label="Select {{ selection.transactionItem.name }} for return"
+                [checked]="selection.selected"
+                (change)="toggleItemSelection($index)"
+              />
+            </div>
+            <div class="return-item-info">
+              <div class="return-item-name">
+                {{ selection.transactionItem.name }}
+                @if (selection.transactionItem.variationName) {
+                  <span class="variation">{{ selection.transactionItem.variationName }}</span>
+                }
+              </div>
+              <div class="return-item-meta">
+                ${{ selection.transactionItem.unitPrice | number:'1.2-2' }}
+                x {{ selection.transactionItem.quantity }}
+                = ${{ selection.transactionItem.lineTotal | number:'1.2-2' }}
+              </div>
+            </div>
+
+            @if (selection.selected) {
+              <div class="return-item-details">
+                <div class="detail-row">
+                  <label [for]="'ret-qty-' + $index">Qty to Return</label>
+                  <input
+                    [id]="'ret-qty-' + $index"
+                    type="number"
+                    min="1"
+                    [max]="selection.transactionItem.quantity"
+                    [ngModel]="selection.returnQuantity"
+                    (ngModelChange)="updateReturnQuantity($index, $event)"
+                    class="qty-input"
+                  />
+                </div>
+                <div class="detail-row">
+                  <label [for]="'ret-reason-' + $index">Reason</label>
+                  <select [id]="'ret-reason-' + $index" [ngModel]="selection.reason" (ngModelChange)="updateReturnReason($index, $event)">
+                    @for (r of returnReasons; track r.value) {
+                      <option [value]="r.value">{{ r.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="detail-row">
+                  <label [for]="'ret-note-' + $index">Note</label>
+                  <input
+                    [id]="'ret-note-' + $index"
+                    type="text"
+                    [ngModel]="selection.note"
+                    (ngModelChange)="updateReturnNote($index, $event)"
+                    placeholder="Optional note..."
+                  />
+                </div>
+                <label class="restock-toggle">
+                  <input
+                    type="checkbox"
+                    [checked]="selection.restock"
+                    (change)="toggleRestock($index)"
+                  />
+                  Return to inventory
+                </label>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Refund Summary -->
+      @if (selectedReturnItems().length > 0) {
+        <div class="refund-summary">
+          <div class="refund-row">
+            <span>Items to Return</span>
+            <span>{{ selectedReturnItems().length }}</span>
+          </div>
+          <div class="refund-row total">
+            <span>Total Refund</span>
+            <span>${{ totalRefundAmount() | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <!-- Refund Method -->
+        <div class="refund-method-section">
+          <p class="section-label">Refund Method</p>
+          <div class="refund-methods">
+            <button
+              class="refund-method-btn"
+              [class.active]="refundMethod() === 'original_payment'"
+              (click)="updateRefundMethod('original_payment')"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+              Original Payment
+            </button>
+            <button
+              class="refund-method-btn"
+              [class.active]="refundMethod() === 'store_credit'"
+              (click)="updateRefundMethod('store_credit')"
+            >
+              <i class="bi bi-wallet2"></i>
+              Store Credit
+            </button>
+            <button
+              class="refund-method-btn"
+              [class.active]="refundMethod() === 'cash'"
+              (click)="updateRefundMethod('cash')"
+            >
+              <i class="bi bi-cash-stack"></i>
+              Cash
+            </button>
+          </div>
+        </div>
+
+        <!-- Manager Override -->
+        @if (needsManagerOverride()) {
+          <div class="manager-override">
+            <label for="ret-manager-pin" class="section-label">Manager Override PIN</label>
+            <input
+              id="ret-manager-pin"
+              type="password"
+              maxlength="6"
+              placeholder="Enter manager PIN..."
+              [ngModel]="managerPin()"
+              (ngModelChange)="updateManagerPin($event)"
+            />
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="return-actions">
+          <button class="btn-outline" (click)="setTab('lookup')">Back to Search</button>
+          <button
+            class="btn-exchange"
+            (click)="startExchange()"
+            [disabled]="!canProcessReturn()"
+          >
+            <i class="bi bi-arrow-left-right"></i> Exchange
+          </button>
+          <button
+            class="btn-return"
+            (click)="processReturn()"
+            [disabled]="!canProcessReturn() || isProcessing() || (needsManagerOverride() && !managerPin())"
+          >
+            @if (isProcessing()) {
+              Processing...
+            } @else {
+              <i class="bi bi-arrow-return-left"></i> Process Return
+            }
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== EXCHANGE TAB ==================== -->
+  @if (activeTab() === 'exchange' && exchangeMode()) {
+    <div class="tab-content">
+      <div class="exchange-header">
+        <div class="exchange-credit">
+          <i class="bi bi-arrow-return-left"></i>
+          <div>
+            <span class="exchange-credit-label">Return Credit</span>
+            <span class="exchange-credit-amount">${{ exchangeCredit() | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="exchange-info">
+        <p>Add replacement items using the Retail POS. The return credit will be applied automatically.</p>
+      </div>
+
+      <!-- Exchange Cart Summary -->
+      @if (exchangeCart().length > 0) {
+        <div class="exchange-cart">
+          @for (item of exchangeCart(); track $index) {
+            <div class="exchange-cart-item">
+              <span class="item-name">
+                {{ item.item.name }}
+                @if (item.variation) {
+                  <span class="variation">{{ item.variation.name }}</span>
+                }
+              </span>
+              <span class="item-qty">x{{ item.quantity }}</span>
+              <span class="item-price">${{ (item.priceOverride ?? item.unitPrice) * item.quantity | number:'1.2-2' }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="exchange-summary">
+          <div class="exchange-row">
+            <span>New Items Total</span>
+            <span>${{ exchangeCartTotal() | number:'1.2-2' }}</span>
+          </div>
+          <div class="exchange-row">
+            <span>Return Credit</span>
+            <span class="credit">−${{ exchangeCredit() | number:'1.2-2' }}</span>
+          </div>
+          <div class="exchange-row difference" [class.refund]="exchangeDifference() < 0" [class.owed]="exchangeDifference() > 0">
+            <span>{{ exchangeDifference() > 0 ? 'Additional Payment' : exchangeDifference() < 0 ? 'Refund to Customer' : 'Even Exchange' }}</span>
+            <span>
+              @if (exchangeDifference() !== 0) {
+                ${{ (exchangeDifference() > 0 ? exchangeDifference() : -exchangeDifference()) | number:'1.2-2' }}
+              } @else {
+                $0.00
+              }
+            </span>
+          </div>
+        </div>
+
+        <div class="exchange-actions">
+          <button class="btn-outline" (click)="setTab('process')">Back</button>
+          <button
+            class="btn-primary btn-lg"
+            (click)="processExchange()"
+            [disabled]="isProcessing()"
+          >
+            @if (isProcessing()) {
+              Processing...
+            } @else {
+              Complete Exchange
+            }
+          </button>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="bi bi-arrow-left-right"></i>
+          <p>Scan or search for replacement items to add to the exchange.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== POLICY TAB ==================== -->
+  @if (activeTab() === 'policy') {
+    <div class="tab-content">
+      <div class="policy-card">
+        <h3>Return Policy Configuration</h3>
+
+        <div class="form-group">
+          <label for="ret-return-window">Return Window (days)</label>
+          <select id="ret-return-window" [ngModel]="policyWindowDays()" (ngModelChange)="updatePolicyWindowDays($event)">
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="30">30 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </div>
+
+        <label class="toggle-row">
+          <input
+            type="checkbox"
+            [checked]="policyRequireReceipt()"
+            (change)="togglePolicyRequireReceipt()"
+          />
+          Require receipt for returns
+        </label>
+
+        @if (!policyRequireReceipt()) {
+          <div class="form-group">
+            <label for="ret-no-receipt-limit">No-Receipt Return Limit ($)</label>
+            <input
+              id="ret-no-receipt-limit"
+              type="number"
+              [ngModel]="policyNoReceiptLimit()"
+              (ngModelChange)="updatePolicyNoReceiptLimit($event)"
+            />
+          </div>
+        }
+
+        <label class="toggle-row">
+          <input
+            type="checkbox"
+            [checked]="policyManagerOverride()"
+            (change)="togglePolicyManagerOverride()"
+          />
+          Require manager override for out-of-policy returns
+        </label>
+
+        <div class="form-group">
+          <label for="ret-final-sale-items">Final Sale Items (comma-separated item IDs)</label>
+          <textarea
+            id="ret-final-sale-items"
+            rows="2"
+            [ngModel]="policyFinalSaleItems()"
+            (ngModelChange)="updatePolicyFinalSaleItems($event)"
+            placeholder="item-id-1, item-id-2..."
+          ></textarea>
+        </div>
+
+        <button class="btn-primary" (click)="savePolicy()">
+          Save Policy
+        </button>
+      </div>
+    </div>
+  }
+</div>

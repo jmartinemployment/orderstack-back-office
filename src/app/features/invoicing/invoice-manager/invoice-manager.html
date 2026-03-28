@@ -1,0 +1,443 @@
+<div class="invoice-manager px-2">
+  @if (!isAuthenticated()) {
+    <div class="text-center text-muted py-5">
+      <p>Please log in to access invoicing.</p>
+    </div>
+  } @else {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">Invoicing</h2>
+      <div class="d-flex gap-2">
+        @if (activeTab() === 'invoices') {
+          <button type="button" class="btn btn-primary btn-sm" (click)="openInvoiceForm()">
+            <i class="bi bi-plus-lg me-1"></i>New Invoice
+          </button>
+        }
+        @if (activeTab() === 'house-accounts') {
+          <button type="button" class="btn btn-primary btn-sm" (click)="openAccountForm()">
+            <i class="bi bi-plus-lg me-1"></i>New Account
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-danger mb-3">{{ error() }}</div>
+    }
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip mb-3">
+      <div class="kpi-card">
+        <div class="kpi-value">{{ invoices().length }}</div>
+        <div class="kpi-label">Total Invoices</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ totalOutstanding() | currency }}</div>
+        <div class="kpi-label">Outstanding</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ totalCollected() | currency }}</div>
+        <div class="kpi-label">Collected</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value text-danger">{{ overdueInvoices().length }}</div>
+        <div class="kpi-label">Overdue</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab() === 'invoices'" (click)="setTab('invoices')">Invoices</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab() === 'house-accounts'" (click)="setTab('house-accounts')">
+          House Accounts
+          @if (activeHouseAccounts().length > 0) {
+            <span class="badge bg-primary ms-1">{{ activeHouseAccounts().length }}</span>
+          }
+        </button>
+      </li>
+    </ul>
+
+    <!-- INVOICES TAB -->
+    @if (activeTab() === 'invoices') {
+      <div class="d-flex gap-2 mb-3 flex-wrap">
+        @for (status of ['all', 'draft', 'sent', 'viewed', 'paid', 'overdue']; track status) {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="statusFilter() === status"
+            [class.btn-outline-light]="statusFilter() !== status"
+            (click)="setStatusFilter($any(status))"
+          >{{ status === 'all' ? 'All' : (status | titlecase) }}</button>
+        }
+      </div>
+
+      @if (isLoading()) {
+        <os-loading-spinner message="Loading invoices..." />
+      } @else if (filteredInvoices().length === 0) {
+        <div class="empty-state text-center py-5">
+          <div class="empty-icon mb-3"><i class="bi bi-receipt"></i></div>
+          <h5>No invoices yet</h5>
+          <p class="text-muted">Create your first invoice for catering or corporate clients.</p>
+          <button type="button" class="btn btn-primary btn-sm" (click)="openInvoiceForm()">Create Invoice</button>
+        </div>
+      } @else {
+        <div class="invoice-list">
+          @for (invoice of filteredInvoices(); track invoice.id) {
+            <button type="button" class="invoice-card" [attr.aria-label]="'View invoice: ' + invoice.invoiceNumber" (click)="selectInvoice(invoice)" (keydown.enter)="selectInvoice(invoice)">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="invoice-number">{{ invoice.invoiceNumber }}</div>
+                  <div class="invoice-customer">{{ invoice.customerName }}</div>
+                  @if (invoice.companyName) {
+                    <div class="invoice-company small text-muted">{{ invoice.companyName }}</div>
+                  }
+                </div>
+                <div class="text-end">
+                  <div class="invoice-amount">{{ invoice.total | currency }}</div>
+                  <span class="badge" [class]="getStatusClass(invoice.status)">{{ invoice.status }}</span>
+                </div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <div class="small text-muted">Due: {{ invoice.dueDate | date:'mediumDate' }}</div>
+                @if (invoice.amountDue > 0 && invoice.status !== 'cancelled') {
+                  <div class="small text-warning">{{ invoice.amountDue | currency }} due</div>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      }
+    }
+
+    <!-- HOUSE ACCOUNTS TAB -->
+    @if (activeTab() === 'house-accounts') {
+      @if (houseAccounts().length === 0) {
+        <div class="empty-state text-center py-5">
+          <div class="empty-icon mb-3"><i class="bi bi-building"></i></div>
+          <h5>No house accounts</h5>
+          <p class="text-muted">Set up recurring billing for corporate clients.</p>
+          <button type="button" class="btn btn-primary btn-sm" (click)="openAccountForm()">Add Account</button>
+        </div>
+      } @else {
+        <div class="account-list">
+          @for (account of houseAccounts(); track account.id) {
+            <div class="account-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <div class="account-company">{{ account.companyName }}</div>
+                  <div class="small text-muted">{{ account.contactName }} &middot; {{ account.contactEmail }}</div>
+                </div>
+                <span class="badge" [class.bg-success]="account.isActive" [class.bg-secondary]="!account.isActive">
+                  {{ account.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+              <div class="d-flex justify-content-between small">
+                <span>Balance: {{ account.currentBalance | currency }}</span>
+                <span>Limit: {{ account.creditLimit | currency }}</span>
+                <span>Cycle: {{ account.billingCycle | titlecase }}</span>
+              </div>
+              @if (account.currentBalance > 0) {
+                <div class="balance-bar mt-2">
+                  <div class="balance-fill" [style.width.%]="getBalancePercent(account)"></div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- INVOICE DETAIL MODAL -->
+    @if (selectedInvoice(); as detail) {
+      <div class="modal-backdrop" (click)="closeDetail()" (keydown.escape)="closeDetail()" aria-hidden="true"></div>
+      <div class="detail-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h4 class="mb-1">{{ detail.invoiceNumber }}</h4>
+            <span class="badge" [class]="getStatusClass(detail.status)">{{ detail.status }}</span>
+          </div>
+          <button type="button" class="btn-close" (click)="closeDetail()"></button>
+        </div>
+
+        <div class="detail-grid mb-3">
+          <div class="detail-item">
+            <div class="detail-label">Customer</div>
+            <div>{{ detail.customerName }}</div>
+            @if (detail.companyName) {
+              <div class="small text-muted">{{ detail.companyName }}</div>
+            }
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Email</div>
+            <div>{{ detail.customerEmail }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Due Date</div>
+            <div>{{ detail.dueDate | date:'mediumDate' }}</div>
+          </div>
+          @if (detail.isHouseAccount) {
+            <div class="detail-item">
+              <div class="detail-label">Type</div>
+              <div><span class="badge bg-outline">House Account</span></div>
+            </div>
+          }
+        </div>
+
+        <!-- Line Items -->
+        <div class="line-items-table mb-3">
+          <table class="table table-dark table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col" class="text-end">Qty</th>
+                <th scope="col" class="text-end">Price</th>
+                <th scope="col" class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of detail.lineItems; track item.id) {
+                <tr>
+                  <td>{{ item.description }}</td>
+                  <td class="text-end">{{ item.quantity }}</td>
+                  <td class="text-end">{{ item.unitPrice | currency }}</td>
+                  <td class="text-end">{{ item.total | currency }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-end">Subtotal</td>
+                <td class="text-end">{{ detail.subtotal | currency }}</td>
+              </tr>
+              <tr>
+                <td colspan="3" class="text-end">Tax ({{ detail.taxRate }}%)</td>
+                <td class="text-end">{{ detail.taxAmount | currency }}</td>
+              </tr>
+              <tr class="fw-bold">
+                <td colspan="3" class="text-end">Total</td>
+                <td class="text-end">{{ detail.total | currency }}</td>
+              </tr>
+              @if (detail.amountPaid > 0) {
+                <tr class="text-success">
+                  <td colspan="3" class="text-end">Paid</td>
+                  <td class="text-end">-{{ detail.amountPaid | currency }}</td>
+                </tr>
+                <tr class="fw-bold">
+                  <td colspan="3" class="text-end">Amount Due</td>
+                  <td class="text-end">{{ detail.amountDue | currency }}</td>
+                </tr>
+              }
+            </tfoot>
+          </table>
+        </div>
+
+        @if (detail.notes) {
+          <div class="mb-3">
+            <div class="detail-label">Notes</div>
+            <div class="small">{{ detail.notes }}</div>
+          </div>
+        }
+
+        <!-- Payment Form -->
+        @if (showPaymentForm()) {
+          <div class="payment-form mb-3">
+            <div class="d-flex gap-2 align-items-end">
+              <div class="flex-grow-1">
+                <label class="form-label" for="inv-payment-amount">Payment Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input id="inv-payment-amount" type="number" class="form-control" [value]="paymentAmount()" (input)="onPaymentAmountInput($event)" min="0" step="0.01" />
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm" (click)="recordPayment()">Record</button>
+              <button type="button" class="btn btn-outline-light btn-sm" (click)="closeDetail(); selectInvoice(detail)">Cancel</button>
+            </div>
+          </div>
+        }
+
+        <div class="d-flex gap-2">
+          @if (detail.status === 'draft') {
+            <button type="button" class="btn btn-primary btn-sm" (click)="sendInvoice(detail)">
+              <i class="bi bi-send me-1"></i>Send
+            </button>
+          }
+          @if (detail.amountDue > 0 && detail.status !== 'cancelled' && !showPaymentForm()) {
+            <button type="button" class="btn btn-success btn-sm" (click)="openPaymentForm()">
+              <i class="bi bi-cash me-1"></i>Record Payment
+            </button>
+          }
+          @if (detail.status !== 'paid' && detail.status !== 'cancelled') {
+            <button type="button" class="btn btn-outline-danger btn-sm ms-auto" (click)="cancelInvoice(detail)">Cancel Invoice</button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- CREATE INVOICE FORM MODAL -->
+    @if (showInvoiceForm()) {
+      <div class="modal-backdrop" (click)="closeInvoiceForm()" (keydown.escape)="closeInvoiceForm()" aria-hidden="true"></div>
+      <div class="form-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">New Invoice</h4>
+          <button type="button" class="btn-close" (click)="closeInvoiceForm()"></button>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label" for="inv-cust-name">Customer Name *</label>
+            <input id="inv-cust-name" type="text" class="form-control" [value]="formName()" (input)="onInvoiceField('name', $event)" placeholder="John Smith" />
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="inv-cust-email">Email *</label>
+            <input id="inv-cust-email" type="email" class="form-control" [value]="formEmail()" (input)="onInvoiceField('email', $event)" placeholder="john@company.com" />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label" for="inv-cust-company">Company</label>
+            <input id="inv-cust-company" type="text" class="form-control" [value]="formCompany()" (input)="onInvoiceField('company', $event)" placeholder="Company name" />
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="inv-cust-phone">Phone</label>
+            <input id="inv-cust-phone" type="tel" class="form-control" [value]="formPhone()" (input)="onInvoiceField('phone', $event)" placeholder="(555) 123-4567" />
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <p class="form-label mb-0">Line Items</p>
+            <button type="button" class="btn btn-sm btn-outline-light" (click)="addLineItem()">+ Add Item</button>
+          </div>
+          @for (item of formLineItems(); track $index; let i = $index) {
+            <div class="line-item-row d-flex gap-2 mb-2 align-items-end">
+              <div class="flex-grow-1">
+                @if (i === 0) { <label class="form-label small" for="inv-li-desc-0">Description</label> }
+                <input [id]="'inv-li-desc-' + i" type="text" class="form-control form-control-sm" [value]="item.description" (input)="onLineItemField(i, 'description', $event)" placeholder="Item description" />
+              </div>
+              <div style="width: 70px;">
+                @if (i === 0) { <label class="form-label small" for="inv-li-qty-0">Qty</label> }
+                <input [id]="'inv-li-qty-' + i" type="number" class="form-control form-control-sm" [value]="item.quantity" (input)="onLineItemField(i, 'quantity', $event)" min="1" />
+              </div>
+              <div style="width: 100px;">
+                @if (i === 0) { <label class="form-label small" for="inv-li-price-0">Price</label> }
+                <input [id]="'inv-li-price-' + i" type="number" class="form-control form-control-sm" [value]="item.unitPrice" (input)="onLineItemField(i, 'unitPrice', $event)" min="0" step="0.01" />
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeLineItem(i)" [disabled]="formLineItems().length <= 1">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-4">
+            <label class="form-label" for="inv-tax-rate">Tax Rate (%)</label>
+            <input id="inv-tax-rate" type="number" class="form-control form-control-sm" [value]="formTaxRate()" (input)="onInvoiceField('taxRate', $event)" min="0" step="0.01" />
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="inv-due-date">Due Date *</label>
+            <input id="inv-due-date" type="date" class="form-control form-control-sm" [value]="formDueDate()" (input)="onInvoiceField('dueDate', $event)" />
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="inv-deposit">Deposit Required</label>
+            <input id="inv-deposit" type="number" class="form-control form-control-sm" [value]="formDeposit()" (input)="onInvoiceField('deposit', $event)" min="0" step="0.01" />
+          </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="totals-summary mb-3">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Subtotal</span>
+            <span>{{ formSubtotal() | currency }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Tax ({{ formTaxRate() }}%)</span>
+            <span>{{ formTaxAmount() | currency }}</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span>{{ formTotal() | currency }}</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="inv-notes">Notes</label>
+          <textarea id="inv-notes" class="form-control" rows="2" [value]="formNotes()" (input)="onInvoiceField('notes', $event)" placeholder="Payment terms, special instructions..."></textarea>
+        </div>
+
+        <div class="form-check mb-3">
+          <input type="checkbox" class="form-check-input" [checked]="formIsHouseAccount()" (change)="toggleHouseAccount()" id="houseAccountCheck" />
+          <label class="form-check-label" for="houseAccountCheck">Bill to house account</label>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary" [disabled]="!canSaveInvoice() || isSaving()" (click)="saveInvoice()">
+            @if (isSaving()) {
+              <output class="spinner-border spinner-border-sm me-1"><span class="visually-hidden">Saving...</span></output>
+            }
+            Create Invoice
+          </button>
+          <button type="button" class="btn btn-outline-light" (click)="closeInvoiceForm()">Cancel</button>
+        </div>
+      </div>
+    }
+
+    <!-- CREATE HOUSE ACCOUNT FORM MODAL -->
+    @if (showAccountForm()) {
+      <div class="modal-backdrop" (click)="closeAccountForm()" (keydown.escape)="closeAccountForm()" aria-hidden="true"></div>
+      <div class="form-modal" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">New House Account</h4>
+          <button type="button" class="btn-close" (click)="closeAccountForm()"></button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="inv-ha-company">Company Name *</label>
+          <input id="inv-ha-company" type="text" class="form-control" [value]="haCompany()" (input)="onAccountField('company', $event)" placeholder="ABC Corporation" />
+        </div>
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label" for="inv-ha-contact">Contact Name *</label>
+            <input id="inv-ha-contact" type="text" class="form-control" [value]="haContact()" (input)="onAccountField('contact', $event)" placeholder="Jane Doe" />
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="inv-ha-email">Contact Email *</label>
+            <input id="inv-ha-email" type="email" class="form-control" [value]="haEmail()" (input)="onAccountField('email', $event)" placeholder="jane@abc.com" />
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-4">
+            <label class="form-label" for="inv-ha-phone">Phone</label>
+            <input id="inv-ha-phone" type="tel" class="form-control" [value]="haPhone()" (input)="onAccountField('phone', $event)" placeholder="(555) 123-4567" />
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="inv-ha-cycle">Billing Cycle</label>
+            <select id="inv-ha-cycle" class="form-select" [value]="haCycle()" (change)="onAccountField('cycle', $event)">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Biweekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="inv-ha-limit">Credit Limit</label>
+            <input id="inv-ha-limit" type="number" class="form-control" [value]="haLimit()" (input)="onAccountField('limit', $event)" min="0" step="100" />
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary" [disabled]="!canSaveAccount() || isSaving()" (click)="saveHouseAccount()">
+            @if (isSaving()) {
+              <output class="spinner-border spinner-border-sm me-1"><span class="visually-hidden">Saving...</span></output>
+            }
+            Create Account
+          </button>
+          <button type="button" class="btn btn-outline-light" (click)="closeAccountForm()">Cancel</button>
+        </div>
+      </div>
+    }
+  }
+</div>

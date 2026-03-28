@@ -1,0 +1,64 @@
+<div class="event-card">
+  <div class="d-flex justify-content-between align-items-start mb-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="event-title">{{ event.title }}</span>
+      <span class="badge rounded-pill" [class]="statusBadgeClass">{{ statusLabel }}</span>
+      <span class="badge rounded-pill bg-light text-secondary border">{{ eventTypeLabel }}</span>
+    </div>
+    @if (event.totalCents > 0) {
+      <div class="text-end">
+        <div class="fw-semibold">{{ formatCents(event.totalCents) }}</div>
+        @if (event.paidCents > 0 && event.paidCents < event.totalCents) {
+          <div class="text-muted small">{{ formatCents(event.totalCents - event.paidCents) }} due</div>
+        } @else if (event.paidCents >= event.totalCents && event.totalCents > 0) {
+          <div class="text-success small">Paid in full</div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="d-flex flex-wrap gap-3 mb-2 event-details">
+    <span class="detail-chip">
+      <i class="bi bi-calendar3"></i> {{ formattedDate }}
+    </span>
+    <span class="detail-chip">
+      <i class="bi bi-clock"></i> {{ formattedTimeRange }}
+    </span>
+    <span class="detail-chip">
+      <i class="bi bi-people"></i> {{ event.headcount }} {{ event.headcount === 1 ? 'guest' : 'guests' }}
+    </span>
+    <span class="badge rounded-pill" [class]="event.locationType === 'on_site' ? 'border text-secondary' : 'border text-info'">
+      {{ locationLabel }}
+    </span>
+    <span class="detail-chip">
+      <i class="bi bi-person"></i> {{ event.clientName }}
+    </span>
+    @if (event.companyName) {
+      <span class="detail-chip">
+        <i class="bi bi-building"></i> {{ event.companyName }}
+      </span>
+    }
+  </div>
+
+  @if (event.totalCents > 0 && event.paidCents > 0) {
+    <div class="progress mb-2" style="height: 4px;">
+      <div class="progress-bar bg-success" [style.width.%]="paymentPercent"></div>
+    </div>
+  }
+
+  <div class="d-flex gap-2 mt-2">
+    @if (canAdvance) {
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="advanceStatus(); $event.stopPropagation()">
+        {{ advanceLabel }}
+      </button>
+    }
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="edit(); $event.stopPropagation()">
+      Edit
+    </button>
+    @if (canCancel) {
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="cancel(); $event.stopPropagation()">
+        Cancel
+      </button>
+    }
+  </div>
+</div>

@@ -1,0 +1,143 @@
+// Mission
+.mkt-about-mission {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.mkt-about-mission__quote {
+  position: relative;
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--os-text);
+  border-left: 4px solid var(--os-primary);
+  padding: 1.25rem 1.5rem;
+  margin: 0 0 2rem;
+  background: var(--os-bg-alt, #f8f9fa);
+  border-radius: 0 0.5rem 0.5rem 0;
+
+  .bi-quote {
+    position: absolute;
+    top: -0.5rem;
+    left: -0.75rem;
+    font-size: 2rem;
+    color: var(--os-primary);
+    opacity: 0.3;
+  }
+}
+
+.mkt-about-mission__text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--os-text-muted);
+  margin-bottom: 1rem;
+}
+
+// Values
+.mkt-about-values__heading {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--os-text);
+  margin-bottom: 2.5rem;
+}
+
+.mkt-about-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+
+  @media (max-width: 767.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mkt-about-value-card {
+  text-align: center;
+  padding: 2rem 1.5rem;
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--os-text);
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--os-text-muted);
+    margin: 0;
+  }
+}
+
+.mkt-about-value-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(var(--os-primary-rgb, 0, 102, 255), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+
+  i {
+    font-size: 1.5rem;
+    color: var(--os-primary);
+  }
+}
+
+// Local
+.mkt-about-local {
+  text-align: center;
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 2rem;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--os-text);
+    margin-bottom: 0.75rem;
+  }
+
+  p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--os-text-muted);
+    margin-bottom: 1.5rem;
+  }
+}
+
+.mkt-about-local__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(var(--os-primary-rgb, 0, 102, 255), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+
+  i {
+    font-size: 1.75rem;
+    color: var(--os-primary);
+  }
+}
+
+.mkt-about-local__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--os-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -1,0 +1,61 @@
+<div class="pair-card">
+  <div class="text-center mb-4">
+    <div class="pair-icon">
+      <i class="bi bi-phone"></i>
+    </div>
+    <h2 class="card-title mb-1">Pair This Device</h2>
+    <p class="text-muted">Enter the 5-character code from Settings &gt; Hardware</p>
+  </div>
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      title="Pairing Failed"
+      (dismissed)="clearError()"
+    />
+  }
+
+  <form [formGroup]="pairForm" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+      <label for="pairCode" class="form-label">Pairing Code</label>
+      <input
+        type="text"
+        class="form-control code-input"
+        id="pairCode"
+        formControlName="code"
+        placeholder="XXXXX"
+        maxlength="5"
+        autocomplete="off"
+        spellcheck="false"
+        (input)="onCodeInput($event)"
+        [class.is-invalid]="codeControl?.touched && codeControl?.invalid"
+      />
+      @if (codeControl?.touched && codeControl?.errors?.['required']) {
+        <div class="invalid-feedback d-block">Pairing code is required</div>
+      }
+      @if (codeControl?.touched && codeControl?.errors?.['minlength']) {
+        <div class="invalid-feedback d-block">Code must be 5 characters</div>
+      }
+      @if (codeControl?.touched && codeControl?.errors?.['pattern']) {
+        <div class="invalid-feedback d-block">Code must be letters and numbers only</div>
+      }
+    </div>
+
+    <button
+      type="submit"
+      class="btn btn-primary w-100"
+      [disabled]="isLoading()"
+    >
+      @if (isLoading()) {
+        <output class="spinner-border spinner-border-sm me-2"></output>
+        Pairing...
+      } @else {
+        Pair Device
+      }
+    </button>
+  </form>
+
+  <p class="switch-link mt-3">
+    Already paired? <a routerLink="/login" class="link-btn">Sign in</a>
+  </p>
+</div>

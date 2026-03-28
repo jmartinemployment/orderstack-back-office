@@ -1,0 +1,53 @@
+<!-- Hero -->
+<os-mkt-section background="hero">
+  <os-mkt-hero
+    [tag]="hero.tag"
+    [title]="hero.title"
+    [subtitle]="hero.subtitle"
+    [primaryCta]="hero.primaryCta"
+    [secondaryCta]="hero.secondaryCta"
+    alignment="center" />
+</os-mkt-section>
+
+<!-- Social proof bar -->
+<os-social-proof-bar />
+
+<!-- Pain points -->
+<os-mkt-section>
+  <os-pain-points />
+</os-mkt-section>
+
+<!-- Animated metrics (replaces stats strip) -->
+<os-metric-strip />
+
+<!-- Feature highlights -->
+<os-mkt-section background="alt">
+  <os-feature-highlights />
+</os-mkt-section>
+
+<!-- Testimonials carousel -->
+<os-testimonial-section />
+
+<!-- How it works -->
+<os-mkt-section>
+  <os-how-it-works />
+</os-mkt-section>
+
+<!-- Partner logos carousel -->
+<os-logo-carousel />
+
+<!-- Case studies -->
+<os-mkt-section background="alt">
+  <div class="mkt-case-studies__header">
+    <span class="mkt-case-studies__tag">{{ caseStudiesHeader.tag }}</span>
+    <h2 class="mkt-case-studies__title">{{ caseStudiesHeader.title }}</h2>
+  </div>
+  <div class="mkt-case-studies__grid">
+    @for (study of caseStudies; track study.id) {
+      <os-case-study-card [caseStudy]="study" />
+    }
+  </div>
+</os-mkt-section>
+
+<!-- Final CTA -->
+<os-final-cta />

@@ -1,0 +1,17 @@
+<div class="connection-status d-flex align-items-center gap-2">
+  <span
+    class="status-indicator"
+    [class.connected]="isConnected()"
+    [class.polling]="isPolling()"
+    [class.disconnected]="connectionStatus() === 'disconnected'"
+    [class.connecting]="connectionStatus() === 'connecting'"
+  ></span>
+  <span class="status-text">
+    @switch (connectionStatus()) {
+      @case ('connected') { Live }
+      @case ('polling') { Polling }
+      @case ('connecting') { Connecting... }
+      @default { Offline }
+    }
+  </span>
+</div>

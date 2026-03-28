@@ -1,0 +1,46 @@
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <!-- Mobile header -->
+  <header class="mobile-header d-md-none">
+    <button class="btn btn-link hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+      <i class="bi bi-list"></i>
+    </button>
+    <span class="brand">OrderStack</span>
+    <span class="spacer"></span>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  @if (mobileMenuOpen()) {
+    <button type="button" class="sidebar-overlay d-md-none" (click)="closeMobileMenu()" (keydown.enter)="closeMobileMenu()" aria-label="Close menu"></button>
+  }
+
+  <!-- Sidebar -->
+  <os-sidebar
+    [navItems]="navItems()"
+    [collapsed]="sidebarCollapsed()"
+    [mobileOpen]="mobileMenuOpen()"
+    [restaurantName]="selectedMerchantName()"
+    [restaurantAddress]="selectedMerchantAddress()"
+    [userName]="userName()"
+    (toggled)="toggleSidebar()"
+    (closeMobile)="closeMobileMenu()"
+    (loggedOut)="logout()" />
+
+  <!-- Session expiry warning overlay -->
+  @if (sessionTimeout.showWarning()) {
+    <div class="session-warning-overlay">
+      <div class="session-warning-modal">
+        <h3>Session Expiring Soon</h3>
+        <p>Your session will expire in <strong>{{ sessionTimeout.secondsRemaining() }}</strong> seconds due to inactivity.</p>
+        <div class="session-warning-actions">
+          <button class="btn btn-primary" (click)="sessionTimeout.extendSession()">Stay Signed In</button>
+          <button class="btn btn-outline-secondary ms-2" (click)="auth.logout()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Main content -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>

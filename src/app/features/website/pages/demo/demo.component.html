@@ -1,0 +1,22 @@
+<!-- Hero -->
+<os-mkt-section background="hero">
+  <os-mkt-hero
+    [title]="hero.title"
+    [subtitle]="hero.subtitle"
+    alignment="center" />
+</os-mkt-section>
+
+<!-- Business type selector -->
+<os-mkt-section>
+  <os-demo-business-selector
+    [selected]="businessType()"
+    (selectionChange)="onBusinessTypeChange($event)" />
+</os-mkt-section>
+
+<!-- Feature tour -->
+<os-mkt-section background="alt">
+  <os-demo-feature-tour [businessType]="businessType()" />
+</os-mkt-section>
+
+<!-- Final CTA -->
+<os-final-cta />

@@ -1,0 +1,78 @@
+<div class="item-grid-container">
+  @if (isLoading()) {
+    <div class="grid-loading">
+      <output class="spinner-border text-primary">
+        <span class="visually-hidden">Loading menu...</span>
+      </output>
+    </div>
+  } @else {
+    <div class="item-grid">
+      @for (item of items(); track item.id) {
+        @if (tileMode() === 'color') {
+          <button
+            type="button"
+            class="item-tile color-tile"
+            [style.background]="categoryColorFn()?.(item)"
+            (click)="itemClick.emit(item)">
+            <span class="item-name">{{ item.name }}</span>
+            @if (item.soldByWeight) {
+              <span class="item-weight-badge">
+                <i class="bi bi-speedometer2"></i> by weight
+              </span>
+            }
+          </button>
+        } @else {
+          <button type="button" class="item-tile image-tile" (click)="itemClick.emit(item)">
+            @if (itemImageFn()?.(item); as imgUrl) {
+              <div class="item-image">
+                <img [src]="imgUrl" [alt]="item.name" loading="lazy" (error)="onImageError($event)" />
+                <i class="bi bi-bag item-image-fallback"></i>
+              </div>
+            } @else {
+              <div class="item-image item-image-placeholder">
+                <i class="bi bi-bag"></i>
+              </div>
+            }
+            <span class="item-name">{{ item.name }}</span>
+            @if (item.soldByWeight) {
+              <span class="item-weight-badge">
+                <i class="bi bi-speedometer2"></i> by weight
+              </span>
+            }
+          </button>
+        }
+      }
+
+      <!-- Empty placeholder tiles to fill the row -->
+      @for (i of placeholders; track i) {
+        @if (items().length % 5 !== 0 && i <= 5 - (items().length % 5)) {
+          <div class="item-tile item-tile-empty"></div>
+        }
+      }
+    </div>
+
+    <!-- Action tiles row -->
+    <div class="action-tiles">
+      <button type="button" class="action-tile">
+        <div class="action-icon">
+          <i class="bi bi-percent"></i>
+        </div>
+        <span class="action-label">Discounts</span>
+      </button>
+      <button type="button" class="action-tile">
+        <div class="action-icon">
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <span class="action-label">Rewards</span>
+      </button>
+      <button type="button" class="action-tile">
+        <div class="action-icon">
+          <i class="bi bi-gift-fill"></i>
+        </div>
+        <span class="action-label">Gift cards</span>
+      </button>
+      <div class="action-tile action-tile-empty"></div>
+      <div class="action-tile action-tile-empty"></div>
+    </div>
+  }
+</div>

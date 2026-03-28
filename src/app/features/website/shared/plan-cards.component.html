@@ -1,0 +1,65 @@
+<div class="mkt-plans">
+  <!-- Billing toggle -->
+  <div class="mkt-plans__toggle">
+    <span [class.active]="!isAnnual()">Monthly</span>
+    <button
+      class="mkt-plans__switch"
+      (click)="toggleInterval()"
+      role="switch"
+      [attr.aria-checked]="isAnnual()"
+      aria-label="Toggle annual billing">
+      <span class="mkt-plans__switch-thumb" [class.mkt-plans__switch-thumb--on]="isAnnual()"></span>
+    </button>
+    <span [class.active]="isAnnual()">
+      Annual
+      <span class="os-badge success ms-1">Save 2 months</span>
+    </span>
+  </div>
+
+  <!-- Plan cards grid -->
+  <div class="mkt-plans__grid">
+    @for (plan of plans; track plan.id) {
+      <div class="mkt-plan-card" [class.mkt-plan-card--highlighted]="plan.highlighted">
+        @if (plan.highlighted) {
+          <div class="mkt-plan-card__badge">Most Popular</div>
+        }
+
+        <h3 class="mkt-plan-card__name">{{ plan.name }}</h3>
+        <p class="mkt-plan-card__desc">{{ plan.description }}</p>
+
+        <div class="mkt-plan-card__price">
+          @if (plan.monthlyCents === 0) {
+            <span class="mkt-plan-card__amount">$0</span>
+          } @else {
+            <span class="mkt-plan-card__amount">
+              ${{ displayPrice(plan) | number:'1.0-0' }}
+            </span>
+            <span class="mkt-plan-card__period">/mo</span>
+          }
+        </div>
+
+        @if (isAnnual() && plan.annualTotalCents > 0) {
+          <p class="mkt-plan-card__annual-note">
+            Billed ${{ plan.annualTotalCents / 100 | number:'1.0-0' }}/year
+          </p>
+        }
+
+        <a class="btn w-100 mb-3"
+           [class.btn-os-primary]="plan.highlighted"
+           [class.btn-os-secondary]="!plan.highlighted"
+           [routerLink]="plan.cta.route">
+          {{ plan.cta.label }}
+        </a>
+
+        <ul class="mkt-plan-card__features">
+          @for (feature of plan.features; track feature) {
+            <li>
+              <i class="bi bi-check2" aria-hidden="true"></i>
+              {{ feature }}
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,23 @@
+<div class="mkt-tour">
+  <!-- Tab list (vertical on desktop, horizontal scroll on mobile) -->
+  <div class="mkt-tour__tabs" role="tablist" aria-label="Feature tour">
+    @for (feature of visibleFeatures(); track feature.id) {
+      <button
+        class="mkt-tour__tab"
+        [class.mkt-tour__tab--active]="isActive(feature)"
+        role="tab"
+        [attr.aria-selected]="isActive(feature)"
+        (click)="selectFeature(feature.id)">
+        <i [class]="'bi ' + feature.icon" aria-hidden="true"></i>
+        <span>{{ feature.title }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Feature detail pane -->
+  @if (activeFeature(); as feature) {
+    <div class="mkt-tour__detail" role="tabpanel">
+      <os-demo-feature-card [feature]="feature" />
+    </div>
+  }
+</div>

@@ -1,0 +1,119 @@
+:host { display: block; }
+
+.catering-dashboard {
+  h2 { color: var(--os-text-primary); font-weight: 600; }
+}
+
+// Next event banner
+.next-event-banner {
+  background: linear-gradient(135deg, rgba(0, 106, 255, 0.08) 0%, rgba(0, 106, 255, 0.03) 100%);
+  border: 1px solid rgba(0, 106, 255, 0.15);
+  color: var(--os-text-primary);
+}
+
+// KPI cards
+.kpi-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+
+  .kpi-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+    line-height: 1.2;
+  }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    color: var(--os-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 0.25rem;
+  }
+}
+
+// Tabs
+.catering-tabs {
+  .nav-link {
+    color: var(--os-text-secondary);
+    font-size: 0.875rem;
+    &:hover { color: var(--os-text-primary); }
+    &.active { background-color: var(--os-primary); color: #fff; }
+    .badge { font-size: 0.65rem; }
+  }
+}
+
+// Event list
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// Empty state
+.empty-state {
+  background-color: var(--os-bg-card);
+  border: 1px dashed var(--os-border);
+  border-radius: 0.5rem;
+}
+
+// Onboarding empty state
+.empty-onboarding {
+  .card {
+    border-color: var(--os-border);
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      border-color: var(--os-primary);
+      box-shadow: 0 0.25rem 0.75rem rgba(0, 106, 255, 0.1);
+    }
+  }
+}
+
+// Capacity settings card
+.capacity-settings {
+  .card {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-border);
+    color: var(--os-text-primary);
+  }
+
+  .form-label {
+    color: var(--os-text-secondary);
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+
+  .form-control {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-border);
+    color: var(--os-text-primary);
+
+    &:focus {
+      background-color: var(--os-bg-card);
+      border-color: var(--os-primary);
+      color: var(--os-text-primary);
+      box-shadow: 0 0 0 0.25rem rgba(0, 106, 255, 0.15);
+    }
+  }
+
+  .form-check-input:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled { opacity: 0.5; }
+}

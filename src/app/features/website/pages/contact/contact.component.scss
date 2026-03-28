@@ -1,0 +1,266 @@
+:host {
+  display: block;
+}
+
+// ── Two-column layout ─────────────────────────────────────────────────────────
+
+.mkt-contact {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 48px;
+  align-items: start;
+
+  @media (max-width: 991.98px) {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+// ── Contact Form ──────────────────────────────────────────────────────────────
+
+.mkt-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mkt-contact-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+
+  input,
+  select,
+  textarea {
+    padding: 10px 14px;
+    border: 1px solid var(--os-border);
+    border-radius: var(--os-radius, 8px);
+    font-size: 0.9375rem;
+    color: var(--os-text-primary);
+    background: var(--os-bg-card);
+    outline: none;
+    transition: border-color 0.15s ease;
+    font-family: inherit;
+
+    &:focus {
+      border-color: var(--os-primary);
+    }
+
+    &--error {
+      border-color: #dc2626;
+    }
+
+    &::placeholder {
+      color: var(--os-text-secondary);
+      opacity: 0.5;
+    }
+  }
+
+  select {
+    cursor: pointer;
+    appearance: auto;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+}
+
+.mkt-contact-form__error {
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+.mkt-contact-form__submit {
+  padding: 12px 24px;
+  background: var(--os-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--os-radius, 8px);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ── Thank You State ───────────────────────────────────────────────────────────
+
+.mkt-contact-thanks {
+  text-align: center;
+  padding: 48px 24px;
+
+  > i {
+    font-size: 4rem;
+    color: #16a34a;
+    display: block;
+    margin-bottom: 24px;
+  }
+}
+
+.mkt-contact-thanks__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--os-text-primary);
+  margin: 0 0 24px;
+}
+
+.mkt-contact-thanks__label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--os-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 12px;
+}
+
+.mkt-contact-thanks__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  max-width: 360px;
+  margin-inline: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9375rem;
+    color: var(--os-text-primary);
+    counter-increment: step;
+
+    &::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--os-primary-light, #e0ecff);
+      color: var(--os-primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.mkt-contact-thanks__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--os-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// ── Contact Info Cards ────────────────────────────────────────────────────────
+
+.mkt-contact__info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mkt-contact-info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+
+  > i {
+    font-size: 1.25rem;
+    color: var(--os-primary);
+    margin-top: 2px;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: 0.875rem;
+    color: var(--os-text-primary);
+  }
+
+  span {
+    font-size: 0.8125rem;
+    color: var(--os-text-secondary);
+  }
+}
+
+// ── Demo Callout ──────────────────────────────────────────────────────────────
+
+.mkt-contact-demo-callout {
+  padding: 24px;
+  background: var(--os-primary-light, #e0ecff);
+  border-radius: var(--os-radius-lg);
+  margin-top: 8px;
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+    margin: 0 0 8px;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: var(--os-text-secondary);
+    line-height: 1.5;
+    margin: 0 0 16px;
+  }
+}
+
+.mkt-contact-demo-callout__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: var(--os-primary);
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  i {
+    font-size: 0.75rem;
+  }
+}

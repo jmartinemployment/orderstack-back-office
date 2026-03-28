@@ -1,0 +1,220 @@
+<button type="button" class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()"></button>
+<div class="modal-dialog">
+  <div class="modal-content">
+    @if (successMessage(); as msg) {
+      <div class="modal-body text-center py-5">
+        <div class="success-icon mb-3">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <p class="success-text">{{ msg }}</p>
+      </div>
+    } @else {
+      <div class="modal-header">
+        <h5 class="modal-title">
+          @switch (phase()) {
+            @case ('reason') { Cancel Subscription }
+            @case ('followup') { Tell Us More }
+            @case ('confirm') { Confirm Cancellation }
+          }
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Phase 1: Reason Selection -->
+        @if (phase() === 'reason') {
+          <p class="phase-description">We're sorry to see you go. Why are you canceling?</p>
+          <div class="reason-list">
+            @for (reason of reasons; track reason.key) {
+              <button
+                class="reason-option"
+                [class.selected]="selectedReason() === reason.key"
+                (click)="selectReason(reason.key)">
+                <span class="reason-radio">
+                  @if (selectedReason() === reason.key) {
+                    <i class="bi bi-record-circle-fill"></i>
+                  } @else {
+                    <i class="bi bi-circle"></i>
+                  }
+                </span>
+                <span class="reason-label">{{ reason.label }}</span>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Phase 2: Follow-Up -->
+        @if (phase() === 'followup') {
+          @switch (selectedReason()) {
+            @case ('too_expensive') {
+              <p class="phase-description">Which plan price would work for your business?</p>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g., $29/month, $49/month"
+                aria-label="Price expectation"
+                [ngModel]="priceExpectation()"
+                (ngModelChange)="priceExpectation.set($event)" />
+            }
+            @case ('missing_features') {
+              <p class="phase-description">What features would have kept you? (check all that apply)</p>
+              <div class="feature-grid">
+                @for (feature of missingFeatureOptions; track feature) {
+                  <label class="feature-check" [class.checked]="selectedFeatures().includes(feature)">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedFeatures().includes(feature)"
+                      (change)="toggleFeature(feature)"
+                      [attr.aria-label]="feature" />
+                    <span>{{ feature }}</span>
+                  </label>
+                }
+                <div class="feature-other">
+                  <label class="feature-check" [class.checked]="featuresOther().trim().length > 0">
+                    <input type="checkbox" disabled [checked]="featuresOther().trim().length > 0" aria-label="Other feature" />
+                    <span>Other</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm mt-1"
+                    placeholder="Tell us what's missing"
+                    aria-label="Other missing feature"
+                    [ngModel]="featuresOther()"
+                    (ngModelChange)="featuresOther.set($event)" />
+                </div>
+              </div>
+            }
+            @case ('too_complicated') {
+              <p class="phase-description">What was hardest to figure out?</p>
+              <textarea
+                class="form-control"
+                rows="3"
+                placeholder="Tell us what was confusing..."
+                aria-label="What was hardest to figure out"
+                [ngModel]="followUpText()"
+                (ngModelChange)="followUpText.set($event)"></textarea>
+            }
+            @case ('switching_competitor') {
+              <label for="competitor-select" class="phase-description">Which product are you switching to?</label>
+              <select
+                id="competitor-select"
+                class="form-select"
+                [ngModel]="selectedCompetitor()"
+                (ngModelChange)="selectedCompetitor.set($event)">
+                <option value="">Select a product</option>
+                @for (comp of competitorOptions; track comp) {
+                  <option [value]="comp">{{ comp }}</option>
+                }
+                <option value="Other">Other</option>
+              </select>
+              @if (selectedCompetitor() === 'Other') {
+                <input
+                  type="text"
+                  class="form-control mt-2"
+                  placeholder="Which product?"
+                  aria-label="Other competitor product"
+                  [ngModel]="competitorOther()"
+                  (ngModelChange)="competitorOther.set($event)" />
+              }
+            }
+            @case ('technical_issues') {
+              <p class="phase-description">What went wrong?</p>
+              <textarea
+                class="form-control"
+                rows="3"
+                placeholder="Describe the issues you experienced..."
+                aria-label="Technical issues description"
+                [ngModel]="followUpText()"
+                (ngModelChange)="followUpText.set($event)"></textarea>
+            }
+            @case ('other') {
+              <p class="phase-description">Tell us more</p>
+              <textarea
+                class="form-control"
+                rows="3"
+                placeholder="What's your reason for canceling?"
+                aria-label="Reason for canceling"
+                [ngModel]="followUpText()"
+                (ngModelChange)="followUpText.set($event)"></textarea>
+            }
+          }
+        }
+
+        <!-- Phase 3: Confirm -->
+        @if (phase() === 'confirm') {
+          @if (subscription(); as sub) {
+            <div class="confirm-warning">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div>
+                <p class="mb-1">
+                  Your subscription will end on <strong>{{ sub.currentPeriodEnd | date:'longDate' }}</strong>.
+                </p>
+                <p class="mb-0">
+                  After that date, you'll lose access to <strong>{{ sub.planName }}</strong> features.
+                  Your data will be preserved.
+                </p>
+              </div>
+            </div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label text-muted" for="additionalFeedback">Anything else you'd like us to know?</label>
+            <textarea
+              class="form-control"
+              id="additionalFeedback"
+              rows="2"
+              placeholder="Optional — suggestions for improvement"
+              [ngModel]="additionalFeedback()"
+              (ngModelChange)="additionalFeedback.set($event)"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-medium" for="confirmCancelText">Type <strong>CANCEL</strong> to confirm</label>
+            <input
+              type="text"
+              class="form-control"
+              id="confirmCancelText"
+              placeholder="CANCEL"
+              [ngModel]="confirmText()"
+              (ngModelChange)="confirmText.set($event)" />
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        @switch (phase()) {
+          @case ('reason') {
+            <button class="btn btn-secondary" (click)="closeModal()">Never Mind</button>
+            <button
+              class="btn btn-primary"
+              [disabled]="!canContinuePhase1()"
+              (click)="continueFromReason()">
+              Continue
+            </button>
+          }
+          @case ('followup') {
+            <button class="btn btn-secondary" (click)="goBack()">Back</button>
+            <button
+              class="btn btn-primary"
+              [disabled]="!canContinuePhase2()"
+              (click)="continueFromFollowUp()">
+              Continue
+            </button>
+          }
+          @case ('confirm') {
+            <button class="btn btn-secondary" (click)="goBack()">Go Back</button>
+            <button
+              class="btn btn-danger"
+              [disabled]="!canConfirm() || isLoading()"
+              (click)="confirmCancel()">
+              @if (isLoading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Cancel My Subscription
+            </button>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>

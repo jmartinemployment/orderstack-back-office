@@ -1,0 +1,862 @@
+@if (isAuthenticated()) {
+<div class="customer-dashboard px-2">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Customer Intelligence</h2>
+  </div>
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      [retryable]="true"
+      (dismissed)="clearError()"
+      (retry)="retry()"
+    />
+  }
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid mb-4">
+    <div class="kpi-card">
+      <span class="kpi-label">Total Customers</span>
+      <span class="kpi-value">{{ totalCustomers() }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Total Revenue</span>
+      <span class="kpi-value">{{ totalRevenue() | currency }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Avg Lifetime Value</span>
+      <span class="kpi-value">{{ avgLifetimeValue() | currency }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Loyalty Points</span>
+      <span class="kpi-value">{{ totalLoyaltyPoints() | number }}</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-pills crm-tabs mb-4">
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'customers'" (click)="setTab('customers')">
+        Customers
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'segments'" (click)="setTab('segments')">
+        Segments
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'insights'" (click)="setTab('insights')">
+        Insights
+        @if (negativeFeedback().length > 0) {
+          <span class="badge bg-danger ms-1">{{ negativeFeedback().length }}</span>
+        }
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'groups'" (click)="setTab('groups')">
+        Groups
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'inbox'" (click)="setTab('inbox')">
+        Inbox
+        @if (totalUnreadMessages() > 0) {
+          <span class="badge bg-danger ms-1">{{ totalUnreadMessages() }}</span>
+        }
+      </button>
+    </li>
+  </ul>
+
+  @if (isLoading() && customers().length === 0) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading customers..." />
+    </div>
+  } @else {
+    <!-- CUSTOMERS TAB -->
+    @if (activeTab() === 'customers') {
+      <!-- Search + Filters -->
+      <div class="filters-bar d-flex flex-wrap gap-2 mb-3">
+        <input
+          type="text"
+          class="form-control form-control-sm search-input"
+          placeholder="Search name, email, phone..."
+          [value]="searchTerm()"
+          (input)="onSearch($event)"
+        />
+        <div class="d-flex flex-wrap gap-1">
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="!segmentFilter()"
+            [class.btn-outline-light]="segmentFilter()"
+            (click)="setSegmentFilter(null)"
+          >All</button>
+          <button type="button" class="btn btn-sm" [class.btn-vip]="segmentFilter() === 'vip'" [class.btn-outline-light]="segmentFilter() !== 'vip'" (click)="setSegmentFilter('vip')">
+            VIP ({{ segmentCounts().vip }})
+          </button>
+          <button type="button" class="btn btn-sm" [class.btn-regular]="segmentFilter() === 'regular'" [class.btn-outline-light]="segmentFilter() !== 'regular'" (click)="setSegmentFilter('regular')">
+            Regular ({{ segmentCounts().regular }})
+          </button>
+          <button type="button" class="btn btn-sm" [class.btn-new]="segmentFilter() === 'new'" [class.btn-outline-light]="segmentFilter() !== 'new'" (click)="setSegmentFilter('new')">
+            New ({{ segmentCounts().new }})
+          </button>
+          <button type="button" class="btn btn-sm" [class.btn-at-risk]="segmentFilter() === 'at-risk'" [class.btn-outline-light]="segmentFilter() !== 'at-risk'" (click)="setSegmentFilter('at-risk')">
+            At Risk ({{ segmentCounts()['at-risk'] }})
+          </button>
+          <button type="button" class="btn btn-sm" [class.btn-dormant]="segmentFilter() === 'dormant'" [class.btn-outline-light]="segmentFilter() !== 'dormant'" (click)="setSegmentFilter('dormant')">
+            Dormant ({{ segmentCounts().dormant }})
+          </button>
+        </div>
+      </div>
+
+      <!-- Customer Table -->
+      <div class="table-responsive">
+        <table class="table crm-table">
+          <thead>
+            <tr>
+              <th (click)="toggleSort('name')" (keydown.enter)="toggleSort('name')" class="sortable" tabindex="0">
+                Name
+                @if (getSortIcon('name') === 'asc') { <span class="sort-arrow">^</span> }
+                @if (getSortIcon('name') === 'desc') { <span class="sort-arrow">v</span> }
+              </th>
+              <th>Contact</th>
+              <th>Segment</th>
+              <th (click)="toggleSort('totalOrders')" (keydown.enter)="toggleSort('totalOrders')" class="sortable text-end" tabindex="0">
+                Orders
+                @if (getSortIcon('totalOrders') === 'asc') { <span class="sort-arrow">^</span> }
+                @if (getSortIcon('totalOrders') === 'desc') { <span class="sort-arrow">v</span> }
+              </th>
+              <th (click)="toggleSort('totalSpent')" (keydown.enter)="toggleSort('totalSpent')" class="sortable text-end" tabindex="0">
+                Spent
+                @if (getSortIcon('totalSpent') === 'asc') { <span class="sort-arrow">^</span> }
+                @if (getSortIcon('totalSpent') === 'desc') { <span class="sort-arrow">v</span> }
+              </th>
+              <th (click)="toggleSort('lastOrderDate')" (keydown.enter)="toggleSort('lastOrderDate')" class="sortable text-end" tabindex="0">
+                Last Order
+                @if (getSortIcon('lastOrderDate') === 'asc') { <span class="sort-arrow">^</span> }
+                @if (getSortIcon('lastOrderDate') === 'desc') { <span class="sort-arrow">v</span> }
+              </th>
+              <th (click)="toggleSort('loyaltyPoints')" (keydown.enter)="toggleSort('loyaltyPoints')" class="sortable text-end" tabindex="0">
+                Points
+                @if (getSortIcon('loyaltyPoints') === 'asc') { <span class="sort-arrow">^</span> }
+                @if (getSortIcon('loyaltyPoints') === 'desc') { <span class="sort-arrow">v</span> }
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customer of filteredCustomers(); track customer.id) {
+              <tr class="customer-row" (click)="selectCustomer(customer)" (keydown.enter)="selectCustomer(customer)" tabindex="0">
+                <td>
+                  <span class="customer-name">{{ getCustomerName(customer) }}</span>
+                  @if (customer.tags.length > 0) {
+                    <div class="customer-tags mt-1">
+                      @for (tag of customer.tags.slice(0, 3); track tag) {
+                        <span class="badge bg-secondary me-1">{{ tag }}</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td>
+                  <div class="small">
+                    @if (customer.email) { <div>{{ customer.email }}</div> }
+                    @if (customer.phone) { <div>{{ customer.phone }}</div> }
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" [class]="getSegment(customer).cssClass">
+                    {{ getSegment(customer).label }}
+                  </span>
+                </td>
+                <td class="text-end">{{ customer.totalOrders }}</td>
+                <td class="text-end">{{ customer.totalSpent | currency }}</td>
+                <td class="text-end">
+                  @if (customer.lastOrderDate) {
+                    {{ customer.lastOrderDate | date:'shortDate' }}
+                    <div class="small text-muted">
+                      {{ getDaysSinceOrder(customer) }}d ago
+                    </div>
+                  } @else {
+                    --
+                  }
+                </td>
+                <td class="text-end">
+                  <span class="loyalty-tier-badge" [style.background-color]="getLoyaltyTierColor(customer)">
+                    {{ getLoyaltyTierLabel(customer) }}
+                  </span>
+                  <div class="small">{{ customer.loyaltyPoints | number }}</div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center text-muted p-4">
+                  @if (searchTerm() || segmentFilter()) {
+                    No customers match your filters
+                  } @else {
+                    No customer data yet. Customers are created when orders are placed.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- SEGMENTS TAB -->
+    @if (activeTab() === 'segments') {
+      <div class="segments-grid">
+        <button type="button" class="segment-card segment-vip" (click)="setSegmentFilter('vip'); setTab('customers')">
+          <h5>VIP</h5>
+          <span class="segment-count">{{ segmentCounts().vip }}</span>
+          <p class="small text-muted mb-0">$500+ spent or 20+ orders</p>
+        </button>
+        <button type="button" class="segment-card segment-regular" (click)="setSegmentFilter('regular'); setTab('customers')">
+          <h5>Regular</h5>
+          <span class="segment-count">{{ segmentCounts().regular }}</span>
+          <p class="small text-muted mb-0">Active, 3+ orders within 30 days</p>
+        </button>
+        <button type="button" class="segment-card segment-new" (click)="setSegmentFilter('new'); setTab('customers')">
+          <h5>New</h5>
+          <span class="segment-count">{{ segmentCounts().new }}</span>
+          <p class="small text-muted mb-0">1-2 orders, recent customer</p>
+        </button>
+        <button type="button" class="segment-card segment-at-risk" (click)="setSegmentFilter('at-risk'); setTab('customers')">
+          <h5>At Risk</h5>
+          <span class="segment-count">{{ segmentCounts()['at-risk'] }}</span>
+          <p class="small text-muted mb-0">Previously active, no order in 30+ days</p>
+        </button>
+        <button type="button" class="segment-card segment-dormant" (click)="setSegmentFilter('dormant'); setTab('customers')">
+          <h5>Dormant</h5>
+          <span class="segment-count">{{ segmentCounts().dormant }}</span>
+          <p class="small text-muted mb-0">No orders in 90+ days</p>
+        </button>
+      </div>
+    }
+
+    <!-- INSIGHTS TAB -->
+    @if (activeTab() === 'insights') {
+      @if (isLoadingFeedback()) {
+        <div class="d-flex justify-content-center p-4">
+          <os-loading-spinner message="Loading feedback..." />
+        </div>
+      } @else {
+        <!-- Feedback KPIs -->
+        <div class="feedback-kpis mb-4">
+          <div class="kpi-card">
+            <span class="kpi-label">Avg NPS</span>
+            <span class="kpi-value" [class]="averageNps() !== null && averageNps()! >= 7 ? 'text-success' : averageNps() !== null && averageNps()! >= 5 ? 'text-warning' : 'text-danger'">
+              {{ averageNps() !== null ? averageNps() : '--' }}
+            </span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Avg Rating</span>
+            <span class="kpi-value">
+              @if (averageRating() !== null) {
+                {{ averageRating() }} <i class="bi bi-star-fill text-warning" style="font-size: 0.85rem;"></i>
+              } @else {
+                --
+              }
+            </span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Total Feedback</span>
+            <span class="kpi-value">{{ feedback().length }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Needs Attention</span>
+            <span class="kpi-value text-danger">{{ negativeFeedback().length }}</span>
+          </div>
+        </div>
+
+        <!-- Star Rating Distribution -->
+        @if (feedback().length > 0) {
+          <div class="rating-distribution mb-4">
+            <h6>Rating Distribution</h6>
+            <div class="rating-bars">
+              @for (count of ratingDistribution(); track $index) {
+                <div class="rating-bar-row">
+                  <span class="rating-label">{{ $index + 1 }} <i class="bi bi-star-fill text-warning"></i></span>
+                  <div class="rating-bar-track">
+                    <div class="rating-bar-fill" [style.width.%]="(count / ratingDistributionMax()) * 100"></div>
+                  </div>
+                  <span class="rating-count">{{ count }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Negative Feedback Alert -->
+        @if (negativeFeedback().length > 0) {
+          <div class="alert alert-danger mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ negativeFeedback().length }} negative review{{ negativeFeedback().length > 1 ? 's' : '' }} need{{ negativeFeedback().length === 1 ? 's' : '' }} attention</span>
+          </div>
+        }
+
+        <!-- Recent Feedback List -->
+        <h6 class="mb-2">Recent Feedback</h6>
+        @if (feedback().length === 0) {
+          <div class="empty-state text-center py-4">
+            <div class="empty-icon mb-2"><i class="bi bi-chat-square-text"></i></div>
+            <p class="text-muted">No feedback received yet. Feedback is collected after orders via email or SMS.</p>
+          </div>
+        } @else {
+          <div class="feedback-list">
+            @for (f of feedback(); track f.id) {
+              <div class="feedback-card" [class.feedback-negative]="isFeedbackNegative(f)">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    @if (f.rating !== null) {
+                      <span class="feedback-stars">
+                        @for (star of getStarArray(f.rating); track $index) {
+                          <i class="bi" [class.bi-star-fill]="star" [class.bi-star]="!star" [class.text-warning]="star"></i>
+                        }
+                      </span>
+                    }
+                    @if (f.npsScore !== null) {
+                      <span class="badge ms-2" [class]="getNpsClass(f.npsScore)">
+                        NPS: {{ f.npsScore }} ({{ getNpsLabel(f.npsScore) }})
+                      </span>
+                    }
+                  </div>
+                  <span class="small text-muted">{{ f.createdAt | date:'mediumDate' }}</span>
+                </div>
+
+                @if (f.comment) {
+                  <div class="feedback-comment mb-2">{{ f.comment }}</div>
+                }
+
+                @if (f.categories.length > 0) {
+                  <div class="d-flex gap-1 flex-wrap mb-2">
+                    @for (cat of f.categories; track cat) {
+                      <span class="badge badge-outline">{{ cat }}</span>
+                    }
+                  </div>
+                }
+
+                @if (f.respondedAt) {
+                  <div class="feedback-response">
+                    <div class="small fw-semibold text-muted mb-1">Your response ({{ f.respondedAt | date:'shortDate' }}):</div>
+                    <div class="small">{{ f.responseMessage }}</div>
+                  </div>
+                } @else {
+                  @if (feedbackResponseId() === f.id) {
+                    <div class="feedback-respond-form mt-2">
+                      <textarea
+                        class="form-control form-control-sm mb-2"
+                        rows="2"
+                        placeholder="Write a response..."
+                        [value]="feedbackResponseText()"
+                        (input)="onFeedbackResponseInput($event)"
+                      ></textarea>
+                      <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary btn-sm" [disabled]="!feedbackResponseText().trim() || isRespondingFeedback()" (click)="submitFeedbackResponse()">
+                          @if (isRespondingFeedback()) {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                          }
+                          Send
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closeFeedbackResponse()">Cancel</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" (click)="openFeedbackResponse(f.id)">
+                      <i class="bi bi-reply me-1"></i>Respond
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    }
+
+    <!-- GROUPS TAB -->
+    @if (activeTab() === 'groups') {
+      <div class="groups-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0">Smart Customer Groups</h6>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refreshGroupCounts()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh Counts
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" (click)="openGroupForm()">
+              <i class="bi bi-plus-lg me-1"></i>Create Group
+            </button>
+          </div>
+        </div>
+
+        @if (isLoadingGroups()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Loading groups..." />
+          </div>
+        } @else {
+          <!-- Group Form -->
+          @if (showGroupForm()) {
+            <div class="group-form-card mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">{{ editingGroupId() ? 'Edit Group' : 'New Group' }}</h6>
+                <button type="button" class="btn-close" (click)="closeGroupForm()"></button>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold" for="crm-group-name">Group Name</label>
+                <input
+                  id="crm-group-name"
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="e.g. Lunch Regulars"
+                  [value]="groupFormName()"
+                  (input)="setGroupFormName($event)"
+                />
+              </div>
+
+              <div class="mb-3">
+                <p class="form-label small fw-semibold">Rules Logic</p>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-sm" [class.btn-primary]="groupFormLogic() === 'and'" [class.btn-outline-secondary]="groupFormLogic() !== 'and'" (click)="setGroupFormLogic('and')">
+                    Match ALL rules
+                  </button>
+                  <button type="button" class="btn btn-sm" [class.btn-primary]="groupFormLogic() === 'or'" [class.btn-outline-secondary]="groupFormLogic() !== 'or'" (click)="setGroupFormLogic('or')">
+                    Match ANY rule
+                  </button>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <p class="form-label small fw-semibold">Rules</p>
+                @for (rule of groupFormRules(); track $index) {
+                  <div class="rule-row d-flex gap-2 mb-2 align-items-center">
+                    <select class="form-select form-select-sm rule-field" aria-label="Rule field" [value]="rule.field" (change)="updateRuleField($index, $any($event.target).value)">
+                      <option value="total_orders">Total Orders</option>
+                      <option value="total_spent">Total Spent</option>
+                      <option value="avg_order_value">Avg Order Value</option>
+                      <option value="days_since_last_order">Days Since Last Order</option>
+                      <option value="loyalty_tier">Loyalty Tier</option>
+                      <option value="loyalty_points">Loyalty Points</option>
+                      <option value="tag">Tag</option>
+                    </select>
+                    <select class="form-select form-select-sm rule-operator" aria-label="Rule operator" [value]="rule.operator" (change)="updateRuleOperator($index, $any($event.target).value)">
+                      <option value="gte">>=</option>
+                      <option value="lte"><=</option>
+                      <option value="eq">=</option>
+                      <option value="neq">!=</option>
+                      <option value="contains">contains</option>
+                    </select>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm rule-value"
+                      aria-label="Rule value"
+                      [value]="rule.value"
+                      (input)="updateRuleValue($index, $event)"
+                    />
+                    @if (groupFormRules().length > 1) {
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeGroupRule($index)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </div>
+                }
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addGroupRule()">
+                  <i class="bi bi-plus me-1"></i>Add Rule
+                </button>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-primary" [disabled]="!groupFormName().trim() || groupFormRules().length === 0" (click)="saveGroup()">
+                  {{ editingGroupId() ? 'Update Group' : 'Create Group' }}
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeGroupForm()">Cancel</button>
+              </div>
+            </div>
+          }
+
+          <!-- Groups List -->
+          @if (smartGroups().length > 0) {
+            <div class="groups-list">
+              @for (group of smartGroups(); track group.id) {
+                <div class="group-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="group-name">
+                        {{ group.name }}
+                        @if (group.isPrebuilt) {
+                          <span class="badge bg-secondary ms-1">Prebuilt</span>
+                        }
+                      </div>
+                      <div class="group-rules small text-muted mt-1">
+                        @for (rule of group.rules; track $index) {
+                          @if ($index > 0) {
+                            <span class="rule-logic-label">{{ group.rulesLogic === 'and' ? 'AND' : 'OR' }}</span>
+                          }
+                          <span class="rule-chip">
+                            {{ getRuleFieldLabel(rule.field) }}
+                            {{ getRuleOperatorLabel(rule.operator) }}
+                            {{ rule.value }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="group-member-count">
+                        <span class="count-value">{{ group.memberCount }}</span>
+                        <span class="count-label">members</span>
+                      </div>
+                      <div class="d-flex gap-1">
+                        @if (!group.isPrebuilt) {
+                          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="editGroup(group)">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                        }
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteGroup(group.id)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-state text-center py-4 mb-4">
+              <div class="empty-icon mb-2"><i class="bi bi-people"></i></div>
+              <p class="text-muted mb-3">No customer groups yet. Create custom groups or add prebuilt ones.</p>
+            </div>
+          }
+
+          <!-- Prebuilt Groups -->
+          <div class="prebuilt-section mt-4">
+            <h6 class="mb-3">Quick-Add Prebuilt Groups</h6>
+            <div class="prebuilt-grid">
+              <button type="button" class="prebuilt-card" (click)="addPrebuiltGroup(0)">
+                <i class="bi bi-sun"></i>
+                <span>Lunch Regulars</span>
+              </button>
+              <button type="button" class="prebuilt-card" (click)="addPrebuiltGroup(1)">
+                <i class="bi bi-calendar-weekend"></i>
+                <span>Weekend Diners</span>
+              </button>
+              <button type="button" class="prebuilt-card" (click)="addPrebuiltGroup(2)">
+                <i class="bi bi-gem"></i>
+                <span>High Spenders</span>
+              </button>
+              <button type="button" class="prebuilt-card" (click)="addPrebuiltGroup(3)">
+                <i class="bi bi-cake2"></i>
+                <span>Birthday This Month</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- INBOX TAB -->
+    @if (activeTab() === 'inbox') {
+      <div class="inbox-section">
+        @if (isLoadingThreads()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Loading messages..." />
+          </div>
+        } @else {
+          <div class="inbox-layout">
+            <!-- Thread List -->
+            <div class="thread-list-panel">
+              <div class="thread-filters d-flex gap-2 mb-3">
+                <button type="button" class="btn btn-sm" [class.btn-primary]="inboxFilter() === 'all'" [class.btn-outline-secondary]="inboxFilter() !== 'all'" (click)="setInboxFilter('all')">
+                  All
+                </button>
+                <button type="button" class="btn btn-sm" [class.btn-primary]="inboxFilter() === 'unread'" [class.btn-outline-secondary]="inboxFilter() !== 'unread'" (click)="setInboxFilter('unread')">
+                  Unread
+                  @if (totalUnreadMessages() > 0) {
+                    <span class="badge bg-danger ms-1">{{ totalUnreadMessages() }}</span>
+                  }
+                </button>
+              </div>
+
+              @if (filteredThreads().length === 0) {
+                <div class="empty-state text-center py-4">
+                  <div class="empty-icon mb-2"><i class="bi bi-inbox"></i></div>
+                  <p class="text-muted">
+                    @if (inboxFilter() === 'unread') {
+                      No unread messages
+                    } @else {
+                      No messages yet. Customer conversations will appear here.
+                    }
+                  </p>
+                </div>
+              } @else {
+                @for (thread of filteredThreads(); track thread.customerId) {
+                  <button type="button" class="thread-item" [class.thread-selected]="selectedThread()?.customerId === thread.customerId" [class.thread-unread]="thread.unreadCount > 0" (click)="selectThread(thread)">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="thread-customer-name">{{ thread.customerName }}</div>
+                      <span class="thread-time small text-muted">{{ thread.lastMessageAt | date:'shortDate' }}</span>
+                    </div>
+                    <div class="thread-preview small text-muted">
+                      {{ thread.messages.at(-1)?.body ?? '' }}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                      <span class="badge channel-badge" [class]="getChannelClass(thread.messages.at(-1)?.channel ?? 'system')">
+                        {{ getChannelLabel(thread.messages.at(-1)?.channel ?? 'system') }}
+                      </span>
+                      @if (thread.unreadCount > 0) {
+                        <span class="badge bg-danger">{{ thread.unreadCount }}</span>
+                      }
+                    </div>
+                  </button>
+                }
+              }
+            </div>
+
+            <!-- Conversation View -->
+            <div class="conversation-panel">
+              @if (selectedThread(); as thread) {
+                <div class="conversation-header d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <h6 class="mb-0">{{ thread.customerName }}</h6>
+                    <div class="small text-muted">
+                      @if (thread.customerPhone) { {{ thread.customerPhone }} }
+                      @if (thread.customerPhone && thread.customerEmail) { &middot; }
+                      @if (thread.customerEmail) { {{ thread.customerEmail }} }
+                    </div>
+                  </div>
+                  <button type="button" class="btn-close" (click)="closeThread()"></button>
+                </div>
+
+                <div class="messages-container">
+                  @for (msg of thread.messages; track msg.id) {
+                    <div class="message-bubble" [class.message-outbound]="msg.direction === 'outbound'" [class.message-inbound]="msg.direction === 'inbound'">
+                      <div class="message-meta small">
+                        <span class="badge channel-badge-sm" [class]="getChannelClass(msg.channel)">{{ getChannelLabel(msg.channel) }}</span>
+                        <span class="text-muted ms-1">{{ msg.createdAt | date:'short' }}</span>
+                      </div>
+                      @if (msg.subject) {
+                        <div class="message-subject fw-semibold small">{{ msg.subject }}</div>
+                      }
+                      <div class="message-body">{{ msg.body }}</div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Reply Form -->
+                <div class="reply-form mt-3">
+                  <!-- Templates -->
+                  @if (templates().length > 0) {
+                    <div class="template-chips mb-2">
+                      <span class="small text-muted me-2">Templates:</span>
+                      @for (tpl of templates(); track tpl.id) {
+                        <button type="button" class="btn btn-sm btn-outline-secondary template-chip" (click)="useTemplate(tpl.body)">
+                          {{ tpl.name }}
+                        </button>
+                      }
+                    </div>
+                  }
+
+                  <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-sm" [class.btn-primary]="replyChannel() === 'sms'" [class.btn-outline-secondary]="replyChannel() !== 'sms'" (click)="setReplyChannel('sms')" [disabled]="!thread.customerPhone">
+                      <i class="bi bi-chat-dots me-1"></i>SMS
+                    </button>
+                    <button type="button" class="btn btn-sm" [class.btn-primary]="replyChannel() === 'email'" [class.btn-outline-secondary]="replyChannel() !== 'email'" (click)="setReplyChannel('email')" [disabled]="!thread.customerEmail">
+                      <i class="bi bi-envelope me-1"></i>Email
+                    </button>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                    <textarea
+                      class="form-control form-control-sm"
+                      rows="2"
+                      placeholder="Type your reply..."
+                      [value]="replyText()"
+                      (input)="setReplyText($event)"
+                    ></textarea>
+                    <button type="button" class="btn btn-primary btn-sm align-self-end" [disabled]="!replyText().trim() || isSendingReply()" (click)="sendReply()">
+                      @if (isSendingReply()) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        <i class="bi bi-send"></i>
+                      }
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="empty-state text-center py-5">
+                  <div class="empty-icon mb-2"><i class="bi bi-chat-left-text"></i></div>
+                  <p class="text-muted">Select a conversation to view messages</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Customer Detail Side Panel -->
+  @if (selectedCustomer(); as customer) {
+    <div class="detail-overlay" (click)="closeDetail()" (keydown.enter)="closeDetail()" (keydown.escape)="closeDetail()" aria-hidden="true">
+      <div class="detail-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="$event.stopPropagation()">
+        <div class="detail-header d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">{{ getCustomerName(customer) }}</h4>
+          <button type="button" class="btn-close" (click)="closeDetail()"></button>
+        </div>
+
+        <div class="mb-3">
+          <span class="badge" [class]="getSegment(customer).cssClass">
+            {{ getSegment(customer).label }}
+          </span>
+          <small class="text-muted ms-2">{{ getSegment(customer).description }}</small>
+        </div>
+
+        <div class="detail-grid mb-3">
+          <div class="detail-stat">
+            <span class="detail-label">Total Spent</span>
+            <span class="detail-value">{{ customer.totalSpent | currency }}</span>
+          </div>
+          <div class="detail-stat">
+            <span class="detail-label">Orders</span>
+            <span class="detail-value">{{ customer.totalOrders }}</span>
+          </div>
+          <div class="detail-stat">
+            <span class="detail-label">Avg Order</span>
+            <span class="detail-value">{{ customer.avgOrderValue | currency }}</span>
+          </div>
+          <div class="detail-stat">
+            <span class="detail-label">Loyalty Points</span>
+            <span class="detail-value">{{ customer.loyaltyPoints | number }}</span>
+          </div>
+        </div>
+
+        <!-- Loyalty Section -->
+        <div class="loyalty-detail mb-3">
+          <h6 class="detail-section-title">Loyalty</h6>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="loyalty-tier-badge" [style.background-color]="getLoyaltyTierColor(customer)">
+              {{ getLoyaltyTierLabel(customer) }}
+            </span>
+            <span class="fw-semibold">{{ customer.loyaltyPoints | number }} pts</span>
+          </div>
+          @if (getNextTierLabel(customer)) {
+            <div class="tier-progress mb-2">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Progress to {{ getNextTierLabel(customer) }}</span>
+                <span>{{ getTierProgress(customer) }}%</span>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar" [style.width.%]="getTierProgress(customer)"></div>
+              </div>
+            </div>
+          }
+          <div class="small text-muted mb-2">
+            Lifetime: {{ customer.totalPointsEarned | number }} earned, {{ customer.totalPointsRedeemed | number }} redeemed
+          </div>
+
+          <!-- Points History -->
+          @if (isLoadingLoyalty()) {
+            <div class="small text-muted">Loading history...</div>
+          } @else if (loyaltyHistory().length > 0) {
+            <div class="points-history mb-2">
+              <div class="small fw-semibold mb-1">Recent Activity</div>
+              @for (tx of loyaltyHistory().slice(0, 5); track tx.id) {
+                <div class="history-row d-flex justify-content-between small">
+                  <span>
+                    <span class="text-uppercase" [class.text-success]="tx.type === 'earn'" [class.text-danger]="tx.type === 'redeem' || tx.type === 'reversal'" [class.text-warning]="tx.type === 'adjustment'">
+                      {{ tx.type }}
+                    </span>
+                    @if (tx.description) {
+                      <span class="text-muted ms-1">{{ tx.description }}</span>
+                    }
+                  </span>
+                  <span [class.text-success]="tx.points > 0" [class.text-danger]="tx.points < 0">
+                    {{ tx.points > 0 ? '+' : '' }}{{ tx.points }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Adjust Points -->
+          <div class="adjust-section">
+            <div class="small fw-semibold mb-1">Adjust Points</div>
+            <div class="d-flex gap-2 mb-1">
+              <input
+                type="number"
+                class="form-control form-control-sm"
+                style="max-width: 100px;"
+                placeholder="Points"
+                [value]="adjustPoints()"
+                (input)="onAdjustPointsInput($event)"
+              />
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Reason"
+                [value]="adjustReason()"
+                (input)="onAdjustReasonInput($event)"
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                [disabled]="isAdjusting() || adjustPoints() === 0 || !adjustReason()"
+                (click)="submitAdjustment()"
+              >
+                @if (isAdjusting()) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                  Apply
+                }
+              </button>
+            </div>
+            <div class="small text-muted">Use negative for deductions</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <h6 class="detail-section-title">Contact</h6>
+          @if (customer.email) {
+            <div class="small mb-1">{{ customer.email }}</div>
+          }
+          @if (customer.phone) {
+            <div class="small mb-1">{{ customer.phone }}</div>
+          }
+          @if (!customer.email && !customer.phone) {
+            <div class="small text-muted">No contact information</div>
+          }
+        </div>
+
+        @if (customer.lastOrderDate) {
+          <div class="mb-3">
+            <h6 class="detail-section-title">Last Order</h6>
+            <div class="small">{{ customer.lastOrderDate | date:'medium' }}</div>
+            <div class="small text-muted">{{ getDaysSinceOrder(customer) }} days ago</div>
+          </div>
+        }
+
+        @if (customer.tags.length > 0) {
+          <div class="mb-3">
+            <h6 class="detail-section-title">Tags</h6>
+            <div class="d-flex flex-wrap gap-1">
+              @for (tag of customer.tags; track tag) {
+                <span class="badge bg-secondary">{{ tag }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="mb-3">
+          <h6 class="detail-section-title">Member Since</h6>
+          <div class="small">{{ customer.createdAt | date:'mediumDate' }}</div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+} @else {
+<div class="auth-required d-flex align-items-center justify-content-center p-5">
+  <div class="text-center">
+    <h3 class="text-warning mb-3">Authentication Required</h3>
+    <p>Please log in to access customer intelligence.</p>
+  </div>
+</div>
+}

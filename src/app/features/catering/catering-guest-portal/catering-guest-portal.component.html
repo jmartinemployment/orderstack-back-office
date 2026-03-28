@@ -1,0 +1,211 @@
+<div class="guest-portal">
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <output class="spinner-border text-primary">
+        <span class="visually-hidden">Loading...</span>
+      </output>
+      <p class="text-muted mt-3">Loading your event details...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state text-center py-5">
+      <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+      <h3 class="mt-3">Unable to Load</h3>
+      <p class="text-muted">{{ error() }}</p>
+    </div>
+  } @else if (job(); as j) {
+    <!-- Header -->
+    <div class="portal-header text-center mb-4">
+      <h2 class="fw-bold">{{ j.title }}</h2>
+      <p class="text-muted mb-0">{{ j.clientName }}</p>
+    </div>
+
+    <!-- Event Details -->
+    <div class="portal-card mb-3">
+      <h5 class="card-title">
+        <i class="bi bi-calendar-event me-2"></i>Event Details
+      </h5>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Date</span>
+          <span class="detail-value">{{ j.fulfillmentDate | date:'fullDate':'UTC' }}</span>
+        </div>
+        @if (j.startTime) {
+          <div class="detail-item">
+            <span class="detail-label">Time</span>
+            <span class="detail-value">
+              {{ formatTime(j.startTime) }}@if (j.endTime) { &ndash; {{ formatTime(j.endTime) }}}
+            </span>
+          </div>
+        }
+        <div class="detail-item">
+          <span class="detail-label">Headcount</span>
+          <span class="detail-value">{{ j.headcount }} {{ j.headcount === 1 ? 'guest' : 'guests' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Location</span>
+          <span class="detail-value">
+            @if (j.locationAddress) {
+              {{ j.locationAddress }}
+            } @else {
+              {{ j.locationType === 'on_site' ? 'On-site' : 'Off-site' }}
+            }
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Package -->
+    @if (selectedPackage; as pkg) {
+      <div class="portal-card mb-3">
+        <h5 class="card-title">
+          <i class="bi bi-box me-2"></i>Package
+        </h5>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">{{ pkg.name }}</div>
+            @if (pkg.description) {
+              <p class="text-muted small mb-0 mt-1">{{ pkg.description }}</p>
+            }
+          </div>
+          <div class="fs-5 fw-bold">${{ formatCents(j.totalCents) }}</div>
+        </div>
+      </div>
+    }
+
+    <!-- Contract Status -->
+    <div class="portal-card mb-3">
+      <h5 class="card-title">
+        <i class="bi bi-file-earmark-text me-2"></i>Contract
+      </h5>
+
+      @if (j.contractSignedAt) {
+        <div class="signed-badge mb-3">
+          <i class="bi bi-patch-check-fill text-success me-2"></i>
+          <span class="text-success fw-semibold">Signed electronically</span>
+          <span class="text-muted small ms-2">{{ j.contractSignedAt | date:'medium' }}</span>
+        </div>
+
+        @if (j.signatureImageUrl) {
+          <div class="signature-record">
+            <p class="signature-record-label">Signature on file</p>
+            <img [src]="j.signatureImageUrl" alt="Client signature" class="signature-record-img" />
+          </div>
+        }
+
+        @if (j.signerIp) {
+          <div class="audit-row">
+            <i class="bi bi-geo me-1 text-muted"></i>
+            <span class="text-muted small">IP: {{ j.signerIp }}</span>
+          </div>
+        }
+      } @else if (j.contractUrl) {
+        <div class="d-flex align-items-center gap-3">
+          <a [href]="j.contractUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-download me-1"></i>View Contract
+          </a>
+          <span class="text-muted small"><i class="bi bi-clock me-1"></i>Awaiting signature</span>
+        </div>
+      } @else {
+        <span class="text-muted">
+          <i class="bi bi-clock me-1"></i>Pending
+        </span>
+      }
+    </div>
+
+    <!-- Payment Progress -->
+    <div class="portal-card mb-3">
+      <h5 class="card-title">
+        <i class="bi bi-credit-card me-2"></i>Payment Progress
+      </h5>
+      <div class="mb-3">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small text-muted">${{ formatCents(j.paidCents) }} of ${{ formatCents(j.totalCents) }}</span>
+          <span class="small fw-semibold">{{ paymentPercent }}%</span>
+        </div>
+        <div class="progress" style="height: 10px;">
+          <!-- NOSONAR — Bootstrap requires role="progressbar" on inner div; <progress> breaks Bootstrap CSS -->
+          <div
+            class="progress-bar bg-success"
+            role="progressbar"
+            [style.width.%]="paymentPercent"
+            [attr.aria-valuenow]="paymentPercent"
+            aria-valuemin="0"
+            aria-valuemax="100">
+          </div>
+        </div>
+      </div>
+
+      @if (j.milestones.length > 0) {
+        <div class="milestone-list">
+          @for (m of j.milestones; track m.id) {
+            <div class="milestone-item d-flex justify-content-between align-items-center py-2">
+              <div class="d-flex align-items-center gap-2">
+                @if (m.paidAt) {
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                } @else {
+                  <i class="bi bi-circle text-muted"></i>
+                }
+                <span [class.text-decoration-line-through]="m.paidAt" [class.text-muted]="m.paidAt">
+                  {{ m.label }}
+                </span>
+              </div>
+              <div class="text-end">
+                <span class="fw-medium">${{ formatCents(m.amountCents) }}</span>
+                @if (m.paidAt) {
+                  <div class="text-success small">Paid {{ m.paidAt | date:'shortDate' }}</div>
+                } @else if (m.dueDate) {
+                  <div class="text-muted small">Due {{ m.dueDate | date:'shortDate':'UTC' }}</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Dietary Requirements -->
+    @if (hasDietary) {
+      <div class="portal-card mb-3">
+        <h5 class="card-title">
+          <i class="bi bi-heart-pulse me-2"></i>Dietary Requirements
+        </h5>
+        <div class="dietary-grid">
+          @if (j.dietaryRequirements!.vegetarian > 0) {
+            <span class="badge bg-success-subtle text-success-emphasis">Vegetarian: {{ j.dietaryRequirements!.vegetarian }}</span>
+          }
+          @if (j.dietaryRequirements!.vegan > 0) {
+            <span class="badge bg-success-subtle text-success-emphasis">Vegan: {{ j.dietaryRequirements!.vegan }}</span>
+          }
+          @if (j.dietaryRequirements!.glutenFree > 0) {
+            <span class="badge bg-warning-subtle text-warning-emphasis">Gluten-Free: {{ j.dietaryRequirements!.glutenFree }}</span>
+          }
+          @if (j.dietaryRequirements!.nutAllergy > 0) {
+            <span class="badge bg-danger-subtle text-danger-emphasis">Nut Allergy: {{ j.dietaryRequirements!.nutAllergy }}</span>
+          }
+          @if (j.dietaryRequirements!.dairyFree > 0) {
+            <span class="badge bg-info-subtle text-info-emphasis">Dairy-Free: {{ j.dietaryRequirements!.dairyFree }}</span>
+          }
+          @if (j.dietaryRequirements!.kosher > 0) {
+            <span class="badge bg-primary-subtle text-primary-emphasis">Kosher: {{ j.dietaryRequirements!.kosher }}</span>
+          }
+          @if (j.dietaryRequirements!.halal > 0) {
+            <span class="badge bg-primary-subtle text-primary-emphasis">Halal: {{ j.dietaryRequirements!.halal }}</span>
+          }
+          @if (j.dietaryRequirements!.other.trim()) {
+            <span class="badge bg-secondary-subtle text-secondary-emphasis">Other: {{ j.dietaryRequirements!.other }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Notes -->
+    @if (j.notes) {
+      <div class="portal-card mb-3">
+        <h5 class="card-title">
+          <i class="bi bi-sticky me-2"></i>Notes
+        </h5>
+        <p class="mb-0 text-muted">{{ j.notes }}</p>
+      </div>
+    }
+  }
+</div>

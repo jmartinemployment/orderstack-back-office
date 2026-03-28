@@ -1,0 +1,1011 @@
+<div class="delivery-settings">
+  <h5 class="mb-3">Delivery Provider</h5>
+  <p class="text-muted small mb-3">
+    Select how your restaurant handles delivery. DaaS providers dispatch third-party drivers on demand.
+  </p>
+
+  @if (!isManagerOrAbove()) {
+    <div class="alert alert-info py-2 small mb-3">
+      View-only access. Delivery credentials can only be changed by manager, owner, or super admin roles.
+    </div>
+  }
+
+  <div class="provider-options mb-4">
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="radio"
+        name="deliveryProvider"
+        id="providerNone"
+        value="none"
+        [checked]="provider() === 'none'"
+        [disabled]="!isManagerOrAbove()"
+        (change)="onProviderChange($event)"
+      />
+      <label class="form-check-label" for="providerNone">
+        <strong>No Third-Party Delivery</strong>
+        <span class="d-block text-muted small">Delivery is handled manually or not offered.</span>
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="radio"
+        name="deliveryProvider"
+        id="providerDoordash"
+        value="doordash"
+        [checked]="provider() === 'doordash'"
+        [disabled]="!isManagerOrAbove()"
+        (change)="onProviderChange($event)"
+      />
+      <label class="form-check-label" for="providerDoordash">
+        <strong>DoorDash Drive</strong>
+        <span class="d-block text-muted small">On-demand delivery drivers via DoorDash. Fee per delivery based on distance.</span>
+        @if (configStatus(); as status) {
+          <span class="config-dot" [class.configured]="status.doordash"></span>
+          <span class="small ms-1">{{ status.doordash ? 'API key configured' : 'API key not configured' }}</span>
+        }
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="radio"
+        name="deliveryProvider"
+        id="providerUber"
+        value="uber"
+        [checked]="provider() === 'uber'"
+        [disabled]="!isManagerOrAbove()"
+        (change)="onProviderChange($event)"
+      />
+      <label class="form-check-label" for="providerUber">
+        <strong>Uber Direct</strong>
+        <span class="d-block text-muted small">On-demand delivery drivers via Uber. Fee per delivery based on distance.</span>
+        @if (configStatus(); as status) {
+          <span class="config-dot" [class.configured]="status.uber"></span>
+          <span class="small ms-1">{{ status.uber ? 'API key configured' : 'API key not configured' }}</span>
+        }
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="radio"
+        name="deliveryProvider"
+        id="providerSelf"
+        value="self"
+        [checked]="provider() === 'self'"
+        [disabled]="!isManagerOrAbove()"
+        (change)="onProviderChange($event)"
+      />
+      <label class="form-check-label" for="providerSelf">
+        <strong>Self (In-House)</strong>
+        <span class="d-block text-muted small">Use your own delivery drivers. Manual status tracking via KDS.</span>
+      </label>
+    </div>
+  </div>
+
+  @if (showOptions()) {
+    <div class="delivery-options mb-4">
+      @if (provider() !== 'self') {
+        @if (requiresProviderCredentials()) {
+          <div class="alert alert-warning py-2 small mb-3">
+            Provider credentials are not configured on the backend yet. Auto-dispatch will stay off until credentials are enabled.
+          </div>
+        }
+        <div class="form-check mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="autoDispatch"
+            [checked]="autoDispatch()"
+            [disabled]="autoDispatchDisabled() || !isManagerOrAbove()"
+            (change)="onAutoDispatchChange($event)"
+          />
+          <label class="form-check-label" for="autoDispatch">
+            Auto-dispatch when order is ready for pickup
+          </label>
+        </div>
+
+        <div class="form-check mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="showQuotes"
+            [checked]="showQuotes()"
+            [disabled]="!isManagerOrAbove()"
+            (change)="onShowQuotesChange($event)"
+          />
+          <label class="form-check-label" for="showQuotes">
+            Show delivery fee quotes to online customers
+          </label>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="defaultTip">Default driver tip (%)</label>
+          <input
+            type="number"
+            class="form-control"
+            id="defaultTip"
+            min="0"
+            max="100"
+            [value]="defaultTip()"
+            [disabled]="!isManagerOrAbove()"
+            (input)="onDefaultTipInput($event)"
+          />
+        </div>
+      }
+    </div>
+  }
+
+  <div class="d-flex gap-2 align-items-center">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="!isDirty() || isSaving() || !isManagerOrAbove()"
+      (click)="save()"
+    >
+      @if (isSaving()) {
+        <span class="spinner-border spinner-border-sm me-1"></span>
+        Saving...
+      } @else {
+        Save
+      }
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-light"
+      [disabled]="!isDirty() || !isManagerOrAbove()"
+      (click)="discard()"
+    >
+      Discard
+    </button>
+    @if (saved()) {
+      <span class="text-success small ms-2">Saved</span>
+    }
+  </div>
+
+  <hr class="my-4" />
+
+  <h6 class="mb-2">Provider Credentials (Encrypted, Per Restaurant)</h6>
+  <p class="small text-muted mb-3">
+    Credentials are stored encrypted in the backend and scoped to the selected restaurant.
+  </p>
+
+  @if (credentialNotice()) {
+    <div class="alert alert-success py-2 small mb-3">
+      {{ credentialNotice() }}
+    </div>
+  }
+  @if (credentialError()) {
+    <div class="alert alert-danger py-2 small mb-3">
+      {{ credentialError() }}
+    </div>
+  }
+
+  <section class="credential-card mb-3">
+    <h6 class="mb-2">Credential Security Mode</h6>
+    <p class="small text-muted mb-2">
+      Select how provider credentials are encrypted. Free mode is default. Most secure mode requires external key backend configuration.
+    </p>
+    @if (credentialSecurityProfile(); as securityProfile) {
+      <p class="small mb-2">
+        Active:
+        <strong>{{ securityProfile.mode === 'most_secure' ? 'Most Secure' : 'Free' }}</strong>
+        <span class="text-muted ms-2">Backend: {{ securityProfile.backend }}</span>
+      </p>
+      @if (!securityProfile.canUseMostSecure) {
+        <p class="small text-warning mb-2">
+          Most secure mode is currently unavailable on backend configuration.
+        </p>
+      }
+    }
+
+    <div class="d-flex gap-2 align-items-end flex-wrap">
+      <div class="flex-grow-1">
+        <label class="form-label" for="credential-security-mode">Encryption Mode</label>
+        <select
+          id="credential-security-mode"
+          class="form-select"
+          [value]="credentialSecurityMode()"
+          [disabled]="!isManagerOrAbove() || isCredentialSaving()"
+          (change)="onCredentialSecurityModeChange($event)"
+        >
+          <option value="free">Free</option>
+          <option value="most_secure" [disabled]="credentialSecurityProfile()?.canUseMostSecure === false">
+            Most Secure
+          </option>
+        </select>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="!canSaveCredentialSecurityMode()"
+        (click)="saveCredentialSecurityMode()"
+      >
+        @if (isCredentialSaving()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Update Mode
+      </button>
+    </div>
+  </section>
+
+  <div class="credential-grid">
+    <section class="credential-card">
+      <h6>DoorDash Credentials</h6>
+      @if (credentialStatus(); as status) {
+        <p class="small mb-2">
+          Status:
+          <span [class.text-success]="status.doordash.configured" [class.text-warning]="!status.doordash.configured">
+            {{ status.doordash.configured ? 'Configured' : 'Not configured' }}
+          </span>
+          @if (status.doordash.updatedAt) {
+            <span class="text-muted ms-2">Updated {{ status.doordash.updatedAt }}</span>
+          }
+        </p>
+      }
+
+      <label class="form-label" for="dd-api-key">API Key</label>
+      <input
+        id="dd-api-key"
+        type="password"
+        class="form-control mb-2"
+        [value]="doorDashApiKey()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new API key"
+        (input)="onDoorDashApiKeyInput($event)"
+      />
+
+      <label class="form-label" for="dd-signing-secret">Signing Secret</label>
+      <input
+        id="dd-signing-secret"
+        type="password"
+        class="form-control mb-2"
+        [value]="doorDashSigningSecret()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new signing secret"
+        (input)="onDoorDashSigningSecretInput($event)"
+      />
+
+      <label class="form-label" for="dd-mode">Mode</label>
+      <select
+        id="dd-mode"
+        class="form-select mb-3"
+        [value]="doorDashMode()"
+        [disabled]="!isManagerOrAbove()"
+        (change)="onDoorDashModeChange($event)"
+      >
+        <option value="test">Test</option>
+        <option value="production">Production</option>
+      </select>
+
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!canSaveDoorDashCredentials()"
+          (click)="saveDoorDashCredentials()"
+        >
+          @if (isCredentialSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Save / Update
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm"
+          [disabled]="!canDeleteDoorDashCredentials()"
+          (click)="deleteDoorDashCredentials()"
+        >
+          Delete
+        </button>
+      </div>
+    </section>
+
+    <section class="credential-card">
+      <h6>Uber Credentials</h6>
+      @if (credentialStatus(); as status) {
+        <p class="small mb-2">
+          Status:
+          <span [class.text-success]="status.uber.configured" [class.text-warning]="!status.uber.configured">
+            {{ status.uber.configured ? 'Configured' : 'Not configured' }}
+          </span>
+          @if (status.uber.updatedAt) {
+            <span class="text-muted ms-2">Updated {{ status.uber.updatedAt }}</span>
+          }
+        </p>
+      }
+
+      <label class="form-label" for="uber-client-id">Client ID</label>
+      <input
+        id="uber-client-id"
+        type="password"
+        class="form-control mb-2"
+        [value]="uberClientId()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new client ID"
+        (input)="onUberClientIdInput($event)"
+      />
+
+      <label class="form-label" for="uber-client-secret">Client Secret</label>
+      <input
+        id="uber-client-secret"
+        type="password"
+        class="form-control mb-2"
+        [value]="uberClientSecret()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new client secret"
+        (input)="onUberClientSecretInput($event)"
+      />
+
+      <label class="form-label" for="uber-customer-id">Customer ID</label>
+      <input
+        id="uber-customer-id"
+        type="password"
+        class="form-control mb-2"
+        [value]="uberCustomerId()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new customer ID"
+        (input)="onUberCustomerIdInput($event)"
+      />
+
+      <label class="form-label" for="uber-webhook-key">Webhook Signing Key</label>
+      <input
+        id="uber-webhook-key"
+        type="password"
+        class="form-control mb-3"
+        [value]="uberWebhookSigningKey()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new webhook signing key"
+        (input)="onUberWebhookSigningKeyInput($event)"
+      />
+
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!canSaveUberCredentials()"
+          (click)="saveUberCredentials()"
+        >
+          @if (isCredentialSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Save / Update
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm"
+          [disabled]="!canDeleteUberCredentials()"
+          (click)="deleteUberCredentials()"
+        >
+          Delete
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <hr class="my-4" />
+
+  <h6 class="mb-2">Marketplace Integrations (Inbound Orders)</h6>
+  <p class="small text-muted mb-3">
+    Configure per-restaurant marketplace store IDs and webhook signing secrets for inbound order ingestion.
+  </p>
+
+  @if (marketplaceNotice()) {
+    <div class="alert alert-success py-2 small mb-3">
+      {{ marketplaceNotice() }}
+    </div>
+  }
+
+  <div class="marketplace-grid">
+    <section class="credential-card">
+      <h6>DoorDash Marketplace</h6>
+      @if (marketplaceStatus('doordash_marketplace'); as status) {
+        <p class="small mb-2">
+          Status:
+          <span [class.text-success]="status.enabled" [class.text-warning]="!status.enabled">
+            {{ status.enabled ? 'Enabled' : 'Disabled' }}
+          </span>
+          <span class="text-muted ms-2">
+            {{ status.hasWebhookSigningSecret ? 'Secret configured' : 'No secret configured' }}
+          </span>
+        </p>
+      }
+
+      <div class="form-check mb-2">
+        <input
+          id="marketplace-doordash-enabled"
+          class="form-check-input"
+          type="checkbox"
+          [checked]="marketplaceDoorDashEnabled()"
+          [disabled]="!isManagerOrAbove()"
+          (change)="onMarketplaceDoorDashEnabledChange($event)"
+        />
+        <label class="form-check-label" for="marketplace-doordash-enabled">Enabled</label>
+      </div>
+
+      <label class="form-label" for="marketplace-doordash-store-id">External Store ID</label>
+      <input
+        id="marketplace-doordash-store-id"
+        type="text"
+        class="form-control marketplace-input mb-2"
+        [value]="marketplaceDoorDashStoreId()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter DoorDash store ID"
+        (input)="onMarketplaceDoorDashStoreIdInput($event)"
+      />
+
+      <label class="form-label" for="marketplace-doordash-secret">Webhook Signing Secret</label>
+      <input
+        id="marketplace-doordash-secret"
+        type="password"
+        class="form-control marketplace-input mb-3"
+        [value]="marketplaceDoorDashWebhookSecret()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new signing secret"
+        (input)="onMarketplaceDoorDashWebhookSecretInput($event)"
+      />
+
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!canSaveMarketplaceDoorDash()"
+          (click)="saveMarketplaceDoorDashIntegration()"
+        >
+          @if (isCredentialSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Save / Update
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm"
+          [disabled]="!canClearMarketplaceDoorDashSecret()"
+          (click)="clearMarketplaceDoorDashSecret()"
+        >
+          Clear Secret
+        </button>
+      </div>
+    </section>
+
+    <section class="credential-card">
+      <h6>Uber Eats Marketplace</h6>
+      @if (marketplaceStatus('ubereats'); as status) {
+        <p class="small mb-2">
+          Status:
+          <span [class.text-success]="status.enabled" [class.text-warning]="!status.enabled">
+            {{ status.enabled ? 'Enabled' : 'Disabled' }}
+          </span>
+          <span class="text-muted ms-2">
+            {{ status.hasWebhookSigningSecret ? 'Secret configured' : 'No secret configured' }}
+          </span>
+        </p>
+      }
+
+      <div class="form-check mb-2">
+        <input
+          id="marketplace-ubereats-enabled"
+          class="form-check-input"
+          type="checkbox"
+          [checked]="marketplaceUberEnabled()"
+          [disabled]="!isManagerOrAbove()"
+          (change)="onMarketplaceUberEnabledChange($event)"
+        />
+        <label class="form-check-label" for="marketplace-ubereats-enabled">Enabled</label>
+      </div>
+
+      <label class="form-label" for="marketplace-ubereats-store-id">External Store ID</label>
+      <input
+        id="marketplace-ubereats-store-id"
+        type="text"
+        class="form-control marketplace-input mb-2"
+        [value]="marketplaceUberStoreId()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter Uber Eats store ID"
+        (input)="onMarketplaceUberStoreIdInput($event)"
+      />
+
+      <label class="form-label" for="marketplace-ubereats-secret">Webhook Signing Secret</label>
+      <input
+        id="marketplace-ubereats-secret"
+        type="password"
+        class="form-control marketplace-input mb-3"
+        [value]="marketplaceUberWebhookSecret()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new signing secret"
+        (input)="onMarketplaceUberWebhookSecretInput($event)"
+      />
+
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!canSaveMarketplaceUber()"
+          (click)="saveMarketplaceUberIntegration()"
+        >
+          @if (isCredentialSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Save / Update
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm"
+          [disabled]="!canClearMarketplaceUberSecret()"
+          (click)="clearMarketplaceUberSecret()"
+        >
+          Clear Secret
+        </button>
+      </div>
+    </section>
+
+    <section class="credential-card">
+      <h6>Grubhub (Conditional)</h6>
+      @if (marketplaceStatus('grubhub'); as status) {
+        <p class="small mb-2">
+          Status:
+          <span [class.text-success]="status.enabled" [class.text-warning]="!status.enabled">
+            {{ status.enabled ? 'Enabled' : 'Disabled' }}
+          </span>
+          <span class="text-muted ms-2">
+            {{ status.hasWebhookSigningSecret ? 'Secret configured' : 'No secret configured' }}
+          </span>
+        </p>
+      }
+
+      <div class="form-check mb-2">
+        <input
+          id="marketplace-grubhub-enabled"
+          class="form-check-input"
+          type="checkbox"
+          [checked]="marketplaceGrubhubEnabled()"
+          [disabled]="!isManagerOrAbove()"
+          (change)="onMarketplaceGrubhubEnabledChange($event)"
+        />
+        <label class="form-check-label" for="marketplace-grubhub-enabled">Enabled</label>
+      </div>
+
+      <label class="form-label" for="marketplace-grubhub-store-id">External Store ID</label>
+      <input
+        id="marketplace-grubhub-store-id"
+        type="text"
+        class="form-control marketplace-input mb-2"
+        [value]="marketplaceGrubhubStoreId()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter Grubhub store ID"
+        (input)="onMarketplaceGrubhubStoreIdInput($event)"
+      />
+
+      <label class="form-label" for="marketplace-grubhub-secret">Webhook Signing Secret</label>
+      <input
+        id="marketplace-grubhub-secret"
+        type="password"
+        class="form-control marketplace-input mb-3"
+        [value]="marketplaceGrubhubWebhookSecret()"
+        [disabled]="!isManagerOrAbove()"
+        autocomplete="off"
+        placeholder="Enter new signing secret"
+        (input)="onMarketplaceGrubhubWebhookSecretInput($event)"
+      />
+
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!canSaveMarketplaceGrubhub()"
+          (click)="saveMarketplaceGrubhubIntegration()"
+        >
+          @if (isCredentialSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Save / Update
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm"
+          [disabled]="!canClearMarketplaceGrubhubSecret()"
+          (click)="clearMarketplaceGrubhubSecret()"
+        >
+          Clear Secret
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <hr class="my-4" />
+
+  <h6 class="mb-2">Marketplace Menu Mapping</h6>
+  <p class="small text-muted mb-3">
+    Map external marketplace item IDs to internal menu items. Inbound orders with unmapped items are held for review.
+  </p>
+
+  <section class="credential-card mb-3">
+    <div class="row g-2">
+      <div class="col-12 col-lg-3">
+        <label class="form-label" for="menu-mapping-provider">Provider</label>
+        <select
+          id="menu-mapping-provider"
+          class="form-select"
+          [value]="menuMappingProvider()"
+          [disabled]="!isManagerOrAbove()"
+          (change)="onMenuMappingProviderChange($event)"
+        >
+          <option value="doordash_marketplace">DoorDash Marketplace</option>
+          <option value="ubereats">Uber Eats</option>
+          <option value="grubhub">Grubhub</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-lg-3">
+        <label class="form-label" for="menu-mapping-external-id">External Item ID</label>
+        <input
+          id="menu-mapping-external-id"
+          type="text"
+          class="form-control"
+          [value]="menuMappingExternalItemId()"
+          [disabled]="!isManagerOrAbove()"
+          autocomplete="off"
+          placeholder="e.g. dd_item_123"
+          (input)="onMenuMappingExternalItemIdInput($event)"
+        />
+      </div>
+
+      <div class="col-12 col-lg-3">
+        <label class="form-label" for="menu-mapping-external-name">External Item Name (optional)</label>
+        <input
+          id="menu-mapping-external-name"
+          type="text"
+          class="form-control"
+          [value]="menuMappingExternalItemName()"
+          [disabled]="!isManagerOrAbove()"
+          autocomplete="off"
+          placeholder="Marketplace item name"
+          (input)="onMenuMappingExternalItemNameInput($event)"
+        />
+      </div>
+
+      <div class="col-12 col-lg-3">
+        <label class="form-label" for="menu-mapping-menu-item">Internal Menu Item</label>
+        <select
+          id="menu-mapping-menu-item"
+          class="form-select"
+          [value]="menuMappingMenuItemId()"
+          [disabled]="!isManagerOrAbove()"
+          (change)="onMenuMappingMenuItemIdChange($event)"
+        >
+          <option value="">Select menu item...</option>
+          @for (item of availableMenuItems(); track item.id) {
+            <option [value]="item.id">{{ menuItemOptionLabel(item) }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="!canSaveMarketplaceMenuMapping()"
+        (click)="saveMarketplaceMenuMapping()"
+      >
+        @if (isCredentialSaving()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Save Mapping
+      </button>
+    </div>
+  </section>
+
+  <section class="credential-card">
+    <h6 class="mb-2">{{ marketplaceProviderLabelFor(menuMappingProvider()) }} Mappings</h6>
+    @if (filteredMarketplaceMenuMappings().length === 0) {
+      <p class="small text-muted mb-0">No mappings configured for this provider yet.</p>
+    } @else {
+      <div class="mapping-table-wrap">
+        <table class="table table-dark table-sm align-middle mb-0 mapping-table">
+          <thead>
+            <tr>
+              <th>External Item ID</th>
+              <th>External Name</th>
+              <th>Internal Item</th>
+              <th>Updated</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (mapping of filteredMarketplaceMenuMappings(); track mapping.id) {
+              <tr>
+                <td><code>{{ mapping.externalItemId }}</code></td>
+                <td>{{ mapping.externalItemName || '—' }}</td>
+                <td>{{ mapping.menuItemName }}</td>
+                <td>{{ mapping.updatedAt }}</td>
+                <td class="text-end">
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    [disabled]="!isManagerOrAbove() || isCredentialSaving()"
+                    (click)="deleteMarketplaceMenuMapping(mapping)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <hr class="my-4" />
+
+  <!-- In-House Driver Management (GAP-R08) -->
+  <h6 class="mb-2">In-House Drivers</h6>
+  <p class="small text-muted mb-3">
+    Manage your delivery team. Add drivers, set vehicle types, and toggle availability.
+  </p>
+
+  @if (driverNotice()) {
+    <div class="alert alert-success py-2 small mb-3">
+      {{ driverNotice() }}
+    </div>
+  }
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="small text-muted">{{ drivers().length }} driver{{ drivers().length === 1 ? '' : 's' }}</span>
+    <button
+      type="button"
+      class="btn btn-primary btn-sm"
+      [disabled]="!isManagerOrAbove()"
+      (click)="openAddDriverForm()"
+    >
+      <i class="bi bi-plus-lg me-1"></i>Add Driver
+    </button>
+  </div>
+
+  @if (drivers().length === 0) {
+    <div class="empty-driver-state text-center py-4">
+      <i class="bi bi-truck d-block mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+      <p class="text-muted small mb-0">No drivers configured. Add your first driver to enable in-house delivery dispatch.</p>
+    </div>
+  } @else {
+    <div class="driver-list">
+      @for (driver of drivers(); track driver.id) {
+        <div class="driver-card">
+          <div class="driver-icon">
+            <i class="bi" [class]="getVehicleIcon(driver.vehicleType)"></i>
+          </div>
+          <div class="driver-info">
+            <div class="driver-name">{{ driver.name }}</div>
+            <div class="driver-meta">
+              <span class="small text-muted">{{ driver.phone }}</span>
+              @if (driver.email) {
+                <span class="small text-muted ms-2">{{ driver.email }}</span>
+              }
+              <span class="small ms-2" [class]="getDriverStatusClass(driver.status)">{{ driver.status }}</span>
+            </div>
+          </div>
+          <div class="driver-actions d-flex gap-2">
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-outline-success]="driver.status === 'offline'"
+              [class.btn-outline-secondary]="driver.status !== 'offline'"
+              [disabled]="!isManagerOrAbove() || driver.status === 'assigned' || driver.status === 'en_route' || driver.status === 'delivering'"
+              (click)="toggleDriverStatus(driver)"
+              [title]="driver.status === 'offline' ? 'Set Available' : 'Set Offline'"
+            >
+              {{ driver.status === 'offline' ? 'Activate' : 'Deactivate' }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              [disabled]="!isManagerOrAbove()"
+              (click)="openEditDriverForm(driver)"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              [disabled]="!isManagerOrAbove() || driver.status === 'assigned' || driver.status === 'en_route' || driver.status === 'delivering'"
+              (click)="deleteDriver(driver)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Driver Form Modal -->
+  @if (showDriverForm()) {
+    <div class="modal-overlay" (click)="closeDriverForm()" (keydown.enter)="closeDriverForm()" aria-hidden="true">
+      <div class="driver-form-modal card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header">
+          <h5 class="mb-0">{{ editingDriver() ? 'Edit Driver' : 'Add Driver' }}</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="driver-name">Name</label>
+            <input
+              id="driver-name"
+              type="text"
+              class="form-control"
+              [value]="driverName()"
+              (input)="onDriverNameInput($event)"
+              placeholder="Driver name"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="driver-phone">Phone</label>
+            <input
+              id="driver-phone"
+              type="tel"
+              class="form-control"
+              [value]="driverPhone()"
+              (input)="onDriverPhoneInput($event)"
+              placeholder="(555) 123-4567"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="driver-email">Email (optional)</label>
+            <input
+              id="driver-email"
+              type="email"
+              class="form-control"
+              [value]="driverEmail()"
+              (input)="onDriverEmailInput($event)"
+              placeholder="driver@example.com"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="driver-vehicle">Vehicle Type</label>
+            <select
+              id="driver-vehicle"
+              class="form-select"
+              [value]="driverVehicleType()"
+              (change)="onDriverVehicleTypeChange($event)"
+            >
+              <option value="car">Car</option>
+              <option value="bike">Bike</option>
+              <option value="scooter">Scooter</option>
+              <option value="walk">Walk</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="closeDriverForm()" [disabled]="isSavingDriver()">Cancel</button>
+          <button class="btn btn-primary" (click)="saveDriver()" [disabled]="!canSaveDriver()">
+            @if (isSavingDriver()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            {{ editingDriver() ? 'Update' : 'Add' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <hr class="my-4" />
+
+  <!-- Dispatch Configuration -->
+  <h6 class="mb-2">Dispatch Configuration</h6>
+  <p class="small text-muted mb-3">
+    Configure delivery radius, fees, and dispatch mode.
+  </p>
+
+  @if (dispatchConfigNotice()) {
+    <div class="alert alert-success py-2 small mb-3">
+      {{ dispatchConfigNotice() }}
+    </div>
+  }
+
+  <section class="credential-card mb-3">
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <div class="form-check mb-2">
+          <input
+            id="enable-in-house"
+            class="form-check-input"
+            type="checkbox"
+            [checked]="dispatchConfig().enableInHouseDelivery"
+            [disabled]="!isManagerOrAbove()"
+            (change)="onDispatchConfigChange('enableInHouseDelivery', $event)"
+          />
+          <label class="form-check-label" for="enable-in-house">Enable in-house delivery</label>
+        </div>
+        <div class="form-check mb-2">
+          <input
+            id="enable-third-party"
+            class="form-check-input"
+            type="checkbox"
+            [checked]="dispatchConfig().enableThirdParty"
+            [disabled]="!isManagerOrAbove()"
+            (change)="onDispatchConfigChange('enableThirdParty', $event)"
+          />
+          <label class="form-check-label" for="enable-third-party">Enable third-party dispatch</label>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="max-radius">Max Delivery Radius (km)</label>
+        <input
+          id="max-radius"
+          type="number"
+          class="form-control"
+          min="1"
+          max="50"
+          [value]="dispatchConfig().maxDeliveryRadiusKm"
+          [disabled]="!isManagerOrAbove()"
+          (input)="onDispatchConfigChange('maxDeliveryRadiusKm', $event)"
+        />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="base-fee">Base Delivery Fee</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input
+            id="base-fee"
+            type="number"
+            class="form-control"
+            min="0"
+            step="0.5"
+            [value]="dispatchConfig().baseDeliveryFee"
+            [disabled]="!isManagerOrAbove()"
+            (input)="onDispatchConfigChange('baseDeliveryFee', $event)"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="per-km-fee">Per-km Fee</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input
+            id="per-km-fee"
+            type="number"
+            class="form-control"
+            min="0"
+            step="0.25"
+            [value]="dispatchConfig().perKmFee"
+            [disabled]="!isManagerOrAbove()"
+            (input)="onDispatchConfigChange('perKmFee', $event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="!isManagerOrAbove() || isSavingDispatchConfig()"
+        (click)="saveDispatchConfig()"
+      >
+        @if (isSavingDispatchConfig()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Save Configuration
+      </button>
+    </div>
+  </section>
+</div>

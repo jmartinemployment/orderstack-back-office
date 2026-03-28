@@ -1,0 +1,753 @@
+<div class="pending-orders px-2">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <h2 class="h4 mb-0">Pending Orders</h2>
+      @if (queuedCount() > 0) {
+        <span class="badge draft-indicator">
+          @if (isSyncing()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          {{ queuedCount() }} Draft{{ queuedCount() === 1 ? '' : 's' }}
+        </span>
+      }
+    </div>
+    <div class="order-counts d-flex gap-3">
+      <span class="badge-count received">
+        <span class="count">{{ orderCounts().received }}</span>
+        <span class="label">New</span>
+      </span>
+      <span class="badge-count in-preparation">
+        <span class="count">{{ orderCounts().inPreparation }}</span>
+        <span class="label">Cooking</span>
+      </span>
+      <span class="badge-count ready">
+        <span class="count">{{ orderCounts().ready }}</span>
+        <span class="label">Ready</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar mb-3">
+    <div class="input-group">
+      <span class="input-group-text">
+        <i class="bi bi-search"></i>
+      </span>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Search by order #, customer name, or item..."
+        aria-label="Search pending orders"
+        [value]="searchQuery()"
+        (input)="setSearchQuery($any($event.target).value)"
+      />
+      @if (searchQuery()) {
+        <button class="btn btn-outline-light" type="button" (click)="setSearchQuery('')">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Channel Filter -->
+  <div class="channel-filter mb-3">
+    <div class="d-flex flex-wrap gap-2">
+      @for (option of channelOptions; track option.value) {
+        <button
+          type="button"
+          class="btn btn-sm channel-btn"
+          [class.active]="channelFilter() === option.value"
+          (click)="setChannelFilter(option.value)"
+        >
+          <i class="bi me-1" [class]="option.icon"></i>
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="source-filter mb-3">
+    <div class="d-flex flex-wrap gap-2">
+      @for (option of marketplaceFilterOptions; track option.value) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="marketplaceFilter() === option.value"
+          [class.btn-outline-light]="marketplaceFilter() !== option.value"
+          (click)="setMarketplaceFilter(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      [retryable]="true"
+      (retry)="retry()"
+    />
+  }
+
+  <!-- Driver Assignment Panel (GAP-R08) -->
+  @if (unassignedDeliveryOrders().length > 0 && availableDrivers().length > 0) {
+    <div class="driver-assignment-panel mb-3">
+      <div class="panel-header">
+        <i class="bi bi-truck me-2"></i>
+        <strong>{{ unassignedDeliveryOrders().length }}</strong> delivery order{{ unassignedDeliveryOrders().length === 1 ? '' : 's' }} need{{ unassignedDeliveryOrders().length === 1 ? 's' : '' }} a driver
+      </div>
+    </div>
+  }
+
+  <!-- Bulk Action Bar -->
+  @if (selectedCount() > 0) {
+    <div class="bulk-action-bar mb-3">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span class="selected-count">{{ selectedCount() }} selected</span>
+        <button type="button" class="btn btn-sm btn-warning" (click)="requestBulkAction('IN_PREPARATION')">
+          <i class="bi bi-play-fill me-1"></i>Mark In Progress
+        </button>
+        <button type="button" class="btn btn-sm btn-success" (click)="requestBulkAction('READY_FOR_PICKUP')">
+          <i class="bi bi-check-lg me-1"></i>Mark Ready
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" (click)="requestBulkAction('CLOSED')">
+          <i class="bi bi-check-all me-1"></i>Mark Complete
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-light ms-auto" (click)="clearSelection()">
+          Clear
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading orders..." />
+    </div>
+  } @else {
+    <!-- Select All -->
+    @if (pendingOrders().length > 0) {
+      <div class="select-all-row mb-2">
+        <label class="form-check d-inline-flex align-items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            aria-label="Select all orders"
+            [checked]="allSelected()"
+            (change)="toggleSelectAll()"
+          />
+          <span class="small text-muted">Select all</span>
+        </label>
+      </div>
+    }
+    <div class="orders-grid">
+      @for (order of pendingOrders(); track order.guid) {
+        <div class="order-card card" [class]="'status-' + order.guestOrderStatus" [class.selected]="isOrderSelected(order.guid)">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <input
+              type="checkbox"
+              class="form-check-input bulk-check me-2"
+              aria-label="Select order"
+              [checked]="isOrderSelected(order.guid)"
+              (change)="toggleOrderSelection(order.guid)"
+              (click)="$event.stopPropagation()"
+              (keydown.enter)="$event.stopPropagation()"
+            />
+            <div>
+              <h5 class="mb-0">#{{ getOrderNumber(order) }}</h5>
+              <small class="time-ago">{{ getTimeSinceOrder(order) }}</small>
+            </div>
+            <os-status-badge [status]="order.guestOrderStatus" />
+            @if (order._queued) {
+              <span class="badge bg-warning text-dark ms-1">Queued</span>
+            }
+            @if (order.guestOrderStatus === 'READY_FOR_PICKUP' && getPrintStatus(order.guid) !== 'none') {
+              <span class="print-status-badge badge ms-1" [class]="'print-' + getPrintStatus(order.guid)">
+                @switch (getPrintStatus(order.guid)) {
+                  @case ('printing') {
+                    <span class="spinner-border spinner-border-sm me-1"></span> Printing
+                  }
+                  @case ('printed') { &#10003; Printed }
+                  @case ('failed') { &#9888; Print Failed }
+                }
+              </span>
+            }
+          </div>
+
+          <button type="button" class="card-body"
+               (click)="selectOrder(order, $event)"
+               (keydown.enter)="selectOrder(order, $event)">
+            <div class="order-meta mb-2">
+              <span class="badge channel-badge me-2">
+                <i class="bi me-1" [class]="getChannelIcon(order)"></i>{{ getChannelLabel(order) }}
+              </span>
+              <span class="badge bg-secondary me-2">{{ order.diningOption.name }}</span>
+              <span class="badge me-2" [class]="getPaymentBadgeClass(order.checks[0]?.paymentStatus ?? 'OPEN')">{{ getPaymentLabel(order.checks[0]?.paymentStatus ?? 'OPEN') }}</span>
+              @if (isMarketplace(order)) {
+                <span class="badge marketplace-source me-2">{{ marketplaceProviderLabel(order) }}</span>
+                <span class="badge marketplace-sync me-2" [class]="marketplaceSyncClass(order)">{{ marketplaceSyncLabel(order) }}</span>
+              }
+              @if (order.table) {
+                <span class="badge bg-info">Table {{ order.table.name }}</span>
+              }
+              @if (order.customer?.firstName || order.customer?.lastName) {
+                <span class="customer-name ms-2">{{ order.customer?.firstName }} {{ order.customer?.lastName }}</span>
+              }
+            </div>
+
+            @if (order.deliveryInfo) {
+              <div class="delivery-detail small mb-2">
+                <div>
+                  {{ order.deliveryInfo.address }}
+                  @if (order.deliveryInfo.city) {
+                    , {{ order.deliveryInfo.city }}, {{ order.deliveryInfo.state }} {{ order.deliveryInfo.zip }}
+                  }
+                </div>
+                @if (order.deliveryInfo.deliveryNotes) {
+                  <div class="text-warning fst-italic">{{ order.deliveryInfo.deliveryNotes }}</div>
+                }
+                <span class="badge" [class]="getDeliveryStateBadgeClass(order.deliveryInfo.deliveryState)">
+                  {{ getDeliveryStateLabel(order.deliveryInfo.deliveryState) }}
+                </span>
+              </div>
+
+              <!-- Driver Assignment (GAP-R08) -->
+              @if (getAssignmentForOrder(order.guid); as assignment) {
+                <div class="driver-assignment-info small mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi" [class]="getVehicleIcon(getDriverVehicleType(assignment.driverId))"></i>
+                    <strong>{{ assignment.driverName ?? 'Driver' }}</strong>
+                    <span class="badge assignment-status-badge" [class]="getAssignmentStatusClass(assignment.status)">
+                      {{ getAssignmentStatusLabel(assignment.status) }}
+                    </span>
+                  </div>
+                  @if (getNextAssignmentStatus(assignment.status); as nextStatus) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary mt-1"
+                      (click)="updateAssignment(assignment.id, nextStatus)"
+                    >
+                      {{ getNextAssignmentAction(assignment.status) }}
+                    </button>
+                  }
+                </div>
+              } @else if (availableDrivers().length > 0) {
+                <div class="driver-assign-dropdown small mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <label [for]="'driver-select-' + order.guid" class="visually-hidden">Assign driver</label>
+                    <select
+                      [id]="'driver-select-' + order.guid"
+                      class="form-select form-select-sm driver-select"
+                      [disabled]="isAssigningDriver(order.guid)"
+                      (change)="onDriverSelect(order.guid, $event)"
+                    >
+                      <option value="">Assign driver...</option>
+                      @for (driver of availableDrivers(); track driver.id) {
+                        <option [value]="driver.id">
+                          {{ driver.name }} ({{ driver.vehicleType }})
+                        </option>
+                      }
+                    </select>
+                    @if (isAssigningDriver(order.guid)) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Third-Party Delivery Tracking (GAP-R08 Phase 2) -->
+              @if (getTrackingForOrder(order.guid); as tracking) {
+                <div class="delivery-tracking-card small mb-2">
+                  <div class="tracking-header d-flex align-items-center justify-content-between">
+                    <span class="badge" [class]="getTrackingStatusClass(tracking.status)">
+                      {{ getTrackingStatusLabel(tracking.status) }}
+                    </span>
+                    @if (getTrackingEtaMinutes(tracking) !== null) {
+                      <span class="tracking-eta">
+                        <i class="bi bi-clock me-1"></i>{{ getTrackingEtaMinutes(tracking) }} min
+                      </span>
+                    }
+                  </div>
+                  @if (tracking.driver) {
+                    <div class="tracking-driver d-flex align-items-center gap-2 mt-1">
+                      @if (tracking.driver.photoUrl) {
+                        <img [src]="tracking.driver.photoUrl" alt="Driver" class="tracking-driver-photo" />
+                      } @else {
+                        <i class="bi bi-person-circle tracking-driver-icon"></i>
+                      }
+                      <div>
+                        @if (tracking.driver.name) {
+                          <strong>{{ tracking.driver.name }}</strong>
+                        }
+                        @if (tracking.driver.phone) {
+                          <span class="text-muted ms-2">{{ tracking.driver.phone }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (tracking.trackingUrl) {
+                    <a [href]="tracking.trackingUrl" target="_blank" rel="noopener" class="tracking-link mt-1">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Live Tracking
+                    </a>
+                  }
+                  <button type="button" class="btn btn-sm btn-outline-secondary mt-1" (click)="stopTracking(order.guid)">
+                    Stop Tracking
+                  </button>
+                </div>
+              } @else if (order.deliveryInfo.deliveryExternalId) {
+                <button type="button" class="btn btn-sm btn-outline-primary mt-1" (click)="startTracking(order)">
+                  <i class="bi bi-geo-alt me-1"></i>Track Delivery
+                </button>
+              }
+            }
+
+            @if (order.curbsideInfo) {
+              <div class="curbside-detail small mb-2">
+                <strong>Vehicle:</strong> {{ order.curbsideInfo.vehicleDescription }}
+                @if (order.curbsideInfo.arrivalNotified) {
+                  <span class="badge bg-success ms-1">Arrived</span>
+                  @if (getCurbsideWaitTime(order)) {
+                    <span class="curbside-wait-time ms-1">{{ getCurbsideWaitTime(order) }}</span>
+                  }
+                }
+              </div>
+            }
+
+            @if (order.cateringInfo) {
+              <div class="catering-detail small mb-2">
+                <div>
+                  <strong>Event:</strong> {{ order.cateringInfo.eventType ?? 'Event' }} &mdash; {{ order.cateringInfo.headcount }} {{ order.cateringInfo.headcount === 1 ? 'guest' : 'guests' }}
+                </div>
+                @if (order.cateringInfo.setupRequired) {
+                  <span class="badge bg-info">Setup Required</span>
+                }
+                @if (order.cateringInfo.depositPaid) {
+                  <span class="badge bg-success ms-1">Deposit Paid</span>
+                }
+              </div>
+            }
+
+            @if (order.approvalStatus === 'NEEDS_APPROVAL') {
+              <div class="approval-section mb-2">
+                <div class="approval-countdown" [class.urgent]="isApprovalUrgent(order)">
+                  {{ getApprovalCountdown(order) }}
+                </div>
+                <div class="approval-actions d-flex gap-2">
+                  @if (isAutoRejecting(order.guid)) {
+                    <span class="text-warning small">Auto-rejecting...</span>
+                  } @else {
+                    <button type="button" class="btn btn-success btn-sm" (click)="approveOrder(order)">Approve</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="confirmReject(order)">Reject</button>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (isMarketplace(order) && marketplaceSyncState(order) === 'FAILED') {
+              <div class="marketplace-sync-alert mb-2">
+                Marketplace status sync failed.
+                @if (order.marketplace?.lastPushError) {
+                  <span class="text-muted ms-1">{{ order.marketplace?.lastPushError }}</span>
+                }
+              </div>
+            }
+
+            <div class="order-items">
+              @if (orderHasCourses(order)) {
+                @for (group of getCourseGroups(order); track group.label) {
+                  <div class="course-group">
+                    <div class="course-header">
+                      <span class="course-label">{{ group.label }}</span>
+                      <span class="badge course-status-badge" [class]="getFireStatusClass(group.fireStatus)">
+                        {{ group.fireStatus }}
+                      </span>
+                      @if (coursePacingEnabled() && group.fireStatus === 'PENDING' && group.course) {
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-warning ms-auto fire-course-btn"
+                          [disabled]="isFiringCourse(group.course.guid)"
+                          (click)="fireCourse(order.guid, group.course.guid)"
+                        >
+                          @if (isFiringCourse(group.course.guid)) {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                          }
+                          Fire {{ group.label }}
+                        </button>
+                      }
+                    </div>
+                    @for (sel of group.selections; track sel.guid) {
+                      <div class="order-item" [class.held-item]="group.fireStatus === 'PENDING'">
+                        <span class="quantity">{{ sel.quantity }}x</span>
+                        <span class="name">{{ sel.menuItemName }}</span>
+                        @if (sel.modifiers && sel.modifiers.length > 0) {
+                          <div class="modifiers">
+                            @for (mod of sel.modifiers; track mod.guid) {
+                              <small class="modifier">+ {{ mod.name }}</small>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              } @else {
+                @for (sel of order.checks[0]?.selections ?? []; track sel.guid) {
+                  <div class="order-item">
+                    <span class="quantity">{{ sel.quantity }}x</span>
+                    <span class="name">{{ sel.menuItemName }}</span>
+                    @if (sel.modifiers && sel.modifiers.length > 0) {
+                      <div class="modifiers">
+                        @for (mod of sel.modifiers; track mod.guid) {
+                          <small class="modifier">+ {{ mod.name }}</small>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+
+            @if (order.specialInstructions) {
+              <div class="special-instructions mt-2">
+                <small class="text-warning">{{ order.specialInstructions }}</small>
+              </div>
+            }
+
+            <div class="order-total mt-2 d-flex justify-content-between align-items-center">
+              <div>
+                @if (getInsight(order.guid); as insight) {
+                  <span class="profit-badge badge" [class.bg-success]="insight.profitMargin >= 60" [class.bg-warning]="insight.profitMargin >= 40 && insight.profitMargin < 60" [class.bg-danger]="insight.profitMargin < 40">
+                    {{ insight.profitMargin }}% margin
+                  </span>
+                  @if (insight.starItem) {
+                    <span class="badge bg-info ms-1">&#9733; {{ insight.starItem }}</span>
+                  }
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info profit-btn"
+                    (click)="fetchProfitInsight(order)"
+                  >
+                    Profit
+                  </button>
+                }
+              </div>
+              <strong>{{ order.totalAmount | currency }}</strong>
+            </div>
+          </button>
+
+          <div class="card-footer">
+            <div class="d-flex gap-2">
+              @if (order._queued) {
+                <span class="text-muted small">
+                  <span class="spinner-border spinner-border-sm me-1"></span>
+                  Waiting for connection...
+                </span>
+              } @else {
+                @switch (order.guestOrderStatus) {
+                  @case ('RECEIVED') {
+                    <button
+                      type="button"
+                      class="btn btn-success btn-sm flex-fill"
+                      (click)="confirmOrder(order)"
+                    >
+                      Start Cooking
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="confirmCancel(order)"
+                    >
+                      Cancel
+                    </button>
+                  }
+                  @case ('IN_PREPARATION') {
+                    <button
+                      type="button"
+                      class="btn btn-success btn-sm flex-fill"
+                      (click)="markReady(order)"
+                    >
+                      Mark Ready
+                    </button>
+                  }
+                  @case ('READY_FOR_PICKUP') {
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm flex-fill"
+                      (click)="completeAndPrint(order)"
+                    >
+                      {{ getActionLabel(order) }}
+                    </button>
+                    @if (order.deliveryInfo && order.deliveryInfo.deliveryState !== 'DELIVERED') {
+                      <button type="button" class="btn btn-outline-info btn-sm"
+                        (click)="advanceDelivery(order)">
+                        {{ getNextDeliveryAction(order.deliveryInfo.deliveryState) }}
+                      </button>
+                    }
+                    @if (order.curbsideInfo && !order.curbsideInfo.arrivalNotified) {
+                      <button type="button" class="btn btn-outline-warning btn-sm"
+                        (click)="notifyArrival(order)">
+                        Customer Arrived
+                      </button>
+                    }
+                    @if (getPrintStatus(order.guid) === 'failed') {
+                      <button
+                        type="button"
+                        class="btn btn-outline-warning btn-sm"
+                        (click)="retryPrint(order)"
+                      >
+                        Retry Print
+                      </button>
+                    }
+                  }
+                }
+              }
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state text-center p-5">
+          <p class="text-muted mb-0">No pending orders</p>
+          <p class="text-muted small">Orders will appear here when placed</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Cancel Order Confirmation Modal -->
+  @if (cancelTarget(); as target) {
+    <div class="modal-overlay" (click)="dismissCancel()" (keydown.escape)="dismissCancel()" aria-hidden="true">
+      <div class="delete-confirm-modal card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header">
+          <h5 class="mb-0">Cancel Order</h5>
+        </div>
+        <div class="card-body">
+          <p>Are you sure you want to cancel order <strong>#{{ getOrderNumber(target) }}</strong>?</p>
+          <p class="text-muted small mb-0">This action cannot be undone.</p>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="dismissCancel()">Keep Order</button>
+          <button class="btn btn-danger" (click)="executeCancel()">Cancel Order</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Bulk Action Confirmation Modal -->
+  @if (showBulkConfirm()) {
+    <div class="modal-overlay" (click)="dismissBulkConfirm()" (keydown.escape)="dismissBulkConfirm()" aria-hidden="true">
+      <div class="delete-confirm-modal card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header">
+          <h5 class="mb-0">{{ getBulkActionLabel() }}</h5>
+        </div>
+        <div class="card-body">
+          <p>{{ getBulkActionLabel() }} for <strong>{{ selectedCount() }} orders</strong>?</p>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="dismissBulkConfirm()" [disabled]="isBulkProcessing()">Cancel</button>
+          <button class="btn btn-primary" (click)="executeBulkAction()" [disabled]="isBulkProcessing()">
+            @if (isBulkProcessing()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Reject Catering Order Confirmation Modal -->
+  @if (rejectTarget(); as target) {
+    <div class="modal-overlay" (click)="dismissReject()" (keydown.escape)="dismissReject()" aria-hidden="true">
+      <div class="delete-confirm-modal card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header">
+          <h5 class="mb-0">Reject Catering Order</h5>
+        </div>
+        <div class="card-body">
+          <p>Are you sure you want to reject catering order <strong>#{{ getOrderNumber(target) }}</strong>?</p>
+          <p class="text-muted small mb-0">The customer will be notified of the rejection.</p>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="dismissReject()">Keep Order</button>
+          <button class="btn btn-danger" (click)="executeReject()">Reject Order</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Order Detail Modal -->
+  @if (_selectedOrder()) {
+    <div class="modal-overlay" (click)="closeOrderDetail()" (keydown.escape)="closeOrderDetail()" aria-hidden="true">
+      <div class="order-detail-modal card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Order #{{ getOrderNumber(_selectedOrder()!) }}</h4>
+          <button type="button" class="btn-close" (click)="closeOrderDetail()"></button>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <os-status-badge [status]="_selectedOrder()!.guestOrderStatus" />
+              <span class="badge channel-badge">
+                <i class="bi me-1" [class]="getChannelIcon(_selectedOrder()!)"></i>{{ getChannelLabel(_selectedOrder()!) }}
+              </span>
+              <span class="badge bg-secondary">{{ _selectedOrder()!.diningOption.name }}</span>
+            </div>
+            <span class="text-muted small">{{ _selectedOrder()!.timestamps.createdDate | date:'medium' }}</span>
+          </div>
+
+          <!-- Customer & Table -->
+          <div class="section mb-3">
+            <h6>Order Details</h6>
+            @if (_selectedOrder()!.customer?.firstName || _selectedOrder()!.customer?.lastName) {
+              <p class="mb-1"><strong>Customer:</strong> {{ _selectedOrder()!.customer?.firstName }} {{ _selectedOrder()!.customer?.lastName }}</p>
+            }
+            @if (_selectedOrder()!.customer?.phone) {
+              <p class="mb-1"><strong>Phone:</strong> {{ _selectedOrder()!.customer?.phone }}</p>
+            }
+            @if (_selectedOrder()!.table) {
+              <p class="mb-1"><strong>Table:</strong> {{ _selectedOrder()!.table!.name }}</p>
+            }
+            @if (_selectedOrder()!.server.name) {
+              <p class="mb-1"><strong>Server:</strong> {{ _selectedOrder()!.server.name }}</p>
+            }
+            @if (isMarketplace(_selectedOrder()!)) {
+              <p class="mb-1"><strong>Source:</strong> {{ marketplaceProviderLabel(_selectedOrder()!) }}</p>
+              <p class="mb-1">
+                <strong>Sync:</strong>
+                <span class="badge marketplace-sync ms-1" [class]="marketplaceSyncClass(_selectedOrder()!)">
+                  {{ marketplaceSyncLabel(_selectedOrder()!) }}
+                </span>
+              </p>
+            }
+          </div>
+
+          <!-- Delivery / Curbside / Catering Info -->
+          @if (_selectedOrder()!.deliveryInfo || _selectedOrder()!.curbsideInfo || _selectedOrder()!.cateringInfo) {
+            <div class="section dining-details mb-3">
+              <h6>Dining Details</h6>
+              @if (_selectedOrder()!.deliveryInfo; as di) {
+                <p class="mb-1"><strong>Delivery:</strong> {{ di.address }}@if (di.address2) {, {{ di.address2 }}}@if (di.city) {, {{ di.city }}, {{ di.state }} {{ di.zip }}}</p>
+                @if (di.deliveryNotes) {
+                  <p class="mb-1 fst-italic text-warning small">{{ di.deliveryNotes }}</p>
+                }
+                <p class="mb-1"><strong>Status:</strong>
+                  <span class="badge" [class]="getDeliveryStateBadgeClass(di.deliveryState)">
+                    {{ getDeliveryStateLabel(di.deliveryState) }}
+                  </span>
+                </p>
+              }
+              @if (_selectedOrder()!.curbsideInfo; as ci) {
+                <p class="mb-1"><strong>Vehicle:</strong> {{ ci.vehicleDescription }}</p>
+                @if (ci.arrivalNotified) {
+                  <span class="badge bg-success">Customer Arrived</span>
+                }
+              }
+              @if (_selectedOrder()!.cateringInfo; as cat) {
+                <p class="mb-1"><strong>Event:</strong> {{ cat.eventType ?? 'Event' }} &mdash; {{ cat.headcount }} {{ cat.headcount === 1 ? 'guest' : 'guests' }}</p>
+                @if (cat.eventDate) {
+                  <p class="mb-1"><strong>Date:</strong> {{ cat.eventDate | date:'mediumDate' }}@if (cat.eventTime) { at {{ cat.eventTime }}}</p>
+                }
+                @if (cat.setupRequired) {
+                  <span class="badge bg-info me-1">Setup Required</span>
+                }
+                @if (cat.depositPaid) {
+                  <span class="badge bg-success">Deposit Paid</span>
+                }
+              }
+            </div>
+          }
+
+          <!-- Line Items -->
+          <div class="section mb-3">
+            <h6>Items</h6>
+            @for (sel of _selectedOrder()!.checks[0]?.selections ?? []; track sel.guid) {
+              <div class="order-item d-flex justify-content-between mb-2">
+                <div>
+                  <span class="fw-bold">{{ sel.quantity }}x</span>
+                  {{ sel.menuItemName }}
+                  @if (sel.modifiers && sel.modifiers.length > 0) {
+                    <div class="modifiers small text-muted ps-3">
+                      @for (mod of sel.modifiers; track mod.guid) {
+                        <span class="d-block">+ {{ mod.name }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+                <span>{{ sel.totalPrice | currency }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Special Instructions -->
+          @if (_selectedOrder()!.specialInstructions) {
+            <div class="section mb-3">
+              <h6>Special Instructions</h6>
+              <p class="mb-0">{{ _selectedOrder()!.specialInstructions }}</p>
+            </div>
+          }
+
+          <!-- Totals -->
+          <div class="section">
+            <hr />
+            <div class="d-flex justify-content-between mb-1">
+              <span>Subtotal</span>
+              <span>{{ _selectedOrder()!.subtotal | currency }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1 text-muted small">
+              <span>Tax</span>
+              <span>{{ _selectedOrder()!.taxAmount | currency }}</span>
+            </div>
+            @if (_selectedOrder()!.tipAmount > 0) {
+              <div class="d-flex justify-content-between mb-1 text-muted small">
+                <span>Tip</span>
+                <span>{{ _selectedOrder()!.tipAmount | currency }}</span>
+              </div>
+            }
+            <hr />
+            <div class="d-flex justify-content-between fw-bold">
+              <span>Total</span>
+              <span class="total">{{ _selectedOrder()!.totalAmount | currency }}</span>
+            </div>
+          </div>
+
+          <!-- Payment Status -->
+          <div class="section mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <h6 class="mb-0">Payment</h6>
+              <span class="badge" [class]="getPaymentBadgeClass(_selectedOrder()!.checks[0]?.paymentStatus ?? 'OPEN')">
+                {{ getPaymentLabel(_selectedOrder()!.checks[0]?.paymentStatus ?? 'OPEN') }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="section mt-3 pt-3 border-top">
+            <div class="d-flex gap-2">
+              @switch (_selectedOrder()!.guestOrderStatus) {
+                @case ('RECEIVED') {
+                  <button type="button" class="btn btn-success flex-fill" (click)="confirmOrder(_selectedOrder()!); closeOrderDetail()">
+                    Start Cooking
+                  </button>
+                  <button type="button" class="btn btn-outline-danger" (click)="confirmCancel(_selectedOrder()!); closeOrderDetail()">
+                    Cancel
+                  </button>
+                }
+                @case ('IN_PREPARATION') {
+                  <button type="button" class="btn btn-success flex-fill" (click)="markReady(_selectedOrder()!); closeOrderDetail()">
+                    Mark Ready
+                  </button>
+                }
+                @case ('READY_FOR_PICKUP') {
+                  <button type="button" class="btn btn-primary flex-fill" (click)="completeAndPrint(_selectedOrder()!); closeOrderDetail()">
+                    {{ getActionLabel(_selectedOrder()!) }}
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,412 @@
+@if (isAuthenticated()) {
+<div class="kds-display px-2">
+  <header class="kds-header d-flex justify-content-between align-items-center p-3">
+    <div class="d-flex align-items-center gap-3">
+      <h1 class="h4 mb-0">Kitchen Display</h1>
+      @if (restaurantName()) {
+        <span class="badge bg-secondary">{{ restaurantName() }}</span>
+      }
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <!-- KDS Stats -->
+      <div class="kds-stats d-flex gap-3">
+        <span class="stat">
+          <span class="stat-value">{{ activeOrderCount() }}</span>
+          <span class="stat-label">Active</span>
+        </span>
+        <span class="stat">
+          <span class="stat-value" [class.text-danger]="overdueCount() > 0">{{ overdueCount() }}</span>
+          <span class="stat-label">Overdue</span>
+        </span>
+        <span class="stat">
+          <span class="stat-value">{{ formatWaitTime(avgWaitMinutes()) }}</span>
+          <span class="stat-label">Avg Wait</span>
+        </span>
+      </div>
+      @if (orderThrottlingStatus(); as throttling) {
+        <div class="throttle-indicator">
+          <span class="badge"
+            [class.bg-danger]="throttling.triggering"
+            [class.bg-success]="!throttling.triggering">
+            Throttle {{ throttling.triggering ? 'ON' : 'OPEN' }}
+          </span>
+          <small class="text-muted ms-2">Held: {{ throttling.heldOrders }}</small>
+        </div>
+      }
+      @if (showDeliveryDispatchStatus()) {
+        <div class="delivery-dispatch-indicator">
+          @if (deliveryDispatchStatus() === 'ready') {
+            <span class="badge bg-success">{{ deliveryProviderLabel() }} Dispatch Ready</span>
+          } @else if (deliveryDispatchStatus() === 'blocked') {
+            <span class="badge bg-warning text-dark">{{ deliveryProviderLabel() }} Dispatch Blocked</span>
+          } @else {
+            <span class="badge bg-secondary">{{ deliveryProviderLabel() }} Dispatch Checking...</span>
+          }
+        </div>
+      }
+      <!-- Course Pacing Mode -->
+      <div class="d-flex align-items-center gap-2">
+        <label class="small text-muted mb-0" for="kds-pacing-mode">Courses:</label>
+        <select
+          id="kds-pacing-mode"
+          class="form-select form-select-sm pacing-select"
+          [value]="coursePacingMode()"
+          (change)="setCoursePacingMode($event)"
+        >
+          @for (opt of pacingModeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+      <!-- Prep Time Firing Toggle -->
+      <div class="d-flex align-items-center gap-2">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="prepTimeFiringToggle"
+            [checked]="prepTimeFiringEnabled()"
+            (change)="togglePrepTimeFiring($event)"
+          />
+          <label class="form-check-label small text-muted" for="prepTimeFiringToggle">Stagger</label>
+        </div>
+      </div>
+      <!-- Auto-fire delay (only when auto_fire_timed) -->
+      @if (coursePacingMode() === 'auto_fire_timed') {
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted mb-0">Fire delay (s):</span>
+          <input
+            type="number"
+            class="form-control form-control-sm auto-fire-control"
+            aria-label="Auto-fire delay in seconds"
+            [value]="autoFireDelay()"
+            (change)="setAutoFireDelay($event)"
+            min="0"
+            step="30"
+          />
+        </div>
+      }
+      <!-- Default prep minutes (only when stagger enabled) -->
+      @if (prepTimeFiringEnabled()) {
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted mb-0">Prep (min):</span>
+          <input
+            type="number"
+            class="form-control form-control-sm auto-fire-control"
+            aria-label="Default prep time in minutes"
+            [value]="defaultPrepMinutes()"
+            (change)="setDefaultPrepMinutes($event)"
+            min="1"
+            max="120"
+          />
+        </div>
+      }
+      <!-- Station Selector -->
+      @if (stations().length > 0) {
+        <div class="d-flex align-items-center gap-2">
+          <label class="small text-muted mb-0" for="kds-station-select">Station:</label>
+          <select
+            id="kds-station-select"
+            class="form-select form-select-sm station-select"
+            (change)="selectStation($any($event.target).value || null)"
+          >
+            <option value="" [selected]="selectedStationId() === null">All Stations</option>
+            @for (station of stations(); track station.id) {
+              <option [value]="station.id" [selected]="selectedStationId() === station.id">
+                {{ station.name }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+      <!-- Expo Station Toggle -->
+      <div class="d-flex align-items-center gap-2">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="expoStationToggle"
+            aria-label="Expo station"
+            [checked]="expoStationEnabled()"
+            (change)="toggleExpoStation($event)"
+          />
+          <label class="form-check-label small text-muted" for="expoStationToggle">Expo</label>
+        </div>
+      </div>
+      <os-connection-status />
+      <button type="button" class="btn btn-outline-light btn-sm" (click)="refresh()">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="kds-source-filter px-3 pt-3">
+    <div class="d-flex flex-wrap gap-2">
+      @for (option of marketplaceFilterOptions; track option.value) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="marketplaceFilter() === option.value"
+          [class.btn-outline-light]="marketplaceFilter() !== option.value"
+          (click)="setMarketplaceFilter(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="p-3">
+      <os-error-display
+        [message]="error()!"
+        [retryable]="true"
+        (dismissed)="clearError()"
+        (retry)="refresh()"
+      />
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading orders..." />
+    </div>
+  } @else {
+    <div class="kds-columns"
+      [class.kds-columns-4]="kdsColumnCount() === 4"
+      [class.kds-columns-5]="kdsColumnCount() === 5">
+      @if (showThrottledColumn()) {
+        <div class="kds-column">
+          <div class="column-header throttled">
+            <h2 class="h5 mb-0">THROTTLED</h2>
+            <span class="badge bg-light text-dark">{{ throttledOrders().length }}</span>
+          </div>
+          <div class="column-body">
+            @for (order of throttledOrders(); track order.guid) {
+              <os-order-card
+                [order]="order"
+                [estimatedPrepMinutes]="getEstimatedPrep(order)"
+                [isRushed]="isRushed(order.guid)"
+                [isThrottleQueue]="true"
+                [coursePacingMode]="coursePacingMode()"
+                [prepTimeMap]="prepTimeMap()"
+                [autoFireDelaySeconds]="autoFireDelay()"
+                [targetCourseServeGapSeconds]="targetCourseServeGapSeconds()"
+                [coursePacingBaselineSeconds]="coursePacingBaselineSeconds()"
+                [coursePacingConfidence]="coursePacingConfidence()"
+                [activeOrderCount]="activeOrderCount()"
+                [overdueOrderCount]="overdueCount()"
+                [prepTimeFiringEnabled]="prepTimeFiringEnabled()"
+                [defaultPrepMinutes]="defaultPrepMinutes()"
+                [printStatus]="getPrintStatus(order.guid)"
+                [stationFilterId]="selectedStationId()"
+                [menuItemToStationMap]="menuItemToStationMap()"
+                (releaseThrottle)="onReleaseThrottle($event)"
+                (rushToggle)="toggleRush($event)"
+              />
+            } @empty {
+              <div class="empty-state text-center p-4">
+                <p class="text-muted mb-0">
+                  @if (isThrottleGateActive()) {
+                    Gate active: {{ throttleGateReason() }}
+                  } @else {
+                    No throttled orders
+                  }
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+      <!-- NEW Orders Column -->
+      <div class="kds-column">
+        <div class="column-header new">
+          <h2 class="h5 mb-0">NEW</h2>
+          <span class="badge bg-light text-dark">{{ pendingOrders().length }}</span>
+        </div>
+        <div class="column-body">
+          @for (order of pendingOrders(); track order.guid) {
+            <os-order-card
+              [order]="order"
+              [estimatedPrepMinutes]="getEstimatedPrep(order)"
+              [isRushed]="isRushed(order.guid)"
+              [coursePacingMode]="coursePacingMode()"
+              [prepTimeMap]="prepTimeMap()"
+              [autoFireDelaySeconds]="autoFireDelay()"
+              [targetCourseServeGapSeconds]="targetCourseServeGapSeconds()"
+              [coursePacingBaselineSeconds]="coursePacingBaselineSeconds()"
+              [coursePacingConfidence]="coursePacingConfidence()"
+              [activeOrderCount]="activeOrderCount()"
+              [overdueOrderCount]="overdueCount()"
+              [prepTimeFiringEnabled]="prepTimeFiringEnabled()"
+              [defaultPrepMinutes]="defaultPrepMinutes()"
+              [printStatus]="getPrintStatus(order.guid)"
+              [stationFilterId]="selectedStationId()"
+              [menuItemToStationMap]="menuItemToStationMap()"
+              [showThrottleHoldAction]="orderThrottlingStatus()?.enabled ?? false"
+              (statusChange)="onStatusChange($event)"
+              (rushToggle)="toggleRush($event)"
+              (throttleHold)="onManualThrottleHold($event)"
+              (fireCourse)="onFireCourse($event)"
+              (fireItemNow)="onFireItemNow($event)"
+              (retryPrint)="onRetryPrint($event)"
+              (recallOrder)="onRecall($event)"
+              (remakeItem)="onRemakeItem($event)"
+            />
+          } @empty {
+            <div class="empty-state text-center p-4">
+              <p class="text-muted mb-0">No new orders</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- COOKING Orders Column -->
+      <div class="kds-column">
+        <div class="column-header cooking">
+          <h2 class="h5 mb-0">COOKING</h2>
+          <span class="badge bg-light text-dark">{{ preparingOrders().length }}</span>
+        </div>
+        <div class="column-body">
+          @for (order of preparingOrders(); track order.guid) {
+            <os-order-card
+              [order]="order"
+              [estimatedPrepMinutes]="getEstimatedPrep(order)"
+              [isRushed]="isRushed(order.guid)"
+              [coursePacingMode]="coursePacingMode()"
+              [prepTimeMap]="prepTimeMap()"
+              [autoFireDelaySeconds]="autoFireDelay()"
+              [targetCourseServeGapSeconds]="targetCourseServeGapSeconds()"
+              [coursePacingBaselineSeconds]="coursePacingBaselineSeconds()"
+              [coursePacingConfidence]="coursePacingConfidence()"
+              [activeOrderCount]="activeOrderCount()"
+              [overdueOrderCount]="overdueCount()"
+              [prepTimeFiringEnabled]="prepTimeFiringEnabled()"
+              [defaultPrepMinutes]="defaultPrepMinutes()"
+              [printStatus]="getPrintStatus(order.guid)"
+              [stationFilterId]="selectedStationId()"
+              [menuItemToStationMap]="menuItemToStationMap()"
+              [showThrottleHoldAction]="orderThrottlingStatus()?.enabled ?? false"
+              (statusChange)="onStatusChange($event)"
+              (rushToggle)="toggleRush($event)"
+              (throttleHold)="onManualThrottleHold($event)"
+              (fireCourse)="onFireCourse($event)"
+              (fireItemNow)="onFireItemNow($event)"
+              (retryPrint)="onRetryPrint($event)"
+              (recallOrder)="onRecall($event)"
+              (remakeItem)="onRemakeItem($event)"
+            />
+          } @empty {
+            <div class="empty-state text-center p-4">
+              <p class="text-muted mb-0">No orders cooking</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- EXPO Orders Column (only when expo enabled) -->
+      @if (expoStationEnabled()) {
+        <div class="kds-column">
+          <div class="column-header expo">
+            <h2 class="h5 mb-0">EXPO</h2>
+            <span class="badge bg-light text-dark">{{ expoQueueOrders().length }}</span>
+          </div>
+          <div class="column-body">
+            @for (order of expoQueueOrders(); track order.guid) {
+              <os-order-card
+                [order]="order"
+                [estimatedPrepMinutes]="getEstimatedPrep(order)"
+                [isRushed]="isRushed(order.guid)"
+                [isExpoQueue]="true"
+                [showCollectPayment]="showCollectPayment()"
+                [coursePacingMode]="coursePacingMode()"
+                [prepTimeMap]="prepTimeMap()"
+                [autoFireDelaySeconds]="autoFireDelay()"
+                [targetCourseServeGapSeconds]="targetCourseServeGapSeconds()"
+                [coursePacingBaselineSeconds]="coursePacingBaselineSeconds()"
+                [coursePacingConfidence]="coursePacingConfidence()"
+                [activeOrderCount]="activeOrderCount()"
+                [overdueOrderCount]="overdueCount()"
+                [prepTimeFiringEnabled]="prepTimeFiringEnabled()"
+                [defaultPrepMinutes]="defaultPrepMinutes()"
+                [printStatus]="getPrintStatus(order.guid)"
+                [stationFilterId]="selectedStationId()"
+                [menuItemToStationMap]="menuItemToStationMap()"
+                [deliveryQuote]="getDeliveryQuote(order.guid)"
+                [dispatchState]="getDispatchState(order.guid)"
+                [dispatchError]="getDispatchError(order.guid)"
+                [canDispatchDelivery]="canDispatchDelivery(order.guid)"
+                (expoCheck)="onExpoCheck($event)"
+                (collectPayment)="onCollectPayment($event)"
+                (rushToggle)="toggleRush($event)"
+                (retryPrint)="onRetryPrint($event)"
+                (recallOrder)="onRecall($event)"
+                (dispatchDriver)="onDispatchDriver($event)"
+                (remakeItem)="onRemakeItem($event)"
+              />
+            } @empty {
+              <div class="empty-state text-center p-4">
+                <p class="text-muted mb-0">No orders to verify</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- READY Orders Column -->
+      <div class="kds-column">
+        <div class="column-header ready">
+          <h2 class="h5 mb-0">READY</h2>
+          <span class="badge bg-light text-dark">{{ expoCheckedOrders().length }}</span>
+        </div>
+        <div class="column-body">
+          @for (order of expoCheckedOrders(); track order.guid) {
+            <os-order-card
+              [order]="order"
+              [estimatedPrepMinutes]="getEstimatedPrep(order)"
+              [isRushed]="isRushed(order.guid)"
+              [showCollectPayment]="showCollectPayment()"
+              [coursePacingMode]="coursePacingMode()"
+              [prepTimeMap]="prepTimeMap()"
+              [autoFireDelaySeconds]="autoFireDelay()"
+              [targetCourseServeGapSeconds]="targetCourseServeGapSeconds()"
+              [coursePacingBaselineSeconds]="coursePacingBaselineSeconds()"
+              [coursePacingConfidence]="coursePacingConfidence()"
+              [activeOrderCount]="activeOrderCount()"
+              [overdueOrderCount]="overdueCount()"
+              [prepTimeFiringEnabled]="prepTimeFiringEnabled()"
+              [defaultPrepMinutes]="defaultPrepMinutes()"
+              [printStatus]="getPrintStatus(order.guid)"
+              [deliveryQuote]="getDeliveryQuote(order.guid)"
+              [dispatchState]="getDispatchState(order.guid)"
+              [dispatchError]="getDispatchError(order.guid)"
+              [canDispatchDelivery]="canDispatchDelivery(order.guid)"
+              (statusChange)="onStatusChange($event)"
+              (collectPayment)="onCollectPayment($event)"
+              (rushToggle)="toggleRush($event)"
+              (fireCourse)="onFireCourse($event)"
+              (fireItemNow)="onFireItemNow($event)"
+              (retryPrint)="onRetryPrint($event)"
+              (recallOrder)="onRecall($event)"
+              (dispatchDriver)="onDispatchDriver($event)"
+              (remakeItem)="onRemakeItem($event)"
+            />
+          } @empty {
+            <div class="empty-state text-center p-4">
+              <p class="text-muted mb-0">No orders ready</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
+} @else {
+  <div class="auth-required d-flex align-items-center justify-content-center p-5">
+    <div class="text-center">
+      <h3 class="text-warning mb-3">Authentication Required</h3>
+      <p class="text-light">Please log in to view the kitchen display.</p>
+    </div>
+  </div>
+}

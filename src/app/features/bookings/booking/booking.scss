@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.booking-shell {
+  display: flex;
+  height: 100%;
+}
+
+.booking-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #f9fafb;
+}

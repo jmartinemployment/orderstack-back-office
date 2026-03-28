@@ -1,0 +1,188 @@
+<div class="report-builder">
+  <div class="builder-header">
+    <button class="btn btn-link btn-back" (click)="cancel()">
+      <i class="bi bi-arrow-left"></i> Back to Reports
+    </button>
+    <h2>{{ isEditing() ? 'Edit Report' : 'New Custom Report' }}</h2>
+  </div>
+
+  <div class="builder-name">
+    <label for="reportName">Report Name</label>
+    <input
+      id="reportName"
+      type="text"
+      class="form-control"
+      placeholder="e.g., Weekly Sales Summary"
+      [ngModel]="reportName()"
+      (ngModelChange)="setReportName($event)"
+    />
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  <div class="builder-body">
+    <!-- Available blocks palette -->
+    <div class="block-palette">
+      <h5>Available Blocks</h5>
+      <p class="palette-hint">Click to add blocks to your report</p>
+
+      @if (unselectedBlocks().length === 0) {
+        <div class="palette-empty">
+          <i class="bi bi-check-circle"></i>
+          <span>All blocks added</span>
+        </div>
+      } @else {
+        <div class="palette-blocks">
+          @for (block of unselectedBlocks(); track block.type) {
+            <button class="palette-block" (click)="addBlock(block)">
+              <i class="bi {{ getBlockIcon(block.type) }}"></i>
+              <span>{{ block.label }}</span>
+              <i class="bi bi-plus-lg add-icon"></i>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Selected blocks composition -->
+    <div class="block-composition">
+      <h5>Report Composition</h5>
+
+      @if (selectedBlocks().length === 0) {
+        <div class="composition-empty">
+          <i class="bi bi-file-earmark-plus"></i>
+          <p>Add blocks from the palette to build your report</p>
+        </div>
+      } @else {
+        <div class="composition-blocks">
+          @for (block of selectedBlocks(); track block.type; let i = $index; let first = $first; let last = $last) {
+            <div class="composition-block">
+              <div class="block-order">{{ i + 1 }}</div>
+              <div class="block-info">
+                <i class="bi {{ getBlockIcon(block.type) }}"></i>
+                <span>{{ block.label }}</span>
+              </div>
+              <div class="block-actions">
+                <button
+                  class="btn btn-sm btn-icon"
+                  [disabled]="first"
+                  (click)="moveBlock(i, 'up')"
+                  title="Move up"
+                >
+                  <i class="bi bi-chevron-up"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-icon"
+                  [disabled]="last"
+                  (click)="moveBlock(i, 'down')"
+                  title="Move down"
+                >
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-icon btn-remove"
+                  (click)="removeBlock(i)"
+                  title="Remove"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Date range + comparison -->
+  <div class="builder-date-section">
+    <h5>Date Range</h5>
+    <div class="date-row">
+      <div class="date-field">
+        <label for="startDate">Start Date</label>
+        <input
+          id="startDate"
+          type="date"
+          class="form-control"
+          [ngModel]="startDate()"
+          (ngModelChange)="setStartDate($event)"
+        />
+      </div>
+      <div class="date-field">
+        <label for="endDate">End Date</label>
+        <input
+          id="endDate"
+          type="date"
+          class="form-control"
+          [ngModel]="endDate()"
+          (ngModelChange)="setEndDate($event)"
+        />
+      </div>
+      <div class="date-field">
+        <label for="comparison">Compare To</label>
+        <select
+          id="comparison"
+          class="form-select"
+          [ngModel]="comparisonPeriod()"
+          (ngModelChange)="setComparisonPeriod($event)"
+        >
+          <option value="">No comparison</option>
+          <option value="previous_period">Previous Period</option>
+          <option value="same_period_last_year">Same Period Last Year</option>
+          <option value="custom">Custom Range</option>
+        </select>
+      </div>
+    </div>
+
+    @if (comparisonPeriod() === 'custom') {
+      <div class="date-row comparison-row">
+        <div class="date-field">
+          <label for="compStartDate">Comparison Start</label>
+          <input
+            id="compStartDate"
+            type="date"
+            class="form-control"
+            [ngModel]="comparisonStartDate()"
+            (ngModelChange)="setComparisonStartDate($event)"
+          />
+        </div>
+        <div class="date-field">
+          <label for="compEndDate">Comparison End</label>
+          <input
+            id="compEndDate"
+            type="date"
+            class="form-control"
+            [ngModel]="comparisonEndDate()"
+            (ngModelChange)="setComparisonEndDate($event)"
+          />
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Action buttons -->
+  <div class="builder-actions">
+    <button class="btn btn-outline-secondary" (click)="cancel()">Cancel</button>
+    <button
+      class="btn btn-outline-primary"
+      [disabled]="!canRun()"
+      (click)="runReport()"
+    >
+      <i class="bi bi-play-fill"></i> Run Now
+    </button>
+    <button
+      class="btn btn-primary"
+      [disabled]="!canSave() || isSaving()"
+      (click)="saveReport()"
+    >
+      @if (isSaving()) {
+        <span class="spinner-border spinner-border-sm"></span>
+      } @else {
+        <i class="bi bi-floppy"></i>
+      }
+      {{ isEditing() ? 'Update Report' : 'Save Report' }}
+    </button>
+  </div>
+</div>

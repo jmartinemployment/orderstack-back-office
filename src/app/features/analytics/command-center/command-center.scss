@@ -1,0 +1,542 @@
+.command-center {
+  h2 {
+    color: var(--os-text-primary);
+    font-size: 1.375rem;
+    font-weight: 600;
+  }
+}
+
+// Pinned widgets (My Insights)
+.pinned-section {
+  .panel-title {
+    font-size: 0.9375rem;
+    color: var(--os-text-primary);
+  }
+}
+
+.pinned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.pinned-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.pinned-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--os-border);
+}
+
+.pinned-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--os-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.btn-unpin {
+  background: transparent;
+  border: none;
+  color: var(--os-text-secondary);
+  cursor: pointer;
+  padding: 0.125rem;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  transition: all 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+    color: var(--os-danger);
+  }
+}
+
+.pinned-kpi {
+  padding: 0.75rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.pinned-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+.pinned-trend {
+  font-size: 0.875rem;
+
+  &.up { color: var(--os-success); }
+  &.down { color: var(--os-danger); }
+}
+
+.pinned-text {
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--os-text-primary);
+  line-height: 1.4;
+}
+
+.pinned-chart-preview {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--os-text-secondary);
+
+  .bi {
+    font-size: 1.25rem;
+    color: var(--os-primary);
+  }
+}
+
+// Tabs
+.cc-tabs {
+  .nav-link {
+    color: var(--os-text-secondary);
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+
+    &:hover { color: var(--os-text-primary); }
+
+    &.active {
+      background-color: var(--os-primary);
+      color: #fff;
+    }
+
+    .badge { font-size: 0.65rem; }
+  }
+}
+
+// KPI Grid
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.kpi-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: border-color 0.2s;
+
+  &:hover { border-color: var(--os-primary); }
+
+  &.kpi-alert {
+    border-color: var(--os-danger);
+  }
+
+  .kpi-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--os-text-secondary);
+  }
+
+  .kpi-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+    line-height: 1.2;
+  }
+
+  .kpi-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    &.positive { color: var(--os-success); }
+    &.negative { color: var(--os-danger); }
+  }
+
+  .kpi-sub {
+    font-size: 0.75rem;
+    color: var(--os-text-muted);
+  }
+}
+
+// Panels
+.cc-panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 1rem;
+
+  .panel-title {
+    color: var(--os-text-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+}
+
+// Insight items (overview)
+.insight-item {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+
+  .insight-text { font-size: 0.85rem; color: var(--os-text-primary); }
+
+  &.insight-positive { border-left-color: var(--os-success); background-color: rgba(0, 166, 126, 0.06); }
+  &.insight-negative { border-left-color: var(--os-danger); background-color: rgba(229, 62, 62, 0.06); }
+  &.insight-warning { border-left-color: var(--os-warning); background-color: rgba(245, 166, 35, 0.06); }
+  &.insight-action { border-left-color: var(--os-primary); background-color: rgba(0, 106, 255, 0.06); }
+  &.insight-neutral { border-left-color: #0dcaf0; background-color: rgba(13, 202, 240, 0.06); }
+}
+
+// Insight items (full view)
+.insight-item-full {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+
+  .insight-text-full { font-size: 0.9rem; color: var(--os-text-primary); line-height: 1.4; }
+
+  &.insight-positive { border-left-color: var(--os-success); background-color: rgba(0, 166, 126, 0.06); }
+  &.insight-negative { border-left-color: var(--os-danger); background-color: rgba(229, 62, 62, 0.06); }
+  &.insight-warning { border-left-color: var(--os-warning); background-color: rgba(245, 166, 35, 0.06); }
+  &.insight-action { border-left-color: var(--os-primary); background-color: rgba(0, 106, 255, 0.06); }
+  &.insight-neutral { border-left-color: #0dcaf0; background-color: rgba(13, 202, 240, 0.06); }
+}
+
+// Source badges
+.insight-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+
+  &.source-sales { background-color: var(--os-success); }
+  &.source-menu { background-color: var(--os-primary); }
+  &.source-inventory { background-color: var(--os-warning); color: #000; }
+  &.source-profit { background-color: #0dcaf0; }
+}
+
+// Top sellers
+.top-seller-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+
+  &:last-child { border-bottom: none; }
+}
+
+.rank-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--os-primary-light);
+  color: var(--os-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+// Stock watch
+.stock-item {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.375rem;
+  color: var(--os-text-primary);
+
+  &.urgency-critical { background-color: rgba(229, 62, 62, 0.08); }
+  &.urgency-warning { background-color: rgba(245, 166, 35, 0.08); }
+  &.urgency-caution { background-color: rgba(13, 202, 240, 0.06); }
+  &.urgency-ok { background-color: rgba(0, 166, 126, 0.06); }
+}
+
+.days-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+// Alert items
+.alert-item {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+  color: var(--os-text-primary);
+
+  &.alert-critical { border-left-color: var(--os-danger); background-color: rgba(229, 62, 62, 0.06); }
+  &.alert-warn { border-left-color: var(--os-warning); background-color: rgba(245, 166, 35, 0.06); }
+  &.alert-info { border-left-color: #0dcaf0; background-color: rgba(13, 202, 240, 0.04); }
+}
+
+// Prediction items
+.prediction-item {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+  color: var(--os-text-primary);
+
+  &.urgency-critical { border-left-color: var(--os-danger); background-color: rgba(229, 62, 62, 0.06); }
+  &.urgency-warning { border-left-color: var(--os-warning); background-color: rgba(245, 166, 35, 0.06); }
+  &.urgency-caution { border-left-color: #0dcaf0; background-color: rgba(13, 202, 240, 0.04); }
+  &.urgency-ok { border-left-color: var(--os-success); background-color: rgba(0, 166, 126, 0.04); }
+}
+
+// === Forecast Tab (Phase 3) ===
+
+.forecast-kpis {
+  flex-wrap: wrap;
+}
+
+.forecast-kpi {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--os-bg);
+  border-radius: var(--os-radius);
+  border: 1px solid var(--os-border);
+
+  .kpi-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+  }
+
+  .kpi-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+  }
+}
+
+// Confidence classes
+.confidence-high { color: var(--os-success) !important; background-color: rgba(0, 166, 126, 0.1) !important; }
+.confidence-medium { color: var(--os-warning) !important; background-color: rgba(245, 166, 35, 0.1) !important; }
+.confidence-low { color: var(--os-danger) !important; background-color: rgba(229, 62, 62, 0.1) !important; }
+
+// Revenue Forecast Chart
+.forecast-chart {
+  overflow-x: auto;
+
+  .forecast-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 180px;
+    padding-bottom: 0.25rem;
+  }
+
+  .forecast-bar-wrapper {
+    flex: 1;
+    min-width: 24px;
+    max-width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    cursor: default;
+  }
+
+  .forecast-bar-band {
+    width: 100%;
+    background-color: rgba(0, 106, 255, 0.12);
+    border-radius: 2px 2px 0 0;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .forecast-bar-predicted {
+    width: 60%;
+    margin: 0 auto;
+    background-color: var(--os-primary);
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+  }
+
+  .forecast-bar-label {
+    font-size: 0.55rem;
+    color: var(--os-text-muted);
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+}
+
+.forecast-legend {
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--os-text-secondary);
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+
+    &.predicted { background-color: var(--os-primary); }
+    &.band { background-color: rgba(0, 106, 255, 0.12); }
+  }
+}
+
+// Demand Forecast
+.demand-list {
+  .demand-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--os-border);
+    color: var(--os-text-primary);
+
+    &:last-child { border-bottom: none; }
+  }
+}
+
+// Staffing Chart
+.staffing-chart {
+  overflow-x: auto;
+
+  .staffing-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 140px;
+    padding-bottom: 0.25rem;
+  }
+
+  .staffing-bar-wrapper {
+    flex: 1;
+    min-width: 24px;
+    max-width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    cursor: default;
+  }
+
+  .staffing-bar {
+    width: 100%;
+    background-color: var(--os-primary);
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .staffing-bar-count {
+    font-size: 0.6rem;
+    color: #fff;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .staffing-bar-label {
+    font-size: 0.55rem;
+    color: var(--os-text-muted);
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+}
+
+// === Proactive Insights (GAP-R02 Phase 2) ===
+
+.proactive-card {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+  color: var(--os-text-primary);
+
+  &.proactive-negative {
+    border-left-color: var(--os-danger);
+    background-color: rgba(229, 62, 62, 0.06);
+  }
+
+  &.proactive-positive {
+    border-left-color: var(--os-success);
+    background-color: rgba(0, 166, 126, 0.06);
+  }
+
+  &.proactive-neutral {
+    border-left-color: var(--os-warning);
+    background-color: rgba(245, 166, 35, 0.06);
+  }
+}
+
+.proactive-icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  .proactive-negative & { color: var(--os-danger); }
+  .proactive-positive & { color: var(--os-success); }
+  .proactive-neutral & { color: var(--os-warning); }
+}
+
+.proactive-title {
+  font-size: 0.875rem;
+  color: var(--os-text-primary);
+}
+
+.proactive-text {
+  font-size: 0.8125rem;
+  color: var(--os-text-secondary);
+  line-height: 1.4;
+}
+
+.btn-proactive-action {
+  background: transparent;
+  border: 1px solid var(--os-border);
+  color: var(--os-text-secondary);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: var(--os-primary);
+    color: var(--os-primary);
+    background: rgba(0, 106, 255, 0.06);
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+}

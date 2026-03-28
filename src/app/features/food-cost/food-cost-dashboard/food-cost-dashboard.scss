@@ -1,0 +1,905 @@
+$bg-dark: #0d0d1a;
+$bg-card: #161625;
+$bg-card-hover: #1c1c30;
+$bg-input: #1a1a2e;
+$border: #2a2a40;
+$text-primary: #e8e8f0;
+$text-secondary: #8888a0;
+$accent: #7c5cfc;
+$accent-hover: #9478ff;
+$green: #22c55e;
+$amber: #f59e0b;
+$red: #ef4444;
+$blue: #3b82f6;
+
+.food-cost-dashboard {
+  background: $bg-dark;
+  color: $text-primary;
+  min-height: 100vh;
+  padding: 1.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+// ── Header ──
+
+.dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  i { font-size: 1.5rem; color: $accent; }
+  h1 { font-size: 1.4rem; font-weight: 600; margin: 0; }
+}
+
+.header-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.kpi-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.kpi-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.kpi-label {
+  font-size: 0.7rem;
+  color: $text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// ── Error ──
+
+.error-banner {
+  background: rgba($red, 0.15);
+  border: 1px solid rgba($red, 0.3);
+  color: $red;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+
+  .bi-x { margin-left: auto; }
+}
+
+// ── Tab bar ──
+
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid $border;
+  margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: $text-secondary;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s, border-color 0.2s;
+
+  &:hover { color: $text-primary; }
+
+  &.active {
+    color: $accent;
+    border-bottom-color: $accent;
+  }
+}
+
+.badge {
+  background: $red;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.loading-msg {
+  text-align: center;
+  color: $text-secondary;
+  padding: 2rem;
+}
+
+// ── Section header ──
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h3 { margin: 0; font-size: 1.1rem; }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pill {
+  background: $bg-card;
+  border: 1px solid $border;
+  color: $text-secondary;
+  padding: 0.3rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { color: $text-primary; }
+  &.active { background: $accent; color: white; border-color: $accent; }
+}
+
+.search-input {
+  background: $bg-input;
+  border: 1px solid $border;
+  color: $text-primary;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  width: 200px;
+
+  &::placeholder { color: $text-secondary; }
+  &:focus { outline: none; border-color: $accent; }
+}
+
+// ── Buttons ──
+
+.btn-add, .btn-upload {
+  background: $accent;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.2s;
+
+  &:hover { background: $accent-hover; }
+}
+
+.btn-upload {
+  background: $bg-card;
+  border: 1px dashed $accent;
+  color: $accent;
+
+  &:hover { background: rgba($accent, 0.1); }
+  &.uploading { opacity: 0.7; pointer-events: none; }
+}
+
+.btn-add-row {
+  background: none;
+  border: 1px dashed $border;
+  color: $text-secondary;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &:hover { color: $accent; border-color: $accent; }
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: $text-secondary;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 4px;
+
+  &:hover { color: $text-primary; background: rgba(white, 0.05); }
+  &.btn-icon-danger:hover { color: $red; }
+}
+
+.btn-approve {
+  background: rgba($green, 0.15);
+  color: $green;
+  border: 1px solid rgba($green, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+
+  &:hover { background: rgba($green, 0.25); }
+}
+
+.btn-paid {
+  background: rgba($blue, 0.15);
+  color: $blue;
+  border: 1px solid rgba($blue, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+
+  &:hover { background: rgba($blue, 0.25); }
+}
+
+.btn-edit {
+  background: rgba($accent, 0.15);
+  color: $accent;
+  border: 1px solid rgba($accent, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+
+  &:hover { background: rgba($accent, 0.25); }
+}
+
+.btn-delete {
+  background: rgba($red, 0.15);
+  color: $red;
+  border: 1px solid rgba($red, 0.3);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+
+  &:hover { background: rgba($red, 0.25); }
+}
+
+// ── Invoice cards ──
+
+.invoice-list, .vendor-list, .recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invoice-card, .vendor-card, .recipe-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { border-color: rgba($accent, 0.4); }
+  &.selected { border-color: $accent; background: rgba($accent, 0.05); }
+}
+
+.invoice-card-header, .vendor-card-header, .recipe-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.invoice-number { font-weight: 600; font-size: 0.95rem; }
+
+.invoice-status {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 500;
+
+  &.status-pending { background: rgba($amber, 0.15); color: $amber; }
+  &.status-approved { background: rgba($green, 0.15); color: $green; }
+  &.status-paid { background: rgba($blue, 0.15); color: $blue; }
+}
+
+.invoice-card-body {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: $text-secondary;
+  margin-bottom: 0.4rem;
+}
+
+.invoice-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.invoice-total { font-weight: 600; font-size: 1rem; }
+.invoice-items { font-size: 0.8rem; color: $text-secondary; }
+
+.invoice-detail, .vendor-detail, .recipe-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid $border;
+}
+
+.invoice-actions, .recipe-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  justify-content: flex-end;
+}
+
+.ocr-badge {
+  font-size: 0.75rem;
+  color: $accent;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+// ── Vendor cards ──
+
+.vendor-name { font-weight: 600; }
+
+.vendor-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $text-secondary;
+
+  &.active { background: $green; }
+}
+
+.vendor-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: $text-secondary;
+  margin-bottom: 0.4rem;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+}
+
+.vendor-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vendor-invoice-count { font-size: 0.8rem; color: $text-secondary; }
+
+.vendor-actions { display: flex; gap: 0.25rem; }
+
+.vendor-card.inactive { opacity: 0.5; }
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: $text-secondary;
+  margin-bottom: 0.5rem;
+
+  i { color: $accent; margin-top: 2px; }
+}
+
+// ── Recipe cards ──
+
+.recipe-name { font-weight: 600; }
+.recipe-menu-item { font-size: 0.8rem; color: $text-secondary; }
+
+.recipe-card-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.recipe-metric {
+  display: flex;
+  flex-direction: column;
+
+  .metric-label { font-size: 0.7rem; color: $text-secondary; text-transform: uppercase; }
+  .metric-value { font-size: 0.95rem; font-weight: 600; }
+}
+
+.recipe-yield {
+  font-size: 0.85rem;
+  color: $text-secondary;
+  margin-bottom: 0.75rem;
+}
+
+// ── Tables ──
+
+.line-items-table, .price-history-table, .ingredients-table, .cost-items-table, .line-items-edit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid $border;
+    color: $text-secondary;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid rgba($border, 0.5);
+  }
+
+  tfoot td {
+    font-weight: 600;
+    border-top: 2px solid $border;
+    padding-top: 0.6rem;
+  }
+}
+
+.line-total { font-weight: 500; text-align: right; }
+
+.no-data { color: $text-secondary; }
+
+// ── Food cost summary ──
+
+.food-cost-summary-bar {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.report-period {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.period-btn {
+  background: $bg-input;
+  border: 1px solid $border;
+  color: $text-secondary;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &.active { background: $accent; color: white; border-color: $accent; }
+  &:hover:not(.active) { color: $text-primary; }
+}
+
+.cost-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.cost-metric {
+  display: flex;
+  flex-direction: column;
+
+  .metric-label { font-size: 0.7rem; color: $text-secondary; text-transform: uppercase; }
+  .metric-value { font-size: 1.1rem; font-weight: 600; }
+}
+
+.price-alerts {
+  margin-top: 1rem;
+
+  h4 {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+    color: $amber;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+}
+
+.price-alert-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  background: rgba($amber, 0.05);
+
+  &.price-spike { background: rgba($red, 0.1); }
+  &.price-up { background: rgba($amber, 0.1); }
+  &.price-down { background: rgba($green, 0.1); }
+}
+
+.alert-ingredient { font-weight: 600; min-width: 120px; }
+.alert-vendor { color: $text-secondary; min-width: 100px; }
+.alert-change { margin-left: auto; font-weight: 500; }
+
+.top-cost-items {
+  margin-top: 1rem;
+
+  h4 { font-size: 0.9rem; margin: 0 0 0.5rem; }
+}
+
+// ── Food cost badges ──
+
+.food-cost-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+
+  &.cost-good { background: rgba($green, 0.15); color: $green; }
+  &.cost-warning { background: rgba($amber, 0.15); color: $amber; }
+  &.cost-danger { background: rgba($red, 0.15); color: $red; }
+}
+
+.cost-good { color: $green; }
+.cost-warning { color: $amber; }
+.cost-danger { color: $red; }
+
+.variance-ok { color: $green; }
+.variance-over { color: $red; }
+.variance-under { color: $amber; }
+
+.uncosted-alert {
+  background: rgba($amber, 0.1);
+  border: 1px solid rgba($amber, 0.25);
+  color: $amber;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+// ── Invoice summary ──
+
+.invoice-summary {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  display: flex;
+  gap: 2rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+
+  .summary-value { font-size: 1.1rem; font-weight: 600; }
+  .unpaid { color: $amber; }
+}
+
+// ── Empty state ──
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: $text-secondary;
+
+  i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+  p { margin: 0.25rem 0; }
+}
+
+.empty-hint {
+  font-size: 0.85rem;
+  color: $text-secondary;
+}
+
+// ── Modals ──
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: $bg-dark;
+  border: 1px solid $border;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  &.modal-wide { max-width: 700px; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $border;
+
+  h3 { margin: 0; font-size: 1.1rem; }
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  color: $text-secondary;
+  cursor: pointer;
+  font-size: 1rem;
+
+  &:hover { color: $text-primary; }
+}
+
+.modal-body {
+  padding: 1.25rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid $border;
+}
+
+.btn-cancel {
+  background: $bg-card;
+  border: 1px solid $border;
+  color: $text-secondary;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover { color: $text-primary; }
+}
+
+.btn-save {
+  background: $accent;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover { background: $accent-hover; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Form elements ──
+
+.form-group {
+  margin-bottom: 0.75rem;
+  flex: 1;
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: $text-secondary;
+    margin-bottom: 0.3rem;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+
+  @media (max-width: 500px) { flex-direction: column; }
+}
+
+.form-input, .form-select {
+  width: 100%;
+  background: $bg-input;
+  border: 1px solid $border;
+  color: $text-primary;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+
+  &:focus { outline: none; border-color: $accent; }
+  &::placeholder { color: $text-secondary; }
+}
+
+textarea.form-input { resize: vertical; }
+
+.form-input-sm {
+  background: $bg-input;
+  border: 1px solid $border;
+  color: $text-primary;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  width: 100%;
+
+  &.num { width: 80px; text-align: right; }
+  &:focus { outline: none; border-color: $accent; }
+}
+
+.form-select-sm {
+  background: $bg-input;
+  border: 1px solid $border;
+  color: $text-primary;
+  padding: 0.3rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+// ── Invoice form total ──
+
+.invoice-form-total, .recipe-form-summary {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid $border;
+}
+
+.invoice-form-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.recipe-form-summary {
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    font-size: 0.9rem;
+
+    &.highlight { font-weight: 600; margin-top: 0.25rem; padding-top: 0.5rem; border-top: 1px solid $border; }
+  }
+}
+
+// ── Responsive ──
+
+@media (max-width: 768px) {
+  .food-cost-dashboard { padding: 1rem; }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-kpis { margin-left: 0; }
+
+  .section-header { flex-direction: column; align-items: flex-start; }
+
+  .cost-summary-row { gap: 1rem; }
+
+  .price-alert-card { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+}
+
+// ── Purchase Orders ──
+
+.data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.data-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover { border-color: $accent; }
+  &.selected { border-color: $accent; background: $bg-card-hover; }
+}
+
+.data-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.data-card-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: $text-secondary;
+}
+
+.data-card-detail {
+  border-top: 1px solid $border;
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.detail-table {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+
+  th {
+    color: $text-secondary;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid $border;
+  }
+
+  td {
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid rgba($border, 0.5);
+    color: $text-primary;
+  }
+}
+
+.btn-action {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  border: 1px solid $border;
+  background: transparent;
+  color: $text-primary;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.btn-submit { border-color: $green; color: $green; &:hover { background: rgba($green, 0.15); } }
+  &.btn-receive { border-color: $blue; color: $blue; &:hover { background: rgba($blue, 0.15); } }
+  &.btn-cancel-po { border-color: $red; color: $red; &:hover { background: rgba($red, 0.15); } }
+}
+
+.status-draft { background: rgba($text-secondary, 0.15); color: $text-secondary; }
+.status-submitted { background: rgba($blue, 0.15); color: $blue; }
+.status-partial { background: rgba($amber, 0.15); color: $amber; }
+.status-received { background: rgba($green, 0.15); color: $green; }
+.status-cancelled { background: rgba($red, 0.15); color: $red; }

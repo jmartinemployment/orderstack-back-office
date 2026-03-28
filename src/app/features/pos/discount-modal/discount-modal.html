@@ -1,0 +1,120 @@
+<div class="modal-overlay" (click)="onCancel()" (keydown.escape)="onCancel()" aria-hidden="true">
+  <div class="modal-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+    <div class="modal-header-bar">
+      <h5>Apply Discount</h5>
+      <button type="button" class="btn-close" (click)="onCancel()"></button>
+    </div>
+
+    <div class="modal-body-content">
+      <!-- Type selector -->
+      <div class="type-selector mb-3">
+        <button
+          type="button"
+          class="type-btn"
+          [class.active]="type() === 'percentage'"
+          (click)="setType('percentage')">
+          <i class="bi bi-percent"></i> Percentage
+        </button>
+        <button
+          type="button"
+          class="type-btn"
+          [class.active]="type() === 'flat'"
+          (click)="setType('flat')">
+          <i class="bi bi-cash"></i> Flat Amount
+        </button>
+        <button
+          type="button"
+          class="type-btn"
+          [class.active]="type() === 'comp'"
+          (click)="onComp()">
+          <i class="bi bi-gift"></i> Full Comp
+        </button>
+      </div>
+
+      <!-- Quick percentages -->
+      @if (type() === 'percentage') {
+        <div class="quick-presets mb-3">
+          @for (pct of [10, 15, 20, 25, 50]; track pct) {
+            <button
+              type="button"
+              class="preset-btn"
+              [class.active]="value() === '' + pct"
+              (click)="onQuickPercent(pct)">
+              {{ pct }}%
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Value input -->
+      @if (type() !== 'comp') {
+        <div class="mb-3">
+          <span class="form-label">
+            {{ type() === 'percentage' ? 'Percentage' : 'Amount ($)' }}
+          </span>
+          <div class="input-group">
+            @if (type() === 'flat') {
+              <span class="input-group-text">$</span>
+            }
+            <input
+              type="number"
+              class="form-control"
+              [attr.aria-label]="type() === 'percentage' ? 'Discount percentage' : 'Discount amount'"
+              [value]="value()"
+              (input)="setValue($any($event.target).value)"
+              [attr.min]="0"
+              [attr.max]="type() === 'percentage' ? 100 : checkSubtotal()"
+              [attr.step]="type() === 'percentage' ? 5 : 0.01"
+              placeholder="0">
+            @if (type() === 'percentage') {
+              <span class="input-group-text">%</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Preview -->
+      <div class="discount-preview mb-3">
+        <span class="preview-label">Discount amount:</span>
+        <span class="preview-value">{{ getPreviewAmount() | currency }}</span>
+      </div>
+
+      <!-- Reason -->
+      <div class="mb-3">
+        <label class="form-label" for="discount-reason">Reason</label>
+        <select
+          id="discount-reason"
+          class="form-select"
+          [value]="reason()"
+          (change)="setReason($any($event.target).value)">
+          @for (opt of reasonOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      @if (reason() === 'other') {
+        <div class="mb-3">
+          <input
+            type="text"
+            class="form-control"
+            aria-label="Custom discount reason"
+            placeholder="Describe reason..."
+            [value]="customReason()"
+            (input)="setCustomReason($any($event.target).value)">
+        </div>
+      }
+
+      @if (error()) {
+        <div class="alert alert-danger py-2 mb-3">{{ error() }}</div>
+      }
+    </div>
+
+    <div class="modal-footer-bar">
+      <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="onApply()">
+        Apply Discount
+      </button>
+    </div>
+  </div>
+</div>

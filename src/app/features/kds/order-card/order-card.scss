@@ -1,0 +1,520 @@
+:host {
+  display: block;
+}
+
+// btn-xs utility (used in fire-now, remake, and flat-list remake buttons)
+.btn-xs {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+}
+
+.order-card {
+  position: relative;
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  margin-bottom: 1rem;
+  border-radius: var(--os-radius);
+  overflow: hidden;
+
+  &.urgent {
+    border-color: var(--os-danger);
+    animation: pulse-border 2s infinite;
+  }
+
+  &.rushed {
+    border-color: var(--os-danger);
+    box-shadow: 0 0 8px rgba(229, 62, 62, 0.2);
+  }
+
+  &.throttled {
+    border-color: var(--os-catering);
+    box-shadow: 0 0 10px rgba(124, 58, 237, 0.15);
+  }
+
+  &.has-allergy-alert {
+    border-color: #dc3545;
+  }
+
+  &.has-critical-alert {
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.5);
+  }
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.15);
+  }
+}
+
+.card-header {
+  background-color: var(--os-bg-card);
+  border-bottom: 1px solid var(--os-border);
+}
+
+.order-number {
+  font-size: 1.25rem;
+  color: var(--os-text-primary);
+  font-weight: 600;
+}
+
+.order-type-pickup {
+  background-color: var(--os-success);
+}
+
+.order-type-delivery {
+  background-color: var(--os-primary);
+}
+
+.order-type-dinein {
+  background-color: var(--os-order-dinein);
+}
+
+.order-type-curbside {
+  background-color: var(--os-warning);
+  color: #000;
+}
+
+.order-type-catering {
+  background-color: var(--os-catering);
+}
+
+.marketplace-source-badge {
+  background-color: var(--os-marketplace);
+  color: #fff;
+}
+
+.marketplace-sync-badge {
+  color: #fff;
+}
+
+.sync-success {
+  background-color: var(--os-success);
+}
+
+.sync-pending {
+  background-color: #6c757d;
+}
+
+.sync-retrying {
+  background-color: var(--os-order-dinein);
+}
+
+.sync-failed {
+  background-color: var(--os-danger);
+}
+
+.elapsed-time {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+// Prep time colors
+.prep-ok { color: var(--os-success); }
+.prep-warning { color: var(--os-warning); }
+.prep-overdue { color: var(--os-danger); font-weight: 700; }
+
+.prep-eta { font-weight: 600; }
+
+.rush-badge { animation: rush-flash 1s infinite; }
+
+@keyframes rush-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+// Prep time progress bar
+.prep-bar-container {
+  height: 5px;
+  background-color: var(--os-border);
+
+  .prep-bar {
+    height: 100%;
+    transition: width 0.3s;
+
+    &.prep-ok { background-color: var(--os-success); }
+    &.prep-warning { background-color: var(--os-warning); }
+    &.prep-overdue { background-color: var(--os-danger); }
+  }
+}
+
+.rush-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  align-self: center;
+}
+
+.recall-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  align-self: center;
+}
+
+.order-items {
+  .order-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--os-border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .item-name {
+    font-weight: 500;
+  }
+}
+
+.card-footer {
+  background-color: var(--os-bg-card);
+  border-top: 1px solid var(--os-border);
+}
+
+.bump-button {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1rem;
+  padding: 0.75rem;
+
+  &:hover {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+}
+
+.btn-expo-check {
+  background-color: #c45200;
+  border-color: #c45200;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  &:hover { background-color: #a84500; border-color: #a84500; color: #fff; }
+}
+
+.expo-badge { animation: rush-flash 1s infinite; }
+.bg-expo { background-color: #c45200; }
+
+// Course system
+.course-group {
+  border-left: 3px solid var(--os-border);
+  padding-left: 0.5rem;
+
+  &:not(:last-child) {
+    border-bottom: 1px dashed var(--os-border);
+    padding-bottom: 0.5rem;
+  }
+}
+
+.course-header {
+  padding: 0.25rem 0;
+}
+
+.course-label {
+  font-size: 0.8rem;
+  color: var(--os-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.course-status-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+// Held items (HOLD / PENDING course)
+.held-item {
+  opacity: 0.45;
+  border-left: 2px dashed #6c757d;
+  padding-left: 0.5rem;
+}
+
+// Fire delay badges
+.fire-delay-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  align-self: center;
+  white-space: nowrap;
+}
+
+// Fire course button
+.fire-course-btn {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  font-weight: 600;
+}
+
+// Auto-fire countdown
+.auto-fire-countdown {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.auto-fire-panel {
+  max-width: 18rem;
+}
+
+.auto-fire-rationale {
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  color: var(--os-text-secondary);
+}
+
+.auto-fire-rationale-meta {
+  margin-top: 0.1rem;
+  font-size: 0.58rem;
+  line-height: 1.2;
+  color: var(--os-text-muted);
+}
+
+// Item actively firing (just transitioned from held)
+.item-firing {
+  border-left: 2px solid var(--os-success);
+  padding-left: 0.5rem;
+}
+
+// Live countdown badge
+.item-countdown {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// Fire Now button (per-item override)
+.fire-now-btn {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  font-weight: 600;
+}
+
+// Fire info container
+.item-fire-info {
+  margin-top: 0.25rem;
+}
+
+// Dining option info blocks
+.dining-info {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: var(--os-bg);
+}
+
+.bg-purple {
+  background-color: var(--os-catering);
+  color: #fff;
+}
+
+.approval-status {
+  .bg-warning {
+    color: #000;
+  }
+}
+
+.customer-info {
+  font-size: 0.85rem;
+}
+
+.print-status-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+
+  &.print-printing { background-color: var(--os-info); color: #000; }
+  &.print-printed { background-color: var(--os-success); color: #fff; }
+  &.print-failed { background-color: var(--os-danger); color: #fff; }
+}
+
+.retry-print-btn {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+}
+
+// Delivery provider badges
+.provider-doordash {
+  background-color: var(--os-doordash);
+  color: #fff;
+}
+
+.provider-uber {
+  background-color: #000;
+  color: #fff;
+}
+
+// Dispatch button
+.btn-dispatch {
+  background-color: var(--os-success);
+  border-color: var(--os-success);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background-color: #00785c;
+    border-color: #00785c;
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    color: #fff;
+  }
+}
+
+// Dispatch status
+.dispatch-status {
+  .badge {
+    font-size: 0.65rem;
+  }
+}
+
+.dispatch-quote {
+  .badge {
+    font-size: 0.65rem;
+  }
+}
+
+.dispatch-error {
+  font-weight: 600;
+}
+
+.marketplace-sync-alert {
+  color: var(--os-danger);
+  border-left: 3px solid var(--os-danger);
+  background-color: rgba(229, 62, 62, 0.06);
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.throttle-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px dashed rgba(245, 166, 35, 0.5);
+  border-radius: 0.35rem;
+  background-color: rgba(245, 166, 35, 0.06);
+}
+
+.bg-throttle {
+  background-color: var(--os-catering);
+  color: #fff;
+}
+
+.throttle-release-btn {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.throttle-hold-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+// Remake button
+.remake-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 0.7rem;
+  color: var(--os-text-secondary);
+  border: 1px solid var(--os-border);
+  border-radius: 0.25rem;
+  background: transparent;
+  align-self: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+
+  &.remake-confirm {
+    background-color: var(--os-warning);
+    border-color: var(--os-warning);
+    color: #000;
+    font-weight: 600;
+    width: auto;
+    padding: 0 0.5rem;
+    font-size: 0.65rem;
+  }
+}
+
+.remake-badge {
+  font-size: 0.6rem;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+// Collect payment button
+.btn-collect-payment {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  align-self: center;
+
+  &:hover {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+    color: #fff;
+  }
+}
+
+// Partial order badge (station filtering)
+.bg-partial-order {
+  background-color: var(--os-info);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+// Sentiment allergy alert
+.allergy-alert {
+  background-color: #dc3545;
+  color: #fff;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+
+  i {
+    font-size: 1rem;
+  }
+}
+
+// Critical urgency pulse overlay
+.critical-pulse {
+  position: absolute;
+  inset: 0;
+  border: 3px solid #dc3545;
+  border-radius: inherit;
+  animation: pulse-ring 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-ring {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}

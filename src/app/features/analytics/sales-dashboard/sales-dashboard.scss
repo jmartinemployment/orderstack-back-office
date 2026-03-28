@@ -1,0 +1,803 @@
+.sales-dashboard {
+  h2 {
+    color: var(--os-text-primary);
+    font-size: 1.375rem;
+    font-weight: 600;
+  }
+}
+
+// ===== Real-Time KPI Ticker =====
+.realtime-ticker {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.ticker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 140px;
+  padding-right: 1rem;
+  border-right: 1px solid var(--os-border);
+
+  &:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .ticker-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--os-text-muted);
+    font-weight: 600;
+
+    i { color: var(--os-warning); }
+  }
+
+  .ticker-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--os-text-primary);
+    line-height: 1.2;
+  }
+
+  .ticker-sub {
+    font-size: 0.75rem;
+    color: var(--os-text-secondary);
+  }
+
+  .ticker-change {
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+}
+
+// ===== Tabs =====
+.dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--os-border);
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--os-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+
+  &:hover { color: var(--os-text-primary); }
+
+  &.active {
+    color: var(--os-primary);
+    border-bottom-color: var(--os-primary);
+    font-weight: 600;
+  }
+
+  .alert-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--os-danger);
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 700;
+  }
+}
+
+// ===== KPI Cards =====
+.kpi-cards {
+  .kpi-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+    border-radius: var(--os-radius);
+    background-color: var(--os-bg-card);
+    border: 1px solid var(--os-border);
+    min-width: 140px;
+    flex: 1;
+
+    .kpi-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--os-text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: bold;
+      color: var(--os-text-primary);
+      line-height: 1;
+    }
+
+    .kpi-change {
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      font-weight: 600;
+    }
+  }
+}
+
+// ===== Panels =====
+.panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 1rem;
+
+  .panel-title {
+    color: var(--os-text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.top-item {
+  border-bottom: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+
+  &:last-child { border-bottom: none; }
+}
+
+.peak-hours {
+  .hour-label {
+    width: 45px;
+    font-size: 0.75rem;
+    color: var(--os-text-secondary);
+    text-align: right;
+  }
+
+  .hour-bar {
+    height: 16px;
+    background-color: var(--os-bg);
+    border-radius: 2px;
+    overflow: hidden;
+
+    .hour-fill {
+      height: 100%;
+      background-color: var(--os-primary);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+  }
+
+  .hour-count {
+    width: 30px;
+    text-align: right;
+    color: var(--os-text-secondary);
+  }
+}
+
+.insights-list {
+  .insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.375rem;
+    color: var(--os-text-primary);
+
+    .insight-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    &.insight-positive {
+      background-color: rgba(0, 166, 126, 0.06);
+      .insight-dot { background-color: var(--os-success); }
+    }
+
+    &.insight-negative {
+      background-color: rgba(229, 62, 62, 0.06);
+      .insight-dot { background-color: var(--os-danger); }
+    }
+
+    &.insight-neutral {
+      background-color: rgba(13, 202, 240, 0.06);
+      .insight-dot { background-color: #0dcaf0; }
+    }
+
+    .insight-content {
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+  }
+}
+
+// ===== Goal Inline Card (on Overview) =====
+.goal-inline-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 12px 16px;
+}
+
+.goal-inline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.goal-inline-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  i { color: var(--os-primary); }
+}
+
+.goal-inline-target {
+  font-size: 0.8125rem;
+  color: var(--os-text-secondary);
+}
+
+.goal-progress-bar {
+  height: 8px;
+  background: var(--os-bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+
+  &.lg { height: 12px; }
+}
+
+.goal-progress-fill {
+  height: 100%;
+  background: var(--os-primary);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+
+  &.complete { background: var(--os-success); }
+}
+
+.goal-inline-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+}
+
+.goal-current {
+  color: var(--os-text-secondary);
+}
+
+.goal-pace {
+  font-weight: 600;
+}
+
+.pace-ahead { color: var(--os-success); }
+.pace-behind { color: var(--os-danger); }
+.pace-on-track { color: var(--os-primary); }
+
+.goal-streak {
+  color: #f59e0b;
+  font-weight: 600;
+
+  i { font-size: 0.75rem; }
+}
+
+// ===== Goals Tab =====
+.goal-progress-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 16px;
+}
+
+.goal-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.goal-type-badge {
+  display: inline-block;
+  background: rgba(0, 106, 255, 0.1);
+  color: var(--os-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+
+  &.sm { font-size: 0.625rem; padding: 1px 6px; }
+}
+
+.goal-target-value {
+  font-size: 0.8125rem;
+  color: var(--os-text-secondary);
+  margin-left: 8px;
+}
+
+.goal-percentage {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--os-primary);
+}
+
+.goal-details {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.goal-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.goal-detail-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  color: var(--os-text-secondary);
+}
+
+.goal-detail-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+
+  &.streak {
+    color: #f59e0b;
+  }
+}
+
+.goal-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  margin-bottom: 6px;
+}
+
+.goal-list-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.goal-list-target {
+  font-weight: 600;
+  color: var(--os-text-primary);
+  font-size: 0.875rem;
+}
+
+.goal-list-dates {
+  font-size: 0.75rem;
+}
+
+.goal-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-active {
+  font-size: 0.625rem;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--os-success);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.goal-form-card {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 16px;
+
+  h6 {
+    font-weight: 600;
+    color: var(--os-text-primary);
+    margin-bottom: 12px;
+  }
+}
+
+.goal-form-field {
+  margin-bottom: 12px;
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--os-text-secondary);
+    margin-bottom: 4px;
+  }
+}
+
+.btn-group-sm {
+  display: flex;
+  gap: 4px;
+}
+
+.goal-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.goal-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+// ===== Team Tab =====
+.leaderboard {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  overflow: hidden;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--os-border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.leaderboard-rank {
+  width: 36px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+
+  &.rank-gold { background: #fef3c7; color: #b45309; }
+  &.rank-silver { background: #f3f4f6; color: #4b5563; }
+  &.rank-bronze { background: #fde68a; color: #92400e; }
+  &.rank-default { background: var(--os-bg); color: var(--os-text-secondary); }
+}
+
+.leaderboard-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+}
+
+.leaderboard-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+}
+
+.leaderboard-job {
+  font-size: 0.6875rem;
+}
+
+.leaderboard-bar-col {
+  flex: 1;
+  min-width: 80px;
+}
+
+.leaderboard-bar {
+  height: 8px;
+  background: var(--os-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.leaderboard-bar-fill {
+  height: 100%;
+  background: var(--os-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.leaderboard-stats {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  min-width: 80px;
+}
+
+.leaderboard-revenue {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+.leaderboard-meta {
+  font-size: 0.6875rem;
+}
+
+.team-summary-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.team-summary-card {
+  flex: 1;
+  min-width: 150px;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.team-summary-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  color: var(--os-text-secondary);
+}
+
+.team-summary-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+.team-summary-sub {
+  font-size: 0.75rem;
+  color: var(--os-text-secondary);
+}
+
+.tip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--os-border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.tip-name {
+  font-size: 0.8125rem;
+  color: var(--os-text-primary);
+  font-weight: 500;
+}
+
+.tip-amount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--os-success);
+}
+
+.tip-avg {
+  font-size: 0.75rem;
+}
+
+// ===== Funnel Tab =====
+.funnel-overall {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.funnel-overall-label {
+  font-size: 0.875rem;
+  color: var(--os-text-secondary);
+}
+
+.funnel-overall-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--os-primary);
+}
+
+.funnel-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.funnel-step {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 12px 14px;
+}
+
+.funnel-step-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.funnel-step-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--os-text-primary);
+}
+
+.funnel-step-count {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+}
+
+.funnel-bar {
+  height: 10px;
+  background: var(--os-bg);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.funnel-bar-fill {
+  height: 100%;
+  background: var(--os-primary);
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.funnel-step-footer {
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+}
+
+.funnel-conversion {
+  color: var(--os-success);
+  font-weight: 500;
+}
+
+.funnel-dropoff {
+  font-weight: 500;
+}
+
+.funnel-arrow {
+  text-align: center;
+  padding: 4px 0;
+  color: var(--os-text-secondary);
+  font-size: 0.875rem;
+}
+
+// ===== Alerts Tab =====
+.sales-alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  margin-bottom: 8px;
+  border-left: 3px solid transparent;
+
+  &.alert-critical { border-left-color: var(--os-danger); }
+  &.alert-warning-level { border-left-color: #f59e0b; }
+  &.alert-info-level { border-left-color: #06b6d4; }
+
+  &.acknowledged { opacity: 0.5; }
+}
+
+.sales-alert-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--os-bg);
+  font-size: 1rem;
+  color: var(--os-text-secondary);
+  flex-shrink: 0;
+}
+
+.sales-alert-content {
+  flex: 1;
+}
+
+.sales-alert-message {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--os-text-primary);
+  margin-bottom: 4px;
+}
+
+.sales-alert-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+  align-items: center;
+}
+
+.sales-alert-change {
+  font-weight: 600;
+}
+
+.sales-alert-time {
+  margin-left: auto;
+}
+
+// ===== Empty State =====
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--os-text-secondary);
+
+  i {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+    color: var(--os-text-secondary);
+    opacity: 0.4;
+  }
+
+  p { margin: 4px 0; }
+}
+
+// ===== Buttons =====
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+}
+
+// ===== Responsive =====
+@media (max-width: 768px) {
+  .dashboard-tabs { gap: 0; }
+
+  .tab-btn { padding: 8px 10px; font-size: 0.75rem; }
+
+  .kpi-cards .kpi-card {
+    min-width: 120px;
+    padding: 0.75rem 1rem;
+
+    .kpi-value { font-size: 1.25rem; }
+  }
+
+  .leaderboard-bar-col { display: none; }
+
+  .team-summary-cards { flex-direction: column; }
+
+  .goal-form-row { flex-direction: column; gap: 0; }
+}

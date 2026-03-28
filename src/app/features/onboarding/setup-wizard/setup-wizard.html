@@ -1,0 +1,114 @@
+<div class="setup-wizard">
+  <!-- Brand -->
+  <div class="wizard-brand">
+    <i class="bi bi-stack"></i> OrderStack
+  </div>
+
+  <div class="wizard-body">
+
+    @if (initializing()) {
+      <div class="wizard-init-loading">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      </div>
+    }
+
+    <!-- Step 1: MFA Setup -->
+    @if (!initializing() && isMfaStep()) {
+      <div class="step-content">
+        @if (mfaLoading() && !mfaCodeSent()) {
+          <div class="mfa-sending">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Sending your verification code…
+          </div>
+        } @else {
+          <div class="mfa-setup-icon">
+            <i class="bi bi-envelope-check-fill"></i>
+          </div>
+          <h2>Secure Your Account</h2>
+          <p class="step-subtitle">
+            @if (mfaMaskedEmail()) {
+              We sent a 6-digit code to <strong>{{ mfaMaskedEmail() }}</strong>. Enter it below
+              to enable two-factor authentication.
+            } @else {
+              Enter the 6-digit code we sent to your email address to enable two-factor authentication.
+            }
+          </p>
+
+          @if (mfaError()) {
+            <div class="wizard-alert wizard-alert--danger">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ mfaError() }}
+            </div>
+          }
+
+          <form [formGroup]="mfaCodeForm" (ngSubmit)="submitMfaCode()" novalidate>
+            <div class="form-group">
+              <label for="wizard-mfa-code">Verification Code</label>
+              <input
+                id="wizard-mfa-code"
+                type="text"
+                class="form-control wizard-otp-input"
+                formControlName="code"
+                placeholder="000000"
+                maxlength="6"
+                autocomplete="one-time-code"
+                inputmode="numeric"
+                [class.is-invalid]="mfaCodeForm.get('code')?.invalid && mfaCodeForm.get('code')?.touched" />
+              @if (mfaCodeForm.get('code')?.touched && mfaCodeForm.get('code')?.errors?.['required']) {
+                <div class="field-hint" style="color: #cc0023;">Please enter the 6-digit code.</div>
+              }
+            </div>
+
+            <button type="submit" class="wizard-btn wizard-btn--primary" [disabled]="mfaLoading()">
+              @if (mfaLoading()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                Verifying…
+              } @else {
+                <i class="bi bi-shield-check me-1"></i>Verify &amp; Continue
+              }
+            </button>
+          </form>
+
+          <div class="mfa-setup-actions">
+            <button type="button" class="wizard-link" (click)="resendSetupOtp()" [disabled]="mfaLoading()">
+              Resend code
+            </button>
+            <span class="mfa-setup-divider">·</span>
+            <button type="button" class="wizard-link wizard-link--muted" (click)="skipMfaSetup()">
+              Skip for now
+            </button>
+          </div>
+
+          <p class="mfa-setup-note">
+            <i class="bi bi-lock-fill me-1"></i>
+            PCI DSS 8.4.2 requires two-factor authentication for owner and manager accounts before going live.
+          </p>
+        }
+      </div>
+    }
+
+    <!-- Step 2: Mode Selection -->
+    @if (!initializing() && isModeStep()) {
+      <div class="step-content">
+        <h2>What type of business do you run?</h2>
+        <p class="step-subtitle">Select the option that best describes your operation.</p>
+
+        <div class="mode-card-grid">
+          @for (card of MODE_CARDS; track card.mode) {
+            <button
+              type="button"
+              class="mode-card"
+              [class.selected]="selectedPosMode() === card.mode"
+              (click)="selectModeAndGo(card.mode)">
+              <div class="mode-card-icon">
+                <i class="bi" [class]="card.icon"></i>
+              </div>
+              <div class="mode-card-label">{{ card.label }}</div>
+              <div class="mode-card-subtext">{{ card.subtext }}</div>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

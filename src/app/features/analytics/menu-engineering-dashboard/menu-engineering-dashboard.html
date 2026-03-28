@@ -1,0 +1,620 @@
+@if (isAuthenticated()) {
+<div class="menu-engineering px-2">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Menu Engineering</h2>
+    <div class="d-flex gap-2">
+      @for (d of [7, 14, 30, 90]; track d) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="days() === d"
+          [class.btn-outline-light]="days() !== d"
+          (click)="setDays(d)"
+        >
+          {{ d }}d
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      [retryable]="true"
+      (retry)="retry()"
+    />
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Analyzing menu performance..." />
+    </div>
+  } @else if (data(); as engineering) {
+    <!-- Deep Dive Tabs -->
+    <ul class="nav nav-pills deep-dive-tabs mb-4">
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="deepDiveTab() === 'overview'" (click)="setDeepDiveTab('overview')">Overview</button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="deepDiveTab() === 'profitability'" (click)="setDeepDiveTab('profitability')">Profitability</button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="deepDiveTab() === 'elasticity'" (click)="setDeepDiveTab('elasticity')">Price Elasticity</button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="deepDiveTab() === 'cannibalization'" (click)="setDeepDiveTab('cannibalization')">Cannibalization</button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="deepDiveTab() === 'seasonal'" (click)="setDeepDiveTab('seasonal')">Seasonal</button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="deepDiveTab() === 'prep-time'" (click)="setDeepDiveTab('prep-time')">
+          Prep Time
+          @if (flaggedPrepItems().length > 0) {
+            <span class="prep-tab-badge">{{ flaggedPrepItems().length }}</span>
+          }
+        </button>
+      </li>
+    </ul>
+
+    <!-- ===== OVERVIEW TAB ===== -->
+    @if (deepDiveTab() === 'overview') {
+      <!-- Summary Cards -->
+      <div class="summary-cards d-flex flex-wrap gap-3 mb-4">
+        <button type="button" class="summary-card" (click)="setFilter('all')" (keydown.enter)="setFilter('all')" tabindex="0" [class.active]="filterQuadrant() === 'all'">
+          <span class="count">{{ engineering.summary.totalItems }}</span>
+          <span class="label">Total Items</span>
+        </button>
+        <button type="button" class="summary-card quadrant-star" (click)="setFilter('star')" (keydown.enter)="setFilter('star')" tabindex="0" [class.active]="filterQuadrant() === 'star'">
+          <span class="count">{{ engineering.summary.stars }}</span>
+          <span class="label">Stars</span>
+        </button>
+        <button type="button" class="summary-card quadrant-cash-cow" (click)="setFilter('cash-cow')" (keydown.enter)="setFilter('cash-cow')" tabindex="0" [class.active]="filterQuadrant() === 'cash-cow'">
+          <span class="count">{{ engineering.summary.cashCows }}</span>
+          <span class="label">Cash Cows</span>
+        </button>
+        <button type="button" class="summary-card quadrant-puzzle" (click)="setFilter('puzzle')" (keydown.enter)="setFilter('puzzle')" tabindex="0" [class.active]="filterQuadrant() === 'puzzle'">
+          <span class="count">{{ engineering.summary.puzzles }}</span>
+          <span class="label">Puzzles</span>
+        </button>
+        <button type="button" class="summary-card quadrant-dog" (click)="setFilter('dog')" (keydown.enter)="setFilter('dog')" tabindex="0" [class.active]="filterQuadrant() === 'dog'">
+          <span class="count">{{ engineering.summary.dogs }}</span>
+          <span class="label">Dogs</span>
+        </button>
+        <div class="summary-card">
+          <span class="count">{{ engineering.summary.averageMargin }}%</span>
+          <span class="label">Avg Margin</span>
+        </div>
+      </div>
+
+      <!-- AI Insights -->
+      @if (engineering.insights.length > 0) {
+        <div class="insights-panel mb-4">
+          <h5 class="insights-title mb-3">AI Recommendations</h5>
+          @for (insight of engineering.insights; track $index) {
+            <div class="insight-card" [class]="'priority-' + insight.priority">
+              <span class="insight-icon" [class]="'type-' + insight.type">
+                {{ getInsightIcon(insight.type) }}
+              </span>
+              <span class="insight-text">{{ insight.text }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Items Table -->
+      <div class="items-table">
+        <div class="table-header d-flex py-2 px-3">
+          <button type="button" class="col-name flex-grow-1 table-sort" (click)="setSort('name')">
+            Item {{ sortField() === 'name' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <span class="col-category">Category</span>
+          <span class="col-price">Price</span>
+          <span class="col-cost">Cost</span>
+          <button type="button" class="col-margin table-sort" (click)="setSort('profitMargin')">
+            Margin {{ sortField() === 'profitMargin' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <button type="button" class="col-popularity table-sort" (click)="setSort('popularity')">
+            Popularity {{ sortField() === 'popularity' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <span class="col-quadrant">Quadrant</span>
+          <span class="col-actions">Actions</span>
+        </div>
+
+        @for (item of filteredItems(); track item.id) {
+          <div class="table-row d-flex align-items-center py-2 px-3">
+            <span class="col-name flex-grow-1 fw-semibold">{{ item.name }}</span>
+            <span class="col-category text-muted small">{{ item.categoryName }}</span>
+            <span class="col-price">{{ item.price | currency }}</span>
+            <span class="col-cost text-muted">{{ item.cost | currency }}</span>
+            <span class="col-margin" [class.text-success]="item.profitMargin >= 60" [class.text-warning]="item.profitMargin >= 40 && item.profitMargin < 60" [class.text-danger]="item.profitMargin < 40">
+              {{ item.profitMargin }}%
+            </span>
+            <span class="col-popularity">{{ item.popularity }}</span>
+            <span class="col-quadrant">
+              <span class="badge" [class]="getQuadrantClass(item.classification)">
+                {{ getQuadrantLabel(item.classification) }}
+              </span>
+            </span>
+            <span class="col-actions d-flex gap-1">
+              <button type="button" class="btn btn-sm btn-outline-primary" title="Profitability trend" (click)="viewItemProfitability(item.id)">Trend</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" title="Seasonal pattern" (click)="viewItemSeasonal(item.id)">Season</button>
+            </span>
+          </div>
+        } @empty {
+          <div class="text-center text-muted p-4">
+            No items match the selected filter
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===== PROFITABILITY TAB ===== -->
+    @if (deepDiveTab() === 'profitability') {
+      <div class="deep-dive-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="section-title mb-0">Item Profitability Trend</h5>
+          <div class="d-flex gap-2">
+            @for (d of [30, 60, 90]; track d) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-primary]="profitTrendDays() === d"
+                [class.btn-outline-light]="profitTrendDays() !== d"
+                (click)="setProfitTrendDays(d)"
+              >
+                {{ d }}d
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Item Selector -->
+        <fieldset class="item-selector mb-3" aria-label="Select an item to view its profitability trend"><legend class="visually-hidden">Select an item to view its profitability trend</legend>
+          <span class="form-label small text-muted">Select an item to view its profitability trend</span>
+          <div class="item-selector-grid">
+            @for (item of engineering.items; track item.id) {
+              <button
+                type="button"
+                class="item-chip"
+                [class.active]="selectedItemId() === item.id"
+                (click)="viewItemProfitability(item.id)"
+              >
+                <span class="badge me-1" [class]="getQuadrantClass(item.classification)">{{ getQuadrantLabel(item.classification).charAt(0) }}</span>
+                {{ item.name }}
+              </button>
+            }
+          </div>
+        </fieldset>
+
+        @if (isLoadingTrend()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Loading profitability trend..." />
+          </div>
+        } @else if (profitTrend(); as trend) {
+          <div class="trend-card">
+            <div class="trend-header d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">{{ trend.itemName }}</h6>
+              <span class="text-muted small">{{ trend.dataPoints.length }} data points</span>
+            </div>
+
+            <!-- Trend Chart (CSS bar chart) -->
+            <div class="trend-chart">
+              <div class="trend-bars">
+                @for (dp of trend.dataPoints; track dp.date) {
+                  <div class="trend-bar-wrapper" [title]="dp.date + ': ' + dp.margin + '% margin, ' + (dp.revenue | currency) + ' revenue, ' + dp.unitsSold + ' units'">
+                    <div
+                      class="trend-bar"
+                      [style.height.%]="getTrendBarHeight(dp.margin)"
+                      [style.background-color]="getTrendBarColor(dp.margin)"
+                    ></div>
+                    <span class="trend-bar-label">{{ dp.margin }}%</span>
+                  </div>
+                }
+              </div>
+              <div class="trend-x-axis">
+                @for (dp of trend.dataPoints; track dp.date) {
+                  <span class="trend-date">{{ dp.date.slice(5) }}</span>
+                }
+              </div>
+            </div>
+
+            <!-- Trend Summary -->
+            <div class="trend-summary d-flex gap-3 mt-3">
+              @if (trend.dataPoints.length > 1) {
+                <div class="trend-stat">
+                  <span class="stat-label">Latest Margin</span>
+                  <span class="stat-value">{{ trend.dataPoints.at(-1)?.margin }}%</span>
+                </div>
+                <div class="trend-stat">
+                  <span class="stat-label">Latest Revenue</span>
+                  <span class="stat-value">{{ trend.dataPoints.at(-1)?.revenue | currency }}</span>
+                </div>
+                <div class="trend-stat">
+                  <span class="stat-label">Latest Units</span>
+                  <span class="stat-value">{{ trend.dataPoints.at(-1)?.unitsSold }}</span>
+                </div>
+                <div class="trend-stat">
+                  <span class="stat-label">Min Margin</span>
+                  <span class="stat-value">{{ trendMinMargin() | number:'1.1-1' }}%</span>
+                </div>
+                <div class="trend-stat">
+                  <span class="stat-label">Max Margin</span>
+                  <span class="stat-value">{{ trendMaxMargin() | number:'1.1-1' }}%</span>
+                </div>
+              }
+            </div>
+          </div>
+        } @else if (selectedItemId()) {
+          <div class="text-center text-muted p-4">
+            No profitability data available for this item.
+          </div>
+        } @else {
+          <div class="empty-state text-center p-5">
+            <p class="text-muted">Select an item above to view its profitability trend over time.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===== PRICE ELASTICITY TAB ===== -->
+    @if (deepDiveTab() === 'elasticity') {
+      <div class="deep-dive-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="section-title mb-1">Price Elasticity</h5>
+            <p class="text-muted small mb-0">Items where price changes correlate with demand changes</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="isLoadingElasticity()" (click)="loadElasticity()">
+            Refresh
+          </button>
+        </div>
+
+        @if (isLoadingElasticity()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Calculating price elasticity..." />
+          </div>
+        } @else if (sortedElasticity().length > 0) {
+          <div class="elasticity-grid">
+            @for (item of sortedElasticity(); track item.itemId) {
+              <div class="elasticity-card" [class]="getElasticityClass(item.recommendation)">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="mb-0">{{ item.itemName }}</h6>
+                  <span class="badge" [class]="getElasticityClass(item.recommendation)">
+                    {{ getElasticityLabel(item.recommendation) }}
+                  </span>
+                </div>
+                <div class="elasticity-details">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted small">Current Price</span>
+                    <span class="fw-semibold">{{ item.currentPrice | currency }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted small">Elasticity</span>
+                    <span class="d-flex align-items-center gap-1">
+                      <span class="fw-semibold">{{ item.elasticity | number:'1.2-2' }}</span>
+                      @if (item.confidence) {
+                        <span class="badge bg-opacity-25 small" [class.bg-success]="item.confidence === 'high'" [class.bg-warning]="item.confidence === 'medium'" [class.bg-secondary]="item.confidence === 'low'">{{ item.confidence }}</span>
+                      }
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Est. Revenue Impact</span>
+                    <span class="fw-semibold" [class.text-success]="item.estimatedRevenueChange > 0" [class.text-danger]="item.estimatedRevenueChange < 0">
+                      {{ item.estimatedRevenueChange > 0 ? '+' : '' }}{{ item.estimatedRevenueChange | currency }}
+                    </span>
+                  </div>
+                  @if (item.reasoning) {
+                    <p class="elasticity-desc small text-muted mb-1">{{ item.reasoning }}</p>
+                  } @else {
+                    <p class="elasticity-desc small text-muted mb-0">{{ getElasticityDescription(item.elasticity) }}</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state text-center p-5">
+            <p class="text-muted">No price elasticity data available. Sufficient sales history is needed for analysis.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===== CANNIBALIZATION TAB ===== -->
+    @if (deepDiveTab() === 'cannibalization') {
+      <div class="deep-dive-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="section-title mb-1">Cannibalization Detection</h5>
+            <p class="text-muted small mb-0">New items that may be reducing sales of existing items</p>
+          </div>
+          <div class="d-flex gap-2">
+            @for (d of [30, 60, 90]; track d) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-primary]="cannibalizationDays() === d"
+                [class.btn-outline-light]="cannibalizationDays() !== d"
+                (click)="setCannibalizationDays(d)"
+              >
+                {{ d }}d
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (isLoadingCannibalization()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Detecting cannibalization patterns..." />
+          </div>
+        } @else if (cannibalizationData().length > 0) {
+          <div class="cannibalization-list">
+            @for (result of cannibalizationData(); track result.newItemId + '-' + result.affectedItemId) {
+              <div class="cannibalization-card" [class]="getCannibalizationSeverity(result.salesDeclinePercent)">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="cannibal-item new-item">
+                    <span class="small text-muted">New Item</span>
+                    <span class="fw-semibold">{{ result.newItemName }}</span>
+                  </div>
+                  <div class="cannibal-arrow">&#8594;</div>
+                  <div class="cannibal-item affected-item">
+                    <span class="small text-muted">Affected Item</span>
+                    <span class="fw-semibold">{{ result.affectedItemName }}</span>
+                  </div>
+                  <div class="cannibal-impact ms-auto text-end">
+                    <span class="decline-value text-danger fw-bold">-{{ result.salesDeclinePercent }}%</span>
+                    <span class="small text-muted d-block">sales decline</span>
+                  </div>
+                </div>
+                <div class="small text-muted mt-1">
+                  {{ result.periodStart }} to {{ result.periodEnd }}
+                </div>
+                @if (result.recommendation) {
+                  <div class="small mt-1 fst-italic">{{ result.recommendation }}</div>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state text-center p-5">
+            <p class="text-muted">No cannibalization patterns detected. New items are not significantly impacting existing item sales.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===== SEASONAL TAB ===== -->
+    @if (deepDiveTab() === 'seasonal') {
+      <div class="deep-dive-section">
+        <h5 class="section-title mb-3">Seasonal Patterns</h5>
+
+        <!-- Item Selector -->
+        <fieldset class="item-selector mb-3" aria-label="Select an item to view its seasonal sales patterns"><legend class="visually-hidden">Select an item to view its seasonal sales patterns</legend>
+          <span class="form-label small text-muted">Select an item to view its seasonal sales patterns</span>
+          <div class="item-selector-grid">
+            @for (item of engineering.items; track item.id) {
+              <button
+                type="button"
+                class="item-chip"
+                [class.active]="selectedItemId() === item.id"
+                (click)="viewItemSeasonal(item.id)"
+              >
+                {{ item.name }}
+              </button>
+            }
+          </div>
+        </fieldset>
+
+        @if (isLoadingSeasonal()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Loading seasonal patterns..." />
+          </div>
+        } @else if (seasonalPattern(); as pattern) {
+          <div class="seasonal-card">
+            <h6 class="mb-3">{{ pattern.itemName }}</h6>
+
+            <div class="row g-3">
+              <!-- Day of Week -->
+              <div class="col-12 col-lg-6">
+                <div class="seasonal-chart-panel">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="small fw-semibold mb-0">Day of Week</h6>
+                    @if (peakDay(); as peak) {
+                      <span class="badge bg-success">Peak: {{ peak.day }}</span>
+                    }
+                  </div>
+                  <div class="seasonal-bars">
+                    @for (day of pattern.dayOfWeek; track day.day) {
+                      <div class="seasonal-bar-wrapper">
+                        <div
+                          class="seasonal-bar"
+                          [style.height.%]="getSeasonalBarHeight(day.avgSales, pattern.dayOfWeek)"
+                        ></div>
+                        <span class="seasonal-bar-value">{{ day.avgSales | number:'1.0-0' }}</span>
+                        <span class="seasonal-bar-label">{{ day.day.slice(0, 3) }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Month of Year -->
+              <div class="col-12 col-lg-6">
+                <div class="seasonal-chart-panel">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="small fw-semibold mb-0">Month of Year</h6>
+                    @if (peakMonth(); as peak) {
+                      <span class="badge bg-success">Peak: {{ peak.month }}</span>
+                    }
+                  </div>
+                  <div class="seasonal-bars">
+                    @for (month of pattern.monthOfYear; track month.month) {
+                      <div class="seasonal-bar-wrapper">
+                        <div
+                          class="seasonal-bar"
+                          [style.height.%]="getSeasonalBarHeight(month.avgSales, pattern.monthOfYear)"
+                        ></div>
+                        <span class="seasonal-bar-value">{{ month.avgSales | number:'1.0-0' }}</span>
+                        <span class="seasonal-bar-label">{{ month.month.slice(0, 3) }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else if (selectedItemId()) {
+          <div class="text-center text-muted p-4">
+            No seasonal data available for this item.
+          </div>
+        } @else {
+          <div class="empty-state text-center p-5">
+            <p class="text-muted">Select an item above to view its day-of-week and month-of-year sales patterns.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===== PREP TIME ACCURACY TAB ===== -->
+    @if (deepDiveTab() === 'prep-time') {
+      <div class="deep-dive-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="section-title mb-1">Prep Time Accuracy</h5>
+            <p class="text-muted small mb-0">Compare estimated prep times against actual completion data</p>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-warning]="showFlaggedOnly()"
+              [class.btn-outline-secondary]="!showFlaggedOnly()"
+              (click)="toggleFlaggedOnly()"
+            >
+              @if (flaggedPrepItems().length > 0) {
+                <i class="bi bi-flag-fill me-1"></i>
+              }
+              Flagged ({{ flaggedPrepItems().length }})
+            </button>
+            @for (d of [7, 14, 30, 60]; track d) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-primary]="prepAccuracyDays() === d"
+                [class.btn-outline-light]="prepAccuracyDays() !== d"
+                (click)="setPrepAccuracyDays(d)"
+              >
+                {{ d }}d
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Summary KPIs -->
+        @if (prepTimeAccuracy().length > 0) {
+          <div class="prep-summary-cards d-flex gap-3 mb-4">
+            <div class="prep-summary-card">
+              <span class="prep-summary-value">{{ prepTimeAccuracy().length }}</span>
+              <span class="prep-summary-label">Items Tracked</span>
+            </div>
+            <div class="prep-summary-card">
+              <span class="prep-summary-value" [class]="getAccuracyClass(avgPrepAccuracy())">{{ avgPrepAccuracy() }}%</span>
+              <span class="prep-summary-label">Avg Accuracy</span>
+            </div>
+            <div class="prep-summary-card">
+              <span class="prep-summary-value text-warning">{{ flaggedPrepItems().length }}</span>
+              <span class="prep-summary-label">Needs Adjustment</span>
+            </div>
+          </div>
+        }
+
+        @if (isLoadingPrepAccuracy()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Loading prep time accuracy data..." />
+          </div>
+        } @else if (sortedPrepAccuracy().length > 0) {
+          <!-- Flagged Items Alert -->
+          @if (flaggedPrepItems().length > 0 && !showFlaggedOnly()) {
+            <div class="prep-alert mb-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {{ flaggedPrepItems().length }} item{{ flaggedPrepItems().length > 1 ? 's' : '' }} have actual prep times that differ from estimates by more than 25%.
+              <button type="button" class="btn btn-sm btn-outline-warning ms-2" (click)="toggleFlaggedOnly()">View Flagged</button>
+            </div>
+          }
+
+          <!-- Accuracy Table -->
+          <div class="prep-table">
+            <div class="prep-table-header d-flex py-2 px-3">
+              <button type="button" class="col-prep-name flex-grow-1 table-sort" (click)="setPrepSort('itemName')">
+                Item {{ prepSortField() === 'itemName' ? (prepSortAsc() ? '&#9650;' : '&#9660;') : '' }}
+              </button>
+              <span class="col-prep-est">Estimated</span>
+              <span class="col-prep-actual">Actual Avg</span>
+              <span class="col-prep-deviation">Deviation</span>
+              <button type="button" class="col-prep-accuracy table-sort" (click)="setPrepSort('accuracy')">
+                Accuracy {{ prepSortField() === 'accuracy' ? (prepSortAsc() ? '&#9650;' : '&#9660;') : '' }}
+              </button>
+              <button type="button" class="col-prep-samples table-sort" (click)="setPrepSort('sampleSize')">
+                Samples {{ prepSortField() === 'sampleSize' ? (prepSortAsc() ? '&#9650;' : '&#9660;') : '' }}
+              </button>
+              <span class="col-prep-action">Action</span>
+            </div>
+
+            @for (row of sortedPrepAccuracy(); track row.itemId) {
+              <div class="prep-table-row d-flex align-items-center py-2 px-3" [class.flagged]="row.suggestedAdjustment !== null">
+                <span class="col-prep-name flex-grow-1 fw-semibold">
+                  {{ row.itemName }}
+                  @if (row.suggestedAdjustment !== null) {
+                    <i class="bi bi-flag-fill text-warning ms-1" title="Needs adjustment"></i>
+                  }
+                </span>
+                <span class="col-prep-est">{{ row.estimatedMinutes }} min</span>
+                <span class="col-prep-actual">{{ row.actualAvgMinutes | number:'1.1-1' }} min</span>
+                <span class="col-prep-deviation" [class.text-danger]="getDeviationPercent(row) > 25" [class.text-warning]="getDeviationPercent(row) > 10 && getDeviationPercent(row) <= 25" [class.text-success]="getDeviationPercent(row) <= 10">
+                  @if (row.actualAvgMinutes > row.estimatedMinutes) {
+                    +{{ getDeviationPercent(row) }}%
+                  } @else {
+                    -{{ getDeviationPercent(row) }}%
+                  }
+                </span>
+                <span class="col-prep-accuracy">
+                  <span class="accuracy-badge" [class]="getAccuracyClass(row.accuracy)">
+                    {{ row.accuracy }}% {{ getAccuracyLabel(row.accuracy) }}
+                  </span>
+                </span>
+                <span class="col-prep-samples text-muted">{{ row.sampleSize }}</span>
+                <span class="col-prep-action">
+                  @if (row.suggestedAdjustment !== null) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      title="Apply suggested adjustment to {{ row.suggestedAdjustment }} min"
+                      (click)="applySuggestion(row)"
+                    >
+                      {{ row.suggestedAdjustment }} min
+                    </button>
+                  } @else {
+                    <span class="text-muted small">OK</span>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state text-center p-5">
+            <p class="text-muted">No prep time accuracy data available. Data is collected when orders are completed on KDS.</p>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
+} @else {
+  <div class="auth-required d-flex align-items-center justify-content-center p-5">
+    <div class="text-center">
+      <h3 class="text-warning mb-3">Authentication Required</h3>
+      <p class="text-light">Please log in to view menu engineering data.</p>
+    </div>
+  </div>
+}

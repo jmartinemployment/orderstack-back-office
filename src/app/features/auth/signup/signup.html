@@ -1,0 +1,311 @@
+<div class="auth-layout">
+  <div class="promo-panel">
+    <div class="promo-inner">
+      <div class="promo-brand">
+        <i class="bi bi-stack"></i> OrderStack
+      </div>
+      <h2 class="promo-heading">Start your free trial</h2>
+      <div class="promo-features">
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-tv"></i></div>
+          <div>
+            <strong>Point of Sale</strong>
+            <span>Fast checkout with mode-aware POS terminals</span>
+          </div>
+        </div>
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-display"></i></div>
+          <div>
+            <strong>Order Display</strong>
+            <span>Real-time order routing to prep stations</span>
+          </div>
+        </div>
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-globe"></i></div>
+          <div>
+            <strong>Online Ordering</strong>
+            <span>Your own branded ordering page, no commissions</span>
+          </div>
+        </div>
+        <div class="promo-feature">
+          <div class="promo-feature-icon"><i class="bi bi-graph-up"></i></div>
+          <div>
+            <strong>Analytics</strong>
+            <span>Sales, labor, and operations — all in one place</span>
+          </div>
+        </div>
+      </div>
+      <p class="promo-tagline">30-day free trial. No credit card required.</p>
+    </div>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-inner">
+      <!-- Step 1: Email input -->
+      @if (currentView() === 'email') {
+        <h1 class="form-heading">Create <span class="highlight">your account</span></h1>
+        <p class="form-subtitle">Enter your email to get started</p>
+
+        @if (error()) {
+          <os-error-display [message]="error()!" (dismissed)="clearError()" />
+        }
+
+        <form [formGroup]="emailForm" (ngSubmit)="submitEmail()" novalidate>
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input
+              id="email"
+              type="email"
+              class="form-control"
+              formControlName="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+            />
+            @if (emailControl?.touched && emailControl?.hasError('required')) {
+              <div class="invalid-feedback d-block">Email is required</div>
+            }
+            @if (emailControl?.touched && emailControl?.hasError('email')) {
+              <div class="invalid-feedback d-block">Enter a valid email address</div>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="isLoading()">
+            @if (isLoading()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            }
+            Continue
+          </button>
+        </form>
+
+        <p class="signin-link">
+          Already have an account? <a routerLink="/login">Sign in</a>
+        </p>
+      }
+
+      <!-- Step 2: Code entry -->
+      @if (currentView() === 'code') {
+        <h1 class="form-heading">Check your email</h1>
+        <p class="form-subtitle">
+          We sent a 6-digit code to {{ verificationMaskedEmail() }}
+        </p>
+
+        @if (error()) {
+          <os-error-display [message]="error()!" (dismissed)="clearError()" />
+        }
+
+        <form [formGroup]="codeForm" (ngSubmit)="submitCode()" novalidate>
+          <div class="form-group">
+            <label for="code">Verification code</label>
+            <input
+              id="code"
+              type="text"
+              class="form-control"
+              formControlName="code"
+              placeholder="000000"
+              maxlength="6"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              style="letter-spacing: 0.5em; text-align: center; font-size: 1.5rem; font-family: monospace;"
+            />
+            @if (codeControl?.touched && codeControl?.hasError('required')) {
+              <div class="invalid-feedback d-block">Code is required</div>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="isLoading()">
+            @if (isLoading()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            }
+            Verify
+          </button>
+        </form>
+
+        <p class="signin-link">
+          Didn't receive it? <button class="btn-resend" (click)="submitEmail()">Resend code</button>
+        </p>
+      }
+
+      <!-- Step 3: Full signup form -->
+      @if (currentView() === 'form') {
+        <h1 class="form-heading">Complete <span class="highlight">your account</span></h1>
+        <p class="form-subtitle">
+          Please complete signup from your restaurant location to register your network.
+        </p>
+
+        @if (error()) {
+          <os-error-display [message]="error()!" (dismissed)="clearError()" />
+        }
+
+        <form [formGroup]="signupForm" (ngSubmit)="onCreateAccount()" novalidate>
+          <!-- Name row -->
+          <div class="name-row">
+            <div class="form-group">
+              <label for="firstName">First name</label>
+              <input id="firstName" type="text" class="form-control" formControlName="firstName" autocomplete="given-name" />
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last name</label>
+              <input id="lastName" type="text" class="form-control" formControlName="lastName" autocomplete="family-name" />
+            </div>
+          </div>
+
+          <!-- Business name -->
+          <div class="form-group">
+            <label for="businessName">Business name</label>
+            <input id="businessName" type="text" class="form-control" formControlName="businessName" autocomplete="organization" />
+          </div>
+
+          <!-- Phone row -->
+          <div class="name-row">
+            <div class="form-group">
+              <label for="businessPhone">Business phone</label>
+              <input id="businessPhone" type="tel" class="form-control" formControlName="businessPhone"
+                     placeholder="555-555-5555" inputmode="tel" autocomplete="tel"
+                     (input)="formatPhone($event, 'businessPhone')" />
+            </div>
+            <div class="form-group">
+              <label for="personalPhone">Personal phone</label>
+              <input id="personalPhone" type="tel" class="form-control" formControlName="personalPhone"
+                     placeholder="555-555-5555" inputmode="tel"
+                     (input)="formatPhone($event, 'personalPhone')" />
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="form-group">
+            <label for="address">Street address</label>
+            <input id="address" type="text" class="form-control" formControlName="address" autocomplete="street-address" />
+          </div>
+
+          <!-- City / State / Zip row -->
+          <div class="name-row">
+            <div class="form-group" style="flex: 2;">
+              <label for="city">City</label>
+              <input id="city" type="text" class="form-control" formControlName="city" autocomplete="address-level2" />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="state">State</label>
+              <select id="state" class="form-control" formControlName="state" autocomplete="address-level1">
+                <option value="">Select</option>
+                @for (st of usStates; track st) {
+                  <option [value]="st">{{ st }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="zip">ZIP</label>
+              <input id="zip" type="text" class="form-control" formControlName="zip" maxlength="5" inputmode="numeric" autocomplete="postal-code" />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-group">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                class="form-control"
+                formControlName="password"
+                placeholder="Min 12 characters"
+                autocomplete="new-password"
+              />
+              <button type="button" class="btn-toggle-pw" (click)="togglePasswordVisibility()"
+                      [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+                <i [class]="showPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Password strength -->
+          @if (signupForm.get('password')?.value) {
+            <div class="password-strength">
+              <div class="strength-bar">
+                @for (i of [1, 2, 3, 4]; track i) {
+                  <div class="strength-segment" [style.background]="passwordScore() >= i ? passwordStrengthLabel().color : undefined"></div>
+                }
+              </div>
+              <span class="strength-label" [style.color]="passwordStrengthLabel().color">{{ passwordStrengthLabel().label }}</span>
+            </div>
+
+            <ul class="password-requirements">
+              <li [class.met]="passwordStrength().length">12+ characters</li>
+              <li [class.met]="passwordStrength().upper">Uppercase letter</li>
+              <li [class.met]="passwordStrength().lower">Lowercase letter</li>
+              <li [class.met]="passwordStrength().digit">Number</li>
+              <li [class.met]="passwordStrength().special">Special character</li>
+            </ul>
+          }
+
+          <!-- Device registration checkbox -->
+          <div class="terms-check">
+            <input type="checkbox" id="registerDevice" class="form-check-input" checked
+                   (change)="onDeviceCheckboxChange($event)" />
+            <label for="registerDevice" class="terms-label">Register this device</label>
+          </div>
+
+          <!-- Multiple locations checkbox -->
+          <div class="terms-check">
+            <input type="checkbox" id="multipleLocations" class="form-check-input"
+                   [checked]="multipleLocations()"
+                   (change)="onMultipleLocationsChange($event)" />
+            <label for="multipleLocations" class="terms-label">I have multiple locations</label>
+          </div>
+
+          <!-- Terms -->
+          <div class="terms-check">
+            <input type="checkbox" id="terms" class="form-check-input"
+                   [checked]="agreedToTerms()" (change)="toggleTerms()" />
+            <label for="terms" class="terms-label">
+              I agree to the <a routerLink="/terms" target="_blank">Terms of Service</a>
+              and <a routerLink="/privacy" target="_blank">Privacy Policy</a>
+            </label>
+          </div>
+          @if (showTermsError()) {
+            <div class="invalid-feedback d-block">You must agree to the terms to continue</div>
+          }
+
+          <button type="submit" class="btn btn-primary btn-create w-100" [disabled]="isLoading() || !passwordValid() || !agreedToTerms()">
+            @if (isLoading()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            }
+            Create Account
+          </button>
+        </form>
+
+        <p class="signin-link">
+          Already have an account? <a routerLink="/login">Sign in</a>
+        </p>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Device registration modal -->
+@if (showDeviceModal()) {
+  <div class="modal-overlay" (click)="closeDeviceModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <h3>A registered device is required</h3>
+      <p>
+        To access your restaurant dashboard, this device must be registered.
+        This is a security measure to prevent unauthorized access.
+        Only registered devices can access restaurant administration.
+      </p>
+      <button class="btn btn-primary w-100" (click)="closeDeviceModal()">Got it</button>
+    </div>
+  </div>
+}
+
+<!-- Multiple locations modal -->
+@if (showMultiLocationModal()) {
+  <div class="modal-overlay" (click)="closeMultiLocationModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <h3>Multiple Locations</h3>
+      <p>Does your other location use the same hardware (POS terminals, KDS displays)?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="setSameHardware(false)">No, different hardware</button>
+        <button class="btn btn-primary" (click)="setSameHardware(true)">Yes, same hardware</button>
+      </div>
+    </div>
+  </div>
+}

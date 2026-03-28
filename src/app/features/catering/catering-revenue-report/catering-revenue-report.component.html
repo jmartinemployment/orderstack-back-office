@@ -1,0 +1,110 @@
+<div class="revenue-page">
+  <div class="revenue-header">
+    <h1 class="revenue-title">Revenue Reports</h1>
+    <p class="revenue-subtitle">Performance overview for your catering business</p>
+  </div>
+
+  @if (_loading()) {
+    <div class="loading-state">
+      <output class="spinner-border text-primary">
+        <span class="visually-hidden">Loading...</span>
+      </output>
+    </div>
+  }
+
+  @if (_error()) {
+    <div class="error-alert">
+      <span>{{ _error() }}</span>
+      <button type="button" class="btn-dismiss" (click)="dismissError()" aria-label="Dismiss error">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  }
+
+  @if (_report(); as report) {
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Jobs</span>
+        <span class="kpi-value">{{ report.totalJobs }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Completed</span>
+        <span class="kpi-value">{{ report.completedJobs }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Cancelled</span>
+        <span class="kpi-value">{{ report.cancelledJobs }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Close Rate</span>
+        <span class="kpi-value">{{ report.closeRate / 100 | percent:'1.0-0' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Revenue</span>
+        <span class="kpi-value">{{ report.totalRevenue / 100 | currency:'USD' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Avg. Job Value</span>
+        <span class="kpi-value">{{ report.avgJobValue / 100 | currency:'USD' }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Outstanding</span>
+        <span class="kpi-value">{{ outstanding() / 100 | currency:'USD' }}</span>
+      </div>
+    </div>
+
+    <!-- Revenue by Event Type -->
+    @if (revenueByTypeEntries().length > 0) {
+      <div class="chart-card">
+        <h3 class="chart-title">Revenue by Event Type</h3>
+        <div class="bar-chart">
+          @for (entry of revenueByTypeEntries(); track entry[0]) {
+            <div class="bar-row">
+              <span class="bar-label">{{ entry[0] }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width]="barWidth(entry[1], revenueByTypeMax())"></div>
+              </div>
+              <span class="bar-value">{{ entry[1] / 100 | currency:'USD':'symbol':'1.0-0' }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Revenue by Month -->
+    @if (revenueByMonthEntries().length > 0) {
+      <div class="chart-card">
+        <h3 class="chart-title">Revenue by Month</h3>
+        <div class="bar-chart">
+          @for (entry of revenueByMonthEntries(); track entry[0]) {
+            <div class="bar-row">
+              <span class="bar-label">{{ entry[0] }}</span>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-month" [style.width]="barWidth(entry[1], revenueByMonthMax())"></div>
+              </div>
+              <span class="bar-value">{{ entry[1] / 100 | currency:'USD':'symbol':'1.0-0' }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Link to full report -->
+    <div class="report-link-row">
+      <button type="button" class="btn-full-report" (click)="viewFullReport()">
+        View Full Report <i class="bi bi-arrow-right"></i>
+      </button>
+    </div>
+  }
+
+  @if (!_loading() && !_report() && !_error()) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-graph-up"></i>
+      </div>
+      <h3>No report data available</h3>
+      <p>Complete some catering jobs to see revenue reports.</p>
+    </div>
+  }
+</div>

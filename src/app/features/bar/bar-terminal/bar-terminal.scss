@@ -1,0 +1,674 @@
+// ===== Bar Terminal — Color-Coded Tiles + Incoming Orders KDS =====
+
+:host {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// ===== Bar Mode Toggle =====
+
+.bar-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 0 20px;
+  flex-shrink: 0;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #6b6b6b;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+
+    i {
+      font-size: 16px;
+    }
+
+    &:hover {
+      color: #1a1a1a;
+    }
+
+    &.active {
+      color: #006aff;
+      border-bottom-color: #006aff;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: #b91c1c;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+}
+
+// ===== Create Orders Mode =====
+
+.bar-terminal {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  flex: 1;
+  min-height: 0;
+  background: #f6f6f6;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 280px;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ===== LEFT: Main Area =====
+
+.bar-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+}
+
+// --- Category Pills ---
+
+.category-pills {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.category-pill {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--pill-color, #006aff);
+    color: var(--pill-color, #006aff);
+  }
+
+  &.active {
+    background: var(--pill-color, #006aff);
+    border-color: var(--pill-color, #006aff);
+    color: #fff;
+  }
+}
+
+// --- Keypad View ---
+
+.keypad-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 20px;
+}
+
+.keypad-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 48px;
+  font-weight: 300;
+  color: #1a1a1a;
+  min-height: 64px;
+}
+
+.keypad-dollar {
+  font-size: 28px;
+  color: #9ca3af;
+}
+
+.keypad-amount {
+  min-width: 60px;
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  gap: 10px;
+}
+
+.keypad-key {
+  width: 80px;
+  height: 56px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  font-size: 20px;
+  font-weight: 500;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:active {
+    background: #f0f0f0;
+  }
+}
+
+.keypad-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.keypad-clear,
+.keypad-backspace {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b6b6b;
+  cursor: pointer;
+
+  &:active {
+    background: #f0f0f0;
+  }
+}
+
+// ===== RIGHT: Sale Panel =====
+
+.sale-panel {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+
+  @media (max-width: 600px) {
+    border-top: 1px solid #e8e8e8;
+  }
+}
+
+.sale-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+
+  h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+}
+
+.sale-more-btn {
+  padding: 6px;
+  background: none;
+  border: none;
+  color: #6b6b6b;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 50%;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+// --- Customer Row ---
+
+.customer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #f9f9f9;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.customer-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 18px;
+    color: #9ca3af;
+  }
+}
+
+.customer-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.customer-chevron {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+// --- Line Items ---
+
+.sale-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px;
+}
+
+.sale-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+
+  p {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 0;
+  }
+}
+
+.sale-line-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+
+  & + .sale-line-item {
+    border-top: none;
+  }
+}
+
+.line-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.line-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #006aff;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.line-item-qty {
+  color: #006aff;
+  margin-right: 2px;
+}
+
+.line-item-modifier {
+  font-size: 12px;
+  color: #6b6b6b;
+  line-height: 1.3;
+}
+
+.line-item-price {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// --- Sale Footer ---
+
+.sale-footer {
+  padding: 0 20px 20px;
+  margin-top: auto;
+}
+
+.sale-totals {
+  margin-bottom: 16px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+.total-divider {
+  height: 1px;
+  background: #e8e8e8;
+  margin: 8px 0;
+}
+
+.add-discount-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #006aff;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.charge-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 8px;
+  background: #006aff;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #0055cc;
+  }
+
+  &:active:not(:disabled) {
+    background: #004ab3;
+  }
+
+  &:disabled {
+    background: #d4d4d4;
+    color: #525252;
+    cursor: not-allowed;
+  }
+}
+
+// ===== Checkout Overlay =====
+
+.checkout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.checkout-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s ease;
+}
+
+// ===== Incoming Orders Mode (Bar KDS) =====
+
+.bar-incoming {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--os-bg);
+  color: var(--os-text-primary);
+}
+
+.bar-incoming-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  background: var(--os-bg-card);
+  border-bottom: 1px solid var(--os-border);
+}
+
+.bar-order-columns {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  min-height: 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bar-order-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--os-bg-card);
+  border-radius: var(--os-radius);
+  border: 1px solid var(--os-border);
+  overflow: hidden;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  &.new {
+    background-color: var(--os-primary);
+  }
+
+  &.cooking {
+    background-color: var(--os-order-dinein);
+  }
+
+  &.ready {
+    background-color: var(--os-success);
+  }
+}
+
+.column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.column-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--os-border);
+    border-radius: 3px;
+  }
+}
+
+.empty-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--os-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+// ===== Bar Payment Modal (same pattern as KDS) =====
+
+.bar-payment-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.2s ease;
+}
+
+.bar-payment-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+
+.bar-payment-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e8e8;
+
+  h5 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+}
+
+.bar-payment-modal-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: #22c55e;
+  margin-left: auto;
+}
+
+.btn-modal-close {
+  padding: 8px;
+  background: none;
+  border: none;
+  color: #6b6b6b;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 50%;
+
+  &:hover {
+    background: #f0f0f0;
+    color: #1a1a1a;
+  }
+}
+
+.bar-payment-modal-error {
+  padding: 12px 20px;
+  background: #fdecec;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.bar-payment-modal-body {
+  padding: 20px;
+}
+
+// ===== Animations =====
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

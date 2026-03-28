@@ -1,0 +1,539 @@
+@if (isAuthenticated()) {
+<div class="sales-dashboard px-2">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Sales Insights</h2>
+    <div class="d-flex gap-2">
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-primary]="period() === 'daily'"
+        [class.btn-outline-secondary]="period() !== 'daily'"
+        (click)="setPeriod('daily')">
+        Daily
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-primary]="period() === 'weekly'"
+        [class.btn-outline-secondary]="period() !== 'weekly'"
+        (click)="setPeriod('weekly')">
+        Weekly
+      </button>
+    </div>
+  </div>
+
+  <!-- Real-Time KPI Ticker -->
+  @if (realTimeKpi(); as kpi) {
+    <div class="realtime-ticker mb-3">
+      <div class="ticker-item">
+        <span class="ticker-label"><i class="bi bi-lightning-charge-fill"></i> Today</span>
+        <span class="ticker-value">{{ kpi.todayRevenue | currency }}</span>
+        <span class="ticker-sub">{{ kpi.todayOrders }} orders</span>
+        @if (revenueVsYesterday() !== null) {
+          <span class="ticker-change" [class]="getComparisonClass(revenueVsYesterday())">
+            {{ getComparisonIcon(revenueVsYesterday()) }}{{ revenueVsYesterday()! | number:'1.1-1' }}% vs yesterday
+          </span>
+        }
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-label">Avg Order</span>
+        <span class="ticker-value">{{ kpi.todayAov | currency }}</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-label">vs Last Week</span>
+        <span class="ticker-value">{{ kpi.lastWeekSameDayRevenue | currency }}</span>
+        @if (revenueVsLastWeek() !== null) {
+          <span class="ticker-change" [class]="getComparisonClass(revenueVsLastWeek())">
+            {{ getComparisonIcon(revenueVsLastWeek()) }}{{ revenueVsLastWeek()! | number:'1.1-1' }}%
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Tabs -->
+  <div class="dashboard-tabs mb-3">
+    <button class="tab-btn" [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">
+      <i class="bi bi-bar-chart-line"></i> Overview
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'goals'" (click)="setTab('goals')">
+      <i class="bi bi-bullseye"></i> Goals
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'team'" (click)="setTab('team')">
+      <i class="bi bi-people"></i> Team
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'funnel'" (click)="setTab('funnel')">
+      <i class="bi bi-funnel"></i> Funnel
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'alerts'" (click)="setTab('alerts')">
+      <i class="bi bi-bell"></i> Alerts
+      @if (unacknowledgedAlertCount() > 0) {
+        <span class="alert-badge">{{ unacknowledgedAlertCount() }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- ===== OVERVIEW TAB ===== -->
+  @if (activeTab() === 'overview') {
+    @if (error()) {
+      <os-error-display
+        [message]="error()!"
+        [retryable]="true"
+        (retry)="retry()"
+      />
+    }
+
+    @if (isLoading()) {
+      <div class="d-flex justify-content-center p-5">
+        <os-loading-spinner message="Loading sales data..." />
+      </div>
+    } @else if (report(); as salesReport) {
+      <!-- KPI Cards -->
+      <div class="kpi-cards d-flex flex-wrap gap-3 mb-4">
+        <div class="kpi-card">
+          <span class="kpi-label">Revenue</span>
+          <span class="kpi-value">{{ salesReport.summary.totalRevenue | currency }}</span>
+          @if (salesReport.comparison?.revenueChange !== undefined) {
+            <span class="kpi-change" [class]="getChangeClass(salesReport.comparison?.revenueChange)">
+              {{ getChangeIcon(salesReport.comparison?.revenueChange) }}{{ salesReport.comparison?.revenueChange }}%
+            </span>
+          }
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Orders</span>
+          <span class="kpi-value">{{ salesReport.summary.totalOrders }}</span>
+          @if (salesReport.comparison?.orderChange !== undefined) {
+            <span class="kpi-change" [class]="getChangeClass(salesReport.comparison?.orderChange)">
+              {{ getChangeIcon(salesReport.comparison?.orderChange) }}{{ salesReport.comparison?.orderChange }}%
+            </span>
+          }
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Avg Order</span>
+          <span class="kpi-value">{{ salesReport.summary.averageOrderValue | currency }}</span>
+          @if (salesReport.comparison?.aovChange !== undefined) {
+            <span class="kpi-change" [class]="getChangeClass(salesReport.comparison?.aovChange)">
+              {{ getChangeIcon(salesReport.comparison?.aovChange) }}{{ salesReport.comparison?.aovChange }}%
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Active Goal Progress (inline) -->
+      @if (activeGoalProgress(); as gp) {
+        <div class="goal-inline-card mb-4">
+          <div class="goal-inline-header">
+            <span class="goal-inline-label">
+              <i class="bi bi-bullseye"></i>
+              {{ gp.type | titlecase }} Goal
+            </span>
+            <span class="goal-inline-target">{{ gp.targetRevenue | currency }}</span>
+          </div>
+          <div class="goal-progress-bar">
+            <div class="goal-progress-fill" [style.width.%]="goalProgressPercent()"></div>
+          </div>
+          <div class="goal-inline-footer">
+            <span class="goal-current">{{ gp.currentRevenue | currency }} earned</span>
+            <span class="goal-pace" [class]="goalPaceClass()">{{ goalPaceLabel() }}</span>
+            @if (gp.streak > 0) {
+              <span class="goal-streak"><i class="bi bi-fire"></i> {{ gp.streak }}-day streak</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="row g-3 mb-4">
+        <!-- Top Sellers -->
+        <div class="col-12 col-md-6">
+          <div class="panel">
+            <h5 class="panel-title">Top Sellers</h5>
+            @for (item of salesReport.summary.topSellingItems; track item.name) {
+              <div class="top-item d-flex justify-content-between align-items-center py-2">
+                <div>
+                  <span class="fw-semibold">{{ item.name }}</span>
+                  <span class="text-muted small ms-2">{{ item.quantity }} sold</span>
+                </div>
+                <span class="fw-bold">{{ item.revenue | currency }}</span>
+              </div>
+            } @empty {
+              <p class="text-muted small mb-0">No sales data available</p>
+            }
+          </div>
+        </div>
+
+        <!-- Peak Hours -->
+        <div class="col-12 col-md-6">
+          <div class="panel">
+            <h5 class="panel-title">Peak Hours</h5>
+            <div class="peak-hours">
+              @for (hour of salesReport.summary.peakHours; track hour.hour) {
+                <div class="peak-hour d-flex align-items-center gap-2 py-1">
+                  <span class="hour-label">{{ formatHour(hour.hour) }}</span>
+                  <div class="hour-bar flex-grow-1">
+                    <div
+                      class="hour-fill"
+                      [style.width.%]="(hour.orders / (salesReport.summary.peakHours[0]?.orders || 1)) * 100"
+                    ></div>
+                  </div>
+                  <span class="hour-count small">{{ hour.orders }}</span>
+                </div>
+              } @empty {
+                <p class="text-muted small mb-0">No peak hours data available</p>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Insights -->
+      @if (salesReport.insights.length > 0) {
+        <div class="panel">
+          <h5 class="panel-title">AI Insights</h5>
+          <div class="insights-list">
+            @for (insight of salesReport.insights; track $index) {
+              <div class="insight-item" [class]="getInsightClass(insight.type)">
+                <span class="insight-dot"></span>
+                <div class="insight-content">
+                  <p class="mb-0">{{ insight.text }}</p>
+                  @if (insight.metric && insight.change !== undefined) {
+                    <small class="text-muted">
+                      {{ insight.metric }}: <span [class]="getChangeClass(insight.change)">{{ getChangeIcon(insight.change) }}{{ insight.change }}%</span>
+                    </small>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+
+  <!-- ===== GOALS TAB ===== -->
+  @if (activeTab() === 'goals') {
+    <div class="goals-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Sales Goals</h5>
+        <button class="btn btn-sm btn-primary" (click)="openGoalForm()">
+          <i class="bi bi-plus-lg"></i> New Goal
+        </button>
+      </div>
+
+      <!-- Active Goal Progress -->
+      @if (activeGoalProgress(); as gp) {
+        <div class="goal-progress-card mb-4">
+          <div class="goal-progress-header">
+            <div>
+              <span class="goal-type-badge">{{ gp.type | titlecase }}</span>
+              <span class="goal-target-value">Target: {{ gp.targetRevenue | currency }}</span>
+            </div>
+            <div class="goal-percentage">{{ gp.progressPercent | number:'1.0-0' }}%</div>
+          </div>
+
+          <div class="goal-progress-bar lg">
+            <div
+              class="goal-progress-fill"
+              [class.complete]="gp.progressPercent >= 100"
+              [style.width.%]="goalProgressPercent()">
+            </div>
+          </div>
+
+          <div class="goal-details">
+            <div class="goal-detail">
+              <span class="goal-detail-label">Current</span>
+              <span class="goal-detail-value">{{ gp.currentRevenue | currency }}</span>
+            </div>
+            <div class="goal-detail">
+              <span class="goal-detail-label">Remaining</span>
+              <span class="goal-detail-value">{{ (gp.targetRevenue - gp.currentRevenue > 0 ? gp.targetRevenue - gp.currentRevenue : 0) | currency }}</span>
+            </div>
+            <div class="goal-detail">
+              <span class="goal-detail-label">Pace</span>
+              <span class="goal-detail-value" [class]="goalPaceClass()">{{ goalPaceLabel() }}</span>
+            </div>
+            @if (gp.streak > 0) {
+              <div class="goal-detail">
+                <span class="goal-detail-label">Streak</span>
+                <span class="goal-detail-value streak"><i class="bi bi-fire"></i> {{ gp.streak }} days</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Goal List -->
+      @if (isLoadingGoals()) {
+        <os-loading-spinner message="Loading goals..." />
+      } @else {
+        @for (goal of goals(); track goal.id) {
+          <div class="goal-list-item">
+            <div class="goal-list-info">
+              <span class="goal-type-badge sm">{{ goal.type | titlecase }}</span>
+              <span class="goal-list-target">{{ goal.targetRevenue | currency }}</span>
+              <span class="goal-list-dates text-muted">{{ goal.startDate }} — {{ goal.endDate }}</span>
+            </div>
+            <div class="goal-list-actions">
+              @if (goal.isActive) {
+                <span class="badge-active">Active</span>
+              }
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteGoal(goal.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-bullseye"></i>
+            <p>No sales goals set</p>
+            <p class="text-muted small">Create a daily, weekly, or monthly revenue target</p>
+          </div>
+        }
+      }
+
+      <!-- New Goal Form -->
+      @if (showGoalForm()) {
+        <div class="goal-form-card mt-3">
+          <h6>New Sales Goal</h6>
+
+          <div class="goal-form-field">
+            <span id="goal-period-label">Period</span>
+            <fieldset class="btn-group-sm" aria-labelledby="goal-period-label"><legend class="visually-hidden">Period</legend>
+              @for (type of ['daily', 'weekly', 'monthly']; track type) {
+                <button
+                  class="btn btn-sm"
+                  [class.btn-primary]="goalType() === type"
+                  [class.btn-outline-secondary]="goalType() !== type"
+                  (click)="setGoalType($any(type))">
+                  {{ type | titlecase }}
+                </button>
+              }
+            </fieldset>
+          </div>
+
+          <div class="goal-form-field">
+            <label for="goal-target-revenue">Target Revenue ($)</label>
+            <input
+              id="goal-target-revenue"
+              type="number"
+              class="form-control form-control-sm"
+              min="1"
+              step="100"
+              aria-label="Target revenue amount"
+              [ngModel]="goalTarget()"
+              (ngModelChange)="setGoalTarget($event)">
+          </div>
+
+          <div class="goal-form-row">
+            <div class="goal-form-field">
+              <label for="goal-start-date">Start Date</label>
+              <input
+                id="goal-start-date"
+                type="date"
+                class="form-control form-control-sm"
+                aria-label="Goal start date"
+                [ngModel]="goalStartDate()"
+                (ngModelChange)="setGoalStartDate($event)">
+            </div>
+            <div class="goal-form-field">
+              <label for="goal-end-date">End Date</label>
+              <input
+                id="goal-end-date"
+                type="date"
+                class="form-control form-control-sm"
+                aria-label="Goal end date"
+                [ngModel]="goalEndDate()"
+                (ngModelChange)="setGoalEndDate($event)">
+            </div>
+          </div>
+
+          <div class="goal-form-actions">
+            <button class="btn btn-sm btn-outline-secondary" (click)="cancelGoalForm()">Cancel</button>
+            <button
+              class="btn btn-sm btn-primary"
+              [disabled]="goalTarget() <= 0"
+              (click)="saveGoal()">
+              Create Goal
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== TEAM TAB ===== -->
+  @if (activeTab() === 'team') {
+    <div class="team-section">
+      <h5 class="mb-3">Team Performance</h5>
+
+      @if (isLoadingTeam()) {
+        <os-loading-spinner message="Loading team data..." />
+      } @else if (teamLeaderboard().length > 0) {
+        <!-- Leaderboard -->
+        <div class="leaderboard">
+          @for (member of teamLeaderboard(); track member.staffId; let idx = $index) {
+            <div class="leaderboard-row">
+              <div class="leaderboard-rank" [class]="getRankClass(idx)">
+                {{ getRankBadge(idx) }}
+              </div>
+              <div class="leaderboard-info">
+                <span class="leaderboard-name">{{ member.staffName }}</span>
+                <span class="leaderboard-job text-muted">{{ member.jobTitle }}</span>
+              </div>
+              <div class="leaderboard-bar-col">
+                <div class="leaderboard-bar">
+                  <div class="leaderboard-bar-fill" [style.width.%]="getTeamBarWidth(member.totalRevenue)"></div>
+                </div>
+              </div>
+              <div class="leaderboard-stats">
+                <span class="leaderboard-revenue">{{ member.totalRevenue | currency }}</span>
+                <span class="leaderboard-meta text-muted">{{ member.orderCount }} orders</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Team summary cards -->
+        <div class="team-summary-cards mt-3">
+          @if (topPerformer(); as top) {
+            <div class="team-summary-card">
+              <span class="team-summary-label">Top Performer</span>
+              <span class="team-summary-value">{{ top.staffName }}</span>
+              <span class="team-summary-sub">{{ top.totalRevenue | currency }} revenue</span>
+            </div>
+          }
+          @if (teamReport(); as tr) {
+            <div class="team-summary-card">
+              <span class="team-summary-label">Team Revenue</span>
+              <span class="team-summary-value">{{ tr.totalRevenue | currency }}</span>
+              <span class="team-summary-sub">{{ tr.totalOrders }} total orders</span>
+            </div>
+            <div class="team-summary-card">
+              <span class="team-summary-label">Avg per Employee</span>
+              <span class="team-summary-value">{{ (tr.members.length > 0 ? tr.totalRevenue / tr.members.length : 0) | currency }}</span>
+              <span class="team-summary-sub">{{ tr.members.length }} team members</span>
+            </div>
+          }
+        </div>
+
+        <!-- Tips breakdown -->
+        <div class="panel mt-3">
+          <h6 class="panel-title">Tips Breakdown</h6>
+          @for (member of teamLeaderboard(); track member.staffId) {
+            @if (member.totalTips > 0) {
+              <div class="tip-row">
+                <span class="tip-name">{{ member.staffName }}</span>
+                <span class="tip-amount">{{ member.totalTips | currency }}</span>
+                <span class="tip-avg text-muted">
+                  {{ member.orderCount > 0 ? (member.totalTips / member.orderCount | currency) : '$0' }}/order
+                </span>
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="bi bi-people"></i>
+          <p>No team sales data available</p>
+          <p class="text-muted small">Team performance data requires completed orders with assigned employees</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== FUNNEL TAB ===== -->
+  @if (activeTab() === 'funnel') {
+    <div class="funnel-section">
+      <h5 class="mb-3">Online Ordering Conversion Funnel</h5>
+
+      @if (isLoadingFunnel()) {
+        <os-loading-spinner message="Loading funnel data..." />
+      } @else if (conversionFunnel(); as funnel) {
+        <div class="funnel-overall mb-3">
+          <span class="funnel-overall-label">Overall Conversion Rate</span>
+          <span class="funnel-overall-value">{{ funnel.overallConversionRate | number:'1.1-1' }}%</span>
+        </div>
+
+        <div class="funnel-steps">
+          @for (step of funnel.steps; track step.name; let idx = $index) {
+            <div class="funnel-step">
+              <div class="funnel-step-header">
+                <span class="funnel-step-name">{{ step.name }}</span>
+                <span class="funnel-step-count">{{ step.count | number }}</span>
+              </div>
+              <div class="funnel-bar">
+                <div class="funnel-bar-fill" [style.width.%]="getFunnelBarWidth(step, funnel.steps)"></div>
+              </div>
+              <div class="funnel-step-footer">
+                @if (idx > 0) {
+                  <span class="funnel-conversion">{{ step.conversionRate | number:'1.1-1' }}% converted</span>
+                  <span class="funnel-dropoff text-danger">{{ step.dropOffRate | number:'1.1-1' }}% drop-off</span>
+                } @else {
+                  <span class="funnel-conversion text-muted">Starting point</span>
+                }
+              </div>
+            </div>
+            @if (idx < funnel.steps.length - 1) {
+              <div class="funnel-arrow">
+                <i class="bi bi-chevron-down"></i>
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="bi bi-funnel"></i>
+          <p>No conversion funnel data</p>
+          <p class="text-muted small">Funnel tracking requires online ordering activity</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== ALERTS TAB ===== -->
+  @if (activeTab() === 'alerts') {
+    <div class="alerts-section">
+      <h5 class="mb-3">Sales Alerts</h5>
+
+      @if (isLoadingAlerts()) {
+        <os-loading-spinner message="Loading alerts..." />
+      } @else {
+        @for (alert of salesAlerts(); track alert.id) {
+          <div class="sales-alert-card" [class]="getAlertSeverityClass(alert.severity)" [class.acknowledged]="alert.acknowledged">
+            <div class="sales-alert-icon">
+              <i class="bi" [class]="getAlertIcon(alert.type)"></i>
+            </div>
+            <div class="sales-alert-content">
+              <div class="sales-alert-message">{{ alert.message }}</div>
+              <div class="sales-alert-meta">
+                <span class="sales-alert-change" [class]="alert.changePercent > 0 ? 'text-success' : 'text-danger'">
+                  {{ alert.changePercent > 0 ? '+' : '' }}{{ alert.changePercent | number:'1.1-1' }}%
+                </span>
+                <span class="text-muted">vs baseline</span>
+                <span class="sales-alert-time text-muted">{{ alert.timestamp }}</span>
+              </div>
+            </div>
+            @if (!alert.acknowledged) {
+              <button class="btn btn-sm btn-outline-secondary" (click)="acknowledgeAlert(alert.id)">
+                <i class="bi bi-check-lg"></i>
+              </button>
+            }
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="bi bi-bell"></i>
+            <p>No sales alerts</p>
+            <p class="text-muted small">Anomaly-powered alerts will appear when unusual patterns are detected</p>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>
+} @else {
+  <div class="auth-required d-flex align-items-center justify-content-center p-5">
+    <div class="text-center">
+      <h3 class="text-warning mb-3">Authentication Required</h3>
+      <p>Please log in to view sales insights.</p>
+    </div>
+  </div>
+}

@@ -1,0 +1,94 @@
+<!-- Hero -->
+<os-mkt-section background="hero">
+  <os-mkt-hero
+    [tag]="hero.tag"
+    [title]="hero.title"
+    [subtitle]="hero.subtitle"
+    alignment="center" />
+</os-mkt-section>
+
+<!-- Category Tabs + Search -->
+<os-mkt-section>
+  <div class="mkt-integrations__controls">
+    <div class="mkt-integrations__pills">
+      @for (cat of categories; track cat.id) {
+        <button
+          class="mkt-integrations__pill"
+          [class.mkt-integrations__pill--active]="cat.id === activeCategory()"
+          (click)="setCategory(cat.id)">
+          <i [class]="'bi ' + cat.icon" aria-hidden="true"></i>
+          {{ cat.label }}
+        </button>
+      }
+    </div>
+    <div class="mkt-integrations__search">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        placeholder="Search integrations..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Search integrations" />
+    </div>
+  </div>
+
+  <!-- Integration Grid -->
+  @if (filteredIntegrations().length > 0) {
+    <div class="mkt-integrations__grid">
+      @for (integration of filteredIntegrations(); track integration.id) {
+        <os-integration-card [integration]="integration" />
+      }
+    </div>
+  } @else {
+    <div class="mkt-integrations__empty">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <p>No integrations match your search. Try a different keyword or category.</p>
+    </div>
+  }
+</os-mkt-section>
+
+<!-- Featured: Star CloudPRNT -->
+<os-mkt-section background="alt">
+  <div class="mkt-cloudprnt">
+    <div class="mkt-cloudprnt__content">
+      <h2 class="mkt-cloudprnt__title">{{ cloudPrnt.title }}</h2>
+      <p class="mkt-cloudprnt__subtitle">{{ cloudPrnt.subtitle }}</p>
+      <p class="mkt-cloudprnt__desc">{{ cloudPrnt.description }}</p>
+      <div class="mkt-cloudprnt__steps">
+        @for (step of cloudPrnt.steps; track step.label; let i = $index) {
+          <div class="mkt-cloudprnt__step">
+            <span class="mkt-cloudprnt__step-num">{{ i + 1 }}</span>
+            <i [class]="'bi ' + step.icon" aria-hidden="true"></i>
+            <span class="mkt-cloudprnt__step-label">{{ step.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="mkt-cloudprnt__visual">
+      <i class="bi bi-printer" aria-hidden="true"></i>
+    </div>
+  </div>
+</os-mkt-section>
+
+<!-- API Developer Section -->
+<os-mkt-section background="dark">
+  <div class="mkt-api">
+    <span class="mkt-api__tag">{{ apiSection.tag }}</span>
+    <h2 class="mkt-api__title">{{ apiSection.title }}</h2>
+    <p class="mkt-api__subtitle">{{ apiSection.subtitle }}</p>
+    <div class="mkt-api__features">
+      @for (feat of apiSection.features; track feat.label) {
+        <span class="mkt-api__pill">
+          <i [class]="'bi ' + feat.icon" aria-hidden="true"></i>
+          {{ feat.label }}
+        </span>
+      }
+    </div>
+    <a class="mkt-api__cta" [href]="apiSection.ctaRoute" target="_blank" rel="noopener">
+      {{ apiSection.ctaLabel }} <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    </a>
+  </div>
+</os-mkt-section>
+
+<!-- Final CTA -->
+<os-final-cta />

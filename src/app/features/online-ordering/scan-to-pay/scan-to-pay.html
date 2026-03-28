@@ -1,0 +1,379 @@
+<div class="scan-to-pay">
+  <!-- Loading -->
+  @if (pageState() === 'loading') {
+    <div class="stp-loading">
+      <div class="spinner"></div>
+      <p>Loading your check...</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (pageState() === 'error') {
+    <div class="stp-error">
+      <div class="error-icon">
+        <i class="bi bi-exclamation-circle"></i>
+      </div>
+      <h2>Unable to Load Check</h2>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  }
+
+  <!-- Check View -->
+  @if (pageState() === 'check' || pageState() === 'paying') {
+    @if (session(); as s) {
+      <!-- Header -->
+      <header class="stp-header">
+        @if (restaurantLogo()) {
+          <img [src]="restaurantLogo()" alt="" class="restaurant-logo">
+        } @else {
+          <div class="restaurant-logo-placeholder">
+            <i class="bi bi-shop"></i>
+          </div>
+        }
+        <h1 class="restaurant-name">{{ restaurantName() }}</h1>
+        <p class="check-label">Check #{{ s.check.displayNumber }}</p>
+      </header>
+
+      <!-- Pay Mode Selector (only if split pay allowed and not yet selected) -->
+      @if (allowSplitPay() && !payMode()) {
+        <section class="stp-pay-mode">
+          <h3>How would you like to pay?</h3>
+          <div class="pay-mode-options">
+            <button type="button" class="pay-mode-btn" (click)="selectPayMode('full')">
+              <i class="bi bi-receipt-cutoff"></i>
+              <span class="pay-mode-label">Pay Full Check</span>
+              <span class="pay-mode-amount">{{ s.check.subtotal + s.check.taxAmount | currency }}</span>
+            </button>
+            <button type="button" class="pay-mode-btn" (click)="selectPayMode('items')">
+              <i class="bi bi-person-check"></i>
+              <span class="pay-mode-label">Pay My Items</span>
+              <span class="pay-mode-desc">Select what you ordered</span>
+            </button>
+          </div>
+        </section>
+      }
+
+      <!-- Items (show when pay mode selected or split not allowed) -->
+      @if (payMode() || !allowSplitPay()) {
+        <section class="stp-items">
+          @if (payMode() === 'items') {
+            <div class="stp-items-header">
+              <h3>Select your items</h3>
+              <span class="selected-count">{{ selectedItemCount() }} selected</span>
+            </div>
+          }
+          @for (sel of selections(); track sel.guid) {
+            <div
+              class="item-line"
+              [class.selectable]="payMode() === 'items'"
+              [class.selected]="payMode() === 'items' && checkItemSelected(sel.guid)"
+              (click)="payMode() === 'items' ? toggleItemSelection(sel.guid) : null"
+              (keydown.enter)="payMode() === 'items' ? toggleItemSelection(sel.guid) : null"
+              [attr.tabindex]="payMode() === 'items' ? 0 : null"
+              [attr.role]="payMode() === 'items' ? 'button' : null">
+              @if (payMode() === 'items') {
+                <span class="item-checkbox">
+                  @if (checkItemSelected(sel.guid)) {
+                    <i class="bi bi-check-circle-fill"></i>
+                  } @else {
+                    <i class="bi bi-circle"></i>
+                  }
+                </span>
+              }
+              <div class="item-info">
+                <span class="item-qty">{{ sel.quantity }}x</span>
+                <span class="item-name">{{ sel.menuItemName }}</span>
+              </div>
+              <span class="item-price">{{ sel.totalPrice | currency }}</span>
+            </div>
+            @if (sel.modifiers.length > 0) {
+              <div class="item-mods">
+                @for (mod of sel.modifiers; track mod.guid) {
+                  <span class="mod-name">{{ mod.name }}
+                    @if (mod.priceAdjustment > 0) {
+                      (+{{ mod.priceAdjustment | currency }})
+                    }
+                  </span>
+                }
+              </div>
+            }
+          }
+        </section>
+
+        <!-- Subtotals -->
+        <section class="stp-subtotals">
+          <div class="subtotal-line">
+            <span>Subtotal</span>
+            <span>{{ subtotal() | currency }}</span>
+          </div>
+          <div class="subtotal-line">
+            <span>Tax</span>
+            <span>{{ taxAmount() | currency }}</span>
+          </div>
+        </section>
+
+        <!-- Tip Selector -->
+        <section class="stp-tip">
+          <h3>Add a tip</h3>
+          <div class="tip-presets">
+            @for (pct of tipPresets; track pct) {
+              <button
+                type="button"
+                class="tip-btn"
+                [class.active]="tipPercent() === pct && customTipAmount() === null"
+                (click)="selectTipPercent(pct)">
+                {{ pct }}%
+              </button>
+            }
+            <button
+              type="button"
+              class="tip-btn"
+              [class.active]="showCustomTip()"
+              (click)="openCustomTip()">
+              Custom
+            </button>
+          </div>
+
+          @if (showCustomTip()) {
+            <div class="custom-tip-input">
+              <span class="dollar-sign">$</span>
+              <input
+                type="number"
+                inputmode="decimal"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                aria-label="Custom tip amount"
+                (input)="setCustomTipAmount($any($event.target).value)">
+            </div>
+          }
+
+          <div class="tip-amount">
+            <span>Tip</span>
+            <span>{{ tipAmount() | currency }}</span>
+          </div>
+        </section>
+
+        <!-- Total -->
+        <section class="stp-total">
+          <span>Total</span>
+          <span class="total-value">{{ totalWithTip() | currency }}</span>
+        </section>
+
+        <!-- Payment Form -->
+        <section class="stp-payment">
+          <h3>Payment</h3>
+          <div class="card-form">
+            <div class="form-field">
+              <label for="stp-card-name">Name on Card</label>
+              <input
+                id="stp-card-name"
+                type="text"
+                placeholder="John Smith"
+                autocomplete="cc-name"
+                aria-label="Name on card"
+                [value]="cardName()"
+                (input)="setCardName($any($event.target).value)">
+            </div>
+            <div class="form-field">
+              <label for="stp-card-number">Card Number</label>
+              <input
+                id="stp-card-number"
+                type="text"
+                inputmode="numeric"
+                placeholder="4242 4242 4242 4242"
+                autocomplete="cc-number"
+                aria-label="Card number"
+                [value]="cardNumber()"
+                (input)="setCardNumber($any($event.target).value)">
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="stp-card-expiry">Expiry</label>
+                <input
+                  id="stp-card-expiry"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="MM/YY"
+                  autocomplete="cc-exp"
+                  aria-label="Card expiry"
+                  [value]="cardExpiry()"
+                  (input)="setCardExpiry($any($event.target).value)">
+              </div>
+              <div class="form-field">
+                <label for="stp-card-cvc">CVC</label>
+                <input
+                  id="stp-card-cvc"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="123"
+                  autocomplete="cc-csc"
+                  aria-label="CVC"
+                  [value]="cardCvc()"
+                  (input)="setCardCvc($any($event.target).value)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Review & Pay button (goes to tip confirmation) -->
+          <button
+            type="button"
+            class="pay-btn"
+            [disabled]="!canPay()"
+            (click)="proceedToTipConfirmation()">
+            Review & Pay {{ totalWithTip() | currency }}
+          </button>
+
+          @if (errorMessage() && pageState() === 'check') {
+            <div class="payment-error">
+              <i class="bi bi-exclamation-triangle"></i>
+              {{ errorMessage() }}
+            </div>
+          }
+
+          <!-- Change pay mode link -->
+          @if (allowSplitPay() && payMode()) {
+            <button type="button" class="change-mode-link" (click)="selectPayMode(payMode() === 'full' ? 'items' : 'full')">
+              @if (payMode() === 'full') {
+                Pay for specific items instead
+              } @else {
+                Pay full check instead
+              }
+            </button>
+          }
+        </section>
+
+        <!-- Footer -->
+        <footer class="stp-footer">
+          <p>Powered by <strong>OrderStack</strong></p>
+        </footer>
+      }
+
+      <!-- Pre-mode footer (when split mode not yet selected) -->
+      @if (allowSplitPay() && !payMode()) {
+        <footer class="stp-footer">
+          <p>Powered by <strong>OrderStack</strong></p>
+        </footer>
+      }
+
+    }
+  }
+
+  <!-- Tip Confirmation Screen -->
+  @if (pageState() === 'confirm-tip') {
+    <div class="stp-confirm">
+      <header class="stp-confirm-header">
+        <h2>Confirm Payment</h2>
+        <p class="text-muted">Review your payment details</p>
+      </header>
+
+      <div class="stp-confirm-summary">
+        <div class="confirm-line">
+          <span>Subtotal</span>
+          <span>{{ subtotal() | currency }}</span>
+        </div>
+        <div class="confirm-line">
+          <span>Tax</span>
+          <span>{{ taxAmount() | currency }}</span>
+        </div>
+        <div class="confirm-line confirm-tip">
+          <span>Tip</span>
+          <span class="tip-highlight">{{ tipAmount() | currency }}</span>
+        </div>
+        <div class="confirm-line confirm-total">
+          <span>Total</span>
+          <span class="total-value">{{ totalWithTip() | currency }}</span>
+        </div>
+      </div>
+
+      <div class="stp-confirm-card">
+        <i class="bi bi-credit-card-2-front"></i>
+        <span>**** {{ cardNumber().slice(-4) }}</span>
+      </div>
+
+      <div class="stp-confirm-actions">
+        <button type="button" class="back-btn" (click)="backToCheck()">
+          <i class="bi bi-chevron-left me-1"></i> Edit
+        </button>
+        <button
+          type="button"
+          class="pay-btn"
+          [disabled]="isProcessing()"
+          (click)="submitPayment()">
+          @if (isProcessing()) {
+            <span class="btn-spinner"></span>
+            Processing...
+          } @else {
+            Confirm & Pay {{ totalWithTip() | currency }}
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Success -->
+  @if (pageState() === 'success') {
+    <div class="stp-success">
+      <div class="success-icon">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h2>Thank You!</h2>
+      <p>Your payment has been received.</p>
+      @if (receiptNumber()) {
+        <div class="receipt-number">
+          <span class="receipt-label">Receipt</span>
+          <span class="receipt-value">#{{ receiptNumber() }}</span>
+        </div>
+      }
+      <div class="success-total">
+        <span>Total Paid</span>
+        <span class="total-value">{{ totalWithTip() | currency }}</span>
+      </div>
+
+      <!-- Remaining balance for split pay -->
+      @if (remainingBalance() !== null && remainingBalance()! > 0) {
+        <div class="remaining-balance">
+          <i class="bi bi-info-circle me-1"></i>
+          Remaining on check: {{ remainingBalance() | currency }}
+        </div>
+      }
+
+      <!-- Email receipt -->
+      @if (emailReceiptEnabled()) {
+        <div class="email-receipt-section">
+          @if (emailSent()) {
+            <div class="email-sent">
+              <i class="bi bi-check-circle me-1"></i> Receipt sent!
+            </div>
+          } @else {
+            <p class="email-prompt">Want a receipt emailed to you?</p>
+            <div class="email-form">
+              <input
+                type="email"
+                inputmode="email"
+                placeholder="your@email.com"
+                autocomplete="email"
+                aria-label="Email address for receipt"
+                [value]="email()"
+                (input)="setEmail($any($event.target).value)"
+                (keydown.enter)="sendEmailReceipt()">
+              <button
+                type="button"
+                class="email-send-btn"
+                [disabled]="!email().trim() || isSendingEmail()"
+                (click)="sendEmailReceipt()">
+                @if (isSendingEmail()) {
+                  <span class="btn-spinner-sm"></span>
+                } @else {
+                  Send
+                }
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <p class="success-note">Your server has been notified.</p>
+    </div>
+  }
+</div>

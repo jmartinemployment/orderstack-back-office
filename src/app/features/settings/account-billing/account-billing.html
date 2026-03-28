@@ -1,0 +1,128 @@
+@if (isLoading() && !subscription()) {
+  <div class="text-center py-5">
+    <output class="spinner-border text-primary">
+      <span class="visually-hidden">Loading...</span>
+    </output>
+  </div>
+} @else {
+  <div class="account-billing">
+    <!-- Status Card -->
+    <div class="plan-card os-card">
+      <div class="plan-header">
+        <div class="plan-info">
+          <h3 class="plan-name">OrderStack</h3>
+          <span class="badge" [class]="statusClass()">{{ statusLabel() }}</span>
+        </div>
+        <div class="plan-price">
+          <span class="amount">{{ planPrice }}</span>
+          <span class="period">/mo</span>
+        </div>
+      </div>
+
+      @if (isTrial()) {
+        <div class="trial-section">
+          <div class="trial-info">
+            <span class="trial-days">{{ trialDaysRemaining() }} days remaining</span>
+            <span class="trial-label">of 30-day free trial</span>
+          </div>
+          <div class="progress trial-progress">
+            <progress
+              class="progress-bar"
+              [value]="trialProgress()"
+              max="100"
+              [attr.aria-valuenow]="trialProgress()"
+              aria-valuemin="0"
+              aria-valuemax="100">
+            </progress>
+          </div>
+          <p class="trial-note">
+            Your trial includes full access to all features. Subscribe before it ends to keep your data.
+          </p>
+        </div>
+      }
+
+      @if (isSuspended()) {
+        <div class="suspended-notice">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          Your account is suspended. Subscribe to restore access.
+        </div>
+      }
+
+      @if (isCanceled()) {
+        <div class="canceled-notice">
+          <i class="bi bi-info-circle"></i>
+          @if (subscription(); as sub) {
+            Access until {{ sub.currentPeriodEnd | date:'longDate' }}
+          }
+        </div>
+      }
+
+      @if (isActive() && !isCanceled()) {
+        @if (subscription(); as sub) {
+          <div class="billing-detail">
+            <span class="detail-label">Next billing date</span>
+            <span class="detail-value">{{ sub.currentPeriodEnd | date:'longDate' }}</span>
+          </div>
+        }
+      }
+
+      @if (error()) {
+        <div class="error-notice">
+          <i class="bi bi-exclamation-circle"></i>
+          {{ error() }}
+        </div>
+      }
+
+      <div class="plan-actions">
+        @if (canSubscribe()) {
+          <button
+            class="btn btn-primary"
+            [disabled]="_subscribing() || isLoading()"
+            (click)="subscribe()">
+            @if (_subscribing()) {
+              <output class="spinner-border spinner-border-sm me-2">
+                <span class="visually-hidden">Subscribing...</span>
+              </output>
+              Subscribing...
+            } @else {
+              Subscribe &mdash; {{ planPrice }}/mo
+            }
+          </button>
+        }
+        @if (canCancel()) {
+          <button class="btn btn-outline-danger btn-sm" (click)="openCancelModal()">
+            Cancel Subscription
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- PayPal Processing Rates -->
+    <div class="rates-card os-card">
+      <h4 class="rates-title">PayPal Processing Rates</h4>
+      <p class="rates-subtitle">These are pass-through PayPal fees charged per transaction. OrderStack does not add any markup.</p>
+      <div class="rates-table">
+        <div class="rate-row">
+          <span class="rate-label">In-person (tap, chip, swipe)</span>
+          <span class="rate-value">{{ paypalRates.inPerson }}</span>
+        </div>
+        <div class="rate-row">
+          <span class="rate-label">Online sales</span>
+          <span class="rate-value">{{ paypalRates.onlineSales }}</span>
+        </div>
+        <div class="rate-row">
+          <span class="rate-label">Card not present (keyed-in)</span>
+          <span class="rate-value">{{ paypalRates.cardNotPresent }}</span>
+        </div>
+        <div class="rate-row">
+          <span class="rate-label">Pay Later</span>
+          <span class="rate-value">{{ paypalRates.payLater }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (showCancelModal()) {
+    <os-cancel-subscription (closed)="closeCancelModal()" />
+  }
+}

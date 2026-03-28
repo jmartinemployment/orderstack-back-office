@@ -1,0 +1,87 @@
+<div class="deferred-page">
+  <div class="deferred-header">
+    <h1 class="deferred-title">Deferred Revenue</h1>
+    <p class="deferred-subtitle">Earned vs. unearned revenue across active catering jobs</p>
+  </div>
+
+  @if (_loading()) {
+    <div class="loading-state">
+      <output class="spinner-border text-primary">
+        <span class="visually-hidden">Loading...</span>
+      </output>
+    </div>
+  }
+
+  @if (!_loading() && _entries().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-cash-stack"></i>
+      </div>
+      <h3>No deferred revenue entries</h3>
+      <p>Complete some catering jobs to see deferred revenue data.</p>
+    </div>
+  }
+
+  @if (_entries().length > 0) {
+    <!-- Summary Strip -->
+    <div class="summary-strip">
+      <div class="summary-item">
+        <span class="summary-label">Total Booked</span>
+        <span class="summary-value">{{ totalBooked() / 100 | currency:'USD' }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Total Collected</span>
+        <span class="summary-value">{{ totalCollected() / 100 | currency:'USD' }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Recognized</span>
+        <span class="summary-value summary-green">{{ totalRecognized() / 100 | currency:'USD' }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Still Deferred</span>
+        <span class="summary-value summary-amber">{{ totalDeferred() / 100 | currency:'USD' }}</span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table class="deferred-table">
+        <thead>
+          <tr>
+            <th scope="col">Job</th>
+            <th scope="col">Event Date</th>
+            <th scope="col" class="text-end">Total Value</th>
+            <th scope="col" class="text-end">Paid</th>
+            <th scope="col" class="text-end">Recognized</th>
+            <th scope="col" class="text-end">Deferred</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of _entries(); track entry.jobId) {
+            <tr>
+              <td>
+                <button type="button" class="link-btn" (click)="viewJob(entry.jobId)">{{ entry.title }}</button>
+              </td>
+              <td>{{ entry.fulfillmentDate | date:'mediumDate':'UTC' }}</td>
+              <td class="text-end">{{ entry.totalCents / 100 | currency:'USD' }}</td>
+              <td class="text-end">{{ entry.paidCents / 100 | currency:'USD' }}</td>
+              <td class="text-end">{{ entry.recognizedCents / 100 | currency:'USD' }}</td>
+              <td class="text-end" [class.cell-amber]="entry.deferredCents > 0">
+                {{ entry.deferredCents / 100 | currency:'USD' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"><strong>Totals</strong></td>
+            <td class="text-end"><strong>{{ totalBooked() / 100 | currency:'USD' }}</strong></td>
+            <td class="text-end"><strong>{{ totalCollected() / 100 | currency:'USD' }}</strong></td>
+            <td class="text-end"><strong>{{ totalRecognized() / 100 | currency:'USD' }}</strong></td>
+            <td class="text-end cell-amber"><strong>{{ totalDeferred() / 100 | currency:'USD' }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  }
+</div>

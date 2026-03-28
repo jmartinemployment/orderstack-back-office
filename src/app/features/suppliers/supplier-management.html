@@ -1,0 +1,343 @@
+<div class="supplier-mgmt px-2">
+  <!-- Restock Banner -->
+  @if (restockItemName(); as itemName) {
+    <div class="restock-banner">
+      <div class="restock-banner-content">
+        <i class="bi bi-truck"></i>
+        <span>Looking to restock <strong>{{ itemName }}</strong>? Browse your suppliers or add a new one below.</span>
+      </div>
+      <button class="btn-close-banner" (click)="dismissRestockBanner()" aria-label="Dismiss restock banner">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  }
+
+  <!-- AI API Discovery Notification -->
+  @if (showApiDiscovery()) {
+    <div class="api-discovery-panel" [class.api-discovery-found]="apiDiscoveryResult()?.hasApi" [class.api-discovery-none]="apiDiscoveryResult() && !apiDiscoveryResult()?.hasApi">
+      <div class="api-discovery-icon">
+        @if (apiDiscoveryLoading()) {
+          <output class="spinner-border spinner-border-sm"></output>
+        } @else if (apiDiscoveryResult()?.hasApi) {
+          <i class="bi bi-plug"></i>
+        } @else {
+          <i class="bi bi-info-circle"></i>
+        }
+      </div>
+      <div class="api-discovery-content">
+        @if (apiDiscoveryLoading()) {
+          <div class="api-discovery-title">Checking API availability...</div>
+          <div class="api-discovery-desc">AI is analyzing whether <strong>{{ apiDiscoveryResult()?.supplierName ?? 'this supplier' }}</strong> offers an ordering API.</div>
+        } @else if (apiDiscoveryResult(); as result) {
+          @if (result.hasApi) {
+            <div class="api-discovery-title"><i class="bi bi-stars"></i> API Available — {{ result.supplierName }}</div>
+            <div class="api-discovery-desc">{{ result.summary }}</div>
+            <div class="api-discovery-actions">
+              @if (result.provider) {
+                <button class="btn-primary-sm" (click)="goToSupplierSettings(); dismissApiDiscovery()">
+                  <i class="bi bi-gear"></i> Connect API
+                </button>
+              }
+              @if (result.apiPortalUrl) {
+                <a class="btn-outline-sm" [href]="result.apiPortalUrl" target="_blank" rel="noopener">
+                  <i class="bi bi-box-arrow-up-right"></i> Developer Portal
+                </a>
+              }
+            </div>
+          } @else {
+            <div class="api-discovery-title">{{ result.supplierName }} — API Status</div>
+            <div class="api-discovery-desc">{{ result.summary }}</div>
+          }
+        }
+      </div>
+      <button class="btn-close-banner" (click)="dismissApiDiscovery()" aria-label="Dismiss">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  }
+
+  <div class="page-header">
+    <h1>Suppliers</h1>
+    <div class="page-header-actions">
+      <button class="btn-outline" (click)="goToSupplierSettings()">
+        <i class="bi bi-gear"></i> API Settings
+      </button>
+      <button class="btn-primary" (click)="openCreateVendor()">
+        <i class="bi bi-plus-lg"></i> Add Supplier
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-chip">
+      <span class="kpi-num">{{ vendors().length }}</span>
+      <span class="kpi-label">Total Suppliers</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-num">{{ activeVendorCount() }}</span>
+      <span class="kpi-label">Active</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-num">{{ connectedSupplierCount() }}</span>
+      <span class="kpi-label">API Connected</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-num">{{ suggestedSuppliers().length }}</span>
+      <span class="kpi-label">Suggestions</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        placeholder="Search suppliers..."
+        aria-label="Search suppliers"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="updateSearch($event)"
+      />
+    </div>
+  </div>
+
+  <!-- My Suppliers -->
+  <section class="section-block">
+    <h2 class="section-title">My Suppliers</h2>
+    <div class="vendor-grid">
+      @for (vendor of filteredVendors(); track vendor.id) {
+        <div class="vendor-card" [class.inactive]="!vendor.isActive" (click)="openEditVendor(vendor)" (keydown.enter)="openEditVendor(vendor)">
+          <div class="vendor-card-header">
+            <div class="vendor-name">{{ vendor.name }}</div>
+            <div class="vendor-actions">
+              <button class="btn-icon" title="Edit" (click)="openEditVendor(vendor); $event.stopPropagation()">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn-icon btn-icon-toggle" [title]="vendor.isActive ? 'Deactivate' : 'Activate'" (click)="toggleVendorActive(vendor); $event.stopPropagation()">
+                <i class="bi" [class.bi-toggle-on]="vendor.isActive" [class.bi-toggle-off]="!vendor.isActive"></i>
+              </button>
+              <button class="btn-icon btn-icon-danger" title="Delete" (click)="deleteVendor(vendor.id); $event.stopPropagation()">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+          @if (vendor.contactName) {
+            <div class="vendor-contact">{{ vendor.contactName }}</div>
+          }
+          <div class="vendor-meta">
+            @if (vendor.contactEmail || vendor.email) {
+              <span><i class="bi bi-envelope"></i> {{ vendor.contactEmail ?? vendor.email }}</span>
+            }
+            @if (vendor.phone) {
+              <span><i class="bi bi-telephone"></i> {{ vendor.phone }}</span>
+            }
+            @if (vendor.website) {
+              <a class="vendor-catalog-link" [href]="vendor.website" target="_blank" rel="noopener" (click)="$event.stopPropagation()">
+                <i class="bi bi-globe"></i> {{ vendor.website }} <i class="bi bi-box-arrow-up-right"></i>
+              </a>
+            }
+          </div>
+          <div class="vendor-footer">
+            @if (vendor.paymentTerms) {
+              <span class="badge badge-secondary">{{ vendor.paymentTerms }}</span>
+            }
+            @if (vendor.leadTimeDays) {
+              <span class="badge badge-info">{{ vendor.leadTimeDays }}d lead time</span>
+            }
+            <span class="badge" [class.badge-success]="vendor.isActive" [class.badge-muted]="!vendor.isActive">
+              {{ vendor.isActive ? 'Active' : 'Inactive' }}
+            </span>
+            @if (vendor.isIntegrated) {
+              <span class="badge badge-api"><i class="bi bi-plug"></i> API Connected</span>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <i class="bi bi-truck"></i>
+          <p>No suppliers yet. Add your first supplier or pick from our suggestions below.</p>
+          <button class="btn-primary" (click)="openCreateVendor()">
+            <i class="bi bi-plus-lg"></i> Add Supplier
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Suggested Suppliers -->
+  @if (suggestedSuppliers().length > 0) {
+    <section class="section-block">
+      <h2 class="section-title">Suggested Suppliers</h2>
+      <p class="section-subtitle">Popular suppliers for your business type. Add them to your supplier list with one click.</p>
+      <div class="suggested-grid">
+        @for (supplier of suggestedSuppliers(); track supplier.name) {
+          <div class="suggested-card">
+            <div class="suggested-card-header">
+              <div class="suggested-icon">
+                <i class="bi" [class]="supplier.icon"></i>
+              </div>
+              <div class="suggested-info">
+                <div class="suggested-name">{{ supplier.name }}</div>
+                <div class="suggested-category">{{ supplier.category }}</div>
+              </div>
+              @if (supplier.apiProvider) {
+                <div class="api-badge-wrap">
+                  @if (isSupplierConnected(supplier)) {
+                    <span class="badge badge-api-connected"><i class="bi bi-check-circle"></i> API Connected</span>
+                  } @else {
+                    <span class="badge badge-api-available"><i class="bi bi-plug"></i> API Available</span>
+                  }
+                </div>
+              }
+            </div>
+            <p class="suggested-desc">{{ supplier.description }}</p>
+            <div class="suggested-actions">
+              <button class="btn-primary-sm" (click)="addKnownSupplier(supplier)">
+                <i class="bi bi-plus-lg"></i> Add as Supplier
+              </button>
+              <a class="btn-outline-sm" [href]="supplier.website" target="_blank" rel="noopener">
+                <i class="bi bi-box-arrow-up-right"></i> Website
+              </a>
+              @if (supplier.apiPortal) {
+                @if (isSupplierConnected(supplier)) {
+                  <span class="btn-outline-sm btn-connected">
+                    <i class="bi bi-check-circle"></i> Connected
+                  </span>
+                } @else {
+                  <button class="btn-outline-sm btn-integrate" (click)="goToSupplierSettings()">
+                    <i class="bi bi-plug"></i> Connect API
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- AI Inventory Assistant -->
+  <section class="section-block ai-section">
+    <div class="ai-header">
+      <div>
+        <h2 class="section-title">
+          <i class="bi bi-stars"></i> AI Inventory Assistant
+        </h2>
+        <p class="section-subtitle">Let AI analyze your inventory and generate smart ordering recommendations.</p>
+      </div>
+    </div>
+    <div class="ai-actions">
+      <button class="ai-action-btn" (click)="generateOrder()" [disabled]="aiLoading()">
+        <i class="bi bi-clipboard-check"></i>
+        <div class="ai-action-text">
+          <span class="ai-action-label">Generate Order</span>
+          <span class="ai-action-desc">Create a purchase order for low-stock items</span>
+        </div>
+      </button>
+      <button class="ai-action-btn" (click)="findCheaperSources()" [disabled]="aiLoading()">
+        <i class="bi bi-piggy-bank"></i>
+        <div class="ai-action-text">
+          <span class="ai-action-label">Find Cheaper Sources</span>
+          <span class="ai-action-desc">Analyze costs and suggest savings opportunities</span>
+        </div>
+      </button>
+      <button class="ai-action-btn" (click)="predictWeeklyNeeds()" [disabled]="aiLoading()">
+        <i class="bi bi-graph-up-arrow"></i>
+        <div class="ai-action-text">
+          <span class="ai-action-label">Predict This Week's Needs</span>
+          <span class="ai-action-desc">Forecast inventory needs based on sales data</span>
+        </div>
+      </button>
+    </div>
+
+    @if (showAiPanel()) {
+      <div class="ai-response-panel">
+        <div class="ai-response-header">
+          <span class="ai-response-label"><i class="bi bi-stars"></i> AI Response</span>
+          <button class="btn-close-panel" (click)="closeAiPanel()" aria-label="Close AI panel">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="ai-response-body">
+          @if (aiLoading()) {
+            <div class="ai-loading">
+              <output class="spinner-border spinner-border-sm"></output>
+              <span>Analyzing your inventory data...</span>
+            </div>
+          } @else if (aiResponse(); as response) {
+            <div class="ai-response-content">{{ response }}</div>
+          }
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Vendor Modal -->
+  @if (showVendorModal()) {
+    <button type="button" class="modal-backdrop" (click)="closeVendorModal()" (keydown.enter)="closeVendorModal()" (keydown.escape)="closeVendorModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.escape)="closeVendorModal()">
+        <div class="modal-header">
+          <h3>{{ editingVendorId() ? 'Edit Supplier' : 'Add Supplier' }}</h3>
+          <button class="btn-close" (click)="closeVendorModal()" aria-label="Close modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="supp-name">Name *</label>
+            <input id="supp-name" type="text" [ngModel]="formName()" (ngModelChange)="updateFormName($event)" placeholder="Supplier name" aria-label="Supplier name" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supp-contact-name">Contact Name</label>
+              <input id="supp-contact-name" type="text" [ngModel]="formContactName()" (ngModelChange)="updateFormContact($event)" aria-label="Contact name" />
+            </div>
+            <div class="form-group">
+              <label for="supp-phone">Phone</label>
+              <input id="supp-phone" type="tel" [ngModel]="formPhone()" (ngModelChange)="updateFormPhone($event)" aria-label="Phone" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="supp-email">Email</label>
+            <input id="supp-email" type="email" [ngModel]="formEmail()" (ngModelChange)="updateFormEmail($event)" aria-label="Email" />
+          </div>
+          <div class="form-group">
+            <label for="supp-website">Website / Catalog URL</label>
+            <input id="supp-website" type="text" [ngModel]="formWebsite()" (ngModelChange)="updateFormWebsite($event)" placeholder="https://..." aria-label="Website or catalog URL" />
+          </div>
+          <div class="form-group">
+            <label for="supp-address">Address</label>
+            <textarea id="supp-address" [ngModel]="formAddress()" (ngModelChange)="updateFormAddress($event)" rows="2" aria-label="Address"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supp-payment-terms">Payment Terms</label>
+              <select id="supp-payment-terms" [ngModel]="formPaymentTerms()" (ngModelChange)="updateFormTerms($event)" aria-label="Payment terms">
+                <option value="">Select...</option>
+                <option value="Net 15">Net 15</option>
+                <option value="Net 30">Net 30</option>
+                <option value="Net 45">Net 45</option>
+                <option value="Net 60">Net 60</option>
+                <option value="COD">COD</option>
+                <option value="Prepaid">Prepaid</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="supp-lead-time">Lead Time (days)</label>
+              <input id="supp-lead-time" type="number" min="0" [ngModel]="formLeadTimeDays()" (ngModelChange)="updateFormLeadTime($event)" aria-label="Lead time in days" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="supp-notes">Notes</label>
+            <textarea id="supp-notes" [ngModel]="formNotes()" (ngModelChange)="updateFormNotes($event)" rows="3" placeholder="Internal notes..." aria-label="Notes"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeVendorModal()">Cancel</button>
+          <button class="btn-primary" (click)="saveVendor()" [disabled]="!formName()">
+            {{ editingVendorId() ? 'Save Changes' : 'Add Supplier' }}
+          </button>
+        </div>
+      </div>
+    </button>
+  }
+</div>

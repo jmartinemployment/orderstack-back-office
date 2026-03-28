@@ -1,0 +1,586 @@
+.item-management {
+  h2 {
+    color: var(--os-text-primary);
+    font-size: 1.375rem;
+    font-weight: 600;
+  }
+}
+
+.category-filter {
+  background-color: var(--os-bg-card);
+  padding: 1rem;
+  border-radius: var(--os-radius);
+  border: 1px solid var(--os-border);
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.item-card {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+
+  &.unavailable {
+    opacity: 0.7;
+  }
+
+  &.eighty-sixed {
+    opacity: 0.5;
+    border-color: var(--os-danger);
+
+    .card-title { text-decoration: line-through; }
+  }
+
+  .card-img-top {
+    height: 150px;
+    object-fit: cover;
+  }
+
+  .card-title {
+    color: var(--os-text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .price {
+    color: var(--os-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .category-badge {
+    font-size: 0.7rem;
+  }
+
+  .alert-warning {
+    background-color: rgba(245, 166, 35, 0.08);
+    border-color: rgba(245, 166, 35, 0.3);
+    color: var(--os-warning);
+  }
+}
+
+// Allergen badges on item cards
+.allergen-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.allergen-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.15rem 0.4rem;
+
+  &.contains {
+    background-color: rgba(229, 62, 62, 0.1);
+    color: var(--os-danger);
+  }
+
+  &.may-contain {
+    background-color: rgba(245, 166, 35, 0.1);
+    color: var(--os-warning);
+  }
+
+  &.facility {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: var(--os-text-secondary);
+  }
+}
+
+// Channel visibility badges on item cards
+.channel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.channel-badge {
+  font-size: 0.6rem;
+  font-weight: 500;
+  padding: 0.1rem 0.35rem;
+  background-color: var(--os-primary-light);
+  color: var(--os-primary);
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  background-color: var(--os-bg-card);
+  border: 1px dashed var(--os-border);
+  border-radius: var(--os-radius);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+
+    h4 {
+      color: var(--os-text-primary);
+      font-weight: 600;
+    }
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+// Scrollable form body inside modal
+.form-scrollable {
+  max-height: calc(90vh - 140px);
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+
+.form-label {
+  color: var(--os-text-primary);
+  font-weight: 500;
+}
+
+.form-control,
+.form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+
+  &:focus {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-primary);
+    color: var(--os-text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 106, 255, 0.15);
+  }
+
+  option {
+    background-color: var(--os-bg-card);
+  }
+}
+
+.input-group-text {
+  background-color: var(--os-bg);
+  border-color: var(--os-border);
+  color: var(--os-text-secondary);
+}
+
+.form-check-input {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+// Collapsible form sections
+.collapsible-section {
+  border-top: 1px solid var(--os-border);
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+}
+
+.section-toggle {
+  background: none;
+  border: none;
+  color: var(--os-text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    color: var(--os-primary);
+  }
+
+  .badge {
+    font-size: 0.65rem;
+  }
+}
+
+.section-body {
+  padding: 0.75rem 0;
+}
+
+// Allergen grid in form
+.allergen-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+
+  @media (max-width: 576px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.allergen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .form-check-label {
+    font-size: 0.85rem;
+  }
+}
+
+.severity-select {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.35rem;
+  max-width: 140px;
+}
+
+// Availability windows in form
+.availability-window {
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.day-btn {
+  min-width: 2.2rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+}
+
+.ai-data {
+  background-color: var(--os-bg);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--os-primary);
+}
+
+.ai-estimation-result {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+
+  .card-body {
+    h6 {
+      color: var(--os-text-primary);
+      font-weight: 600;
+    }
+  }
+}
+
+.confidence-badge {
+  font-size: 0.7rem;
+  text-transform: capitalize;
+}
+
+.ai-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+
+  .spinner-border-sm {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-width: 0.15em;
+  }
+}
+
+// Search bar
+.search-bar {
+  .input-group-text {
+    background-color: var(--os-bg);
+    border-color: var(--os-border);
+    color: var(--os-text-secondary);
+  }
+}
+
+// Sort bar
+.sort-bar {
+  .btn-outline-light {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+
+    .bi {
+      font-size: 0.7rem;
+      margin-left: 0.25rem;
+    }
+  }
+}
+
+// Modifier tags on item cards
+.modifier-badge {
+  background-color: var(--os-primary-light);
+  color: var(--os-primary);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+// Modifier group picker in form
+.modifier-group-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, 1fr);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modifier-group-check {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--os-border);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary);
+  }
+}
+
+// Delete confirmation modal
+.delete-confirm-modal {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+// CSV Import modal
+.import-modal {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 500px;
+  margin: auto;
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+.import-dropzone {
+  border: 2px dashed var(--os-border);
+  border-radius: var(--os-radius);
+  color: var(--os-text-secondary);
+
+  i {
+    color: var(--os-primary);
+  }
+}
+
+.import-results {
+  .badge {
+    font-size: 0.8rem;
+  }
+}
+
+.import-errors {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+// Image upload zone in form
+.image-dropzone {
+  border: 2px dashed var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--os-text-secondary);
+
+  &:hover {
+    border-color: var(--os-primary);
+    background-color: rgba(0, 106, 255, 0.03);
+  }
+
+  i {
+    font-size: 1.5rem;
+    color: var(--os-primary);
+  }
+}
+
+.dropzone-hint {
+  font-size: 0.75rem;
+  color: var(--os-text-muted);
+}
+
+.image-preview-container {
+  position: relative;
+  border-radius: var(--os-radius);
+  overflow: hidden;
+  border: 1px solid var(--os-border);
+}
+
+.image-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.image-preview-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--os-bg);
+  border-top: 1px solid var(--os-border);
+}
+
+.upload-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--os-text-primary);
+}
+
+// AI description generation
+.ai-description-section {
+  padding: 0.75rem;
+  background-color: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+}
+
+.generated-desc-card {
+  textarea {
+    font-size: 0.85rem;
+    background-color: var(--os-bg-card);
+    border-color: var(--os-border);
+    color: var(--os-text-primary);
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+// --- FEATURE-11: Catering ingredient/beverage form sections ---
+
+.form-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--bs-border-color);
+
+  &__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary);
+    margin-bottom: 0.625rem;
+  }
+}
+
+.allergen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--bs-border-color);
+  background: transparent;
+  color: var(--bs-body-color);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &--active {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: #fff;
+  }
+
+  &:hover:not(.chip--active) {
+    background: var(--bs-secondary-bg);
+  }
+}
+
+.recipe-info {
+  padding: 0.75rem;
+  background: var(--bs-secondary-bg);
+  border-radius: 8px;
+}

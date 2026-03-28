@@ -1,0 +1,977 @@
+<div class="retail-pos px-2">
+  <!-- ==================== LEFT PANEL ==================== -->
+  <div class="left-panel">
+    <!-- Barcode Input -->
+    <div class="barcode-section">
+      <div class="barcode-input-wrap">
+        <i class="bi bi-upc-scan"></i>
+        <input
+          #barcodeInput
+          type="text"
+          placeholder="Scan barcode or enter SKU..."
+          aria-label="Scan barcode or enter SKU"
+          [ngModel]="barcodeValue()"
+          (ngModelChange)="updateBarcode($event)"
+          (keydown.enter)="onBarcodeScan()"
+          autofocus
+        />
+        @if (scanFlash()) {
+          <span class="scan-flash">{{ scanFlashMessage() }}</span>
+        }
+      </div>
+      <button class="btn-search" (click)="openSearch()" aria-label="Search products">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+
+    <!-- Error Banner -->
+    @if (error() && error() !== 'VARIATION_PICKER_NEEDED') {
+      <div class="error-banner">
+        <i class="bi bi-exclamation-triangle"></i>
+        {{ error() }}
+      </div>
+    }
+
+    <!-- Quick Keys Grid -->
+    <div class="quick-keys-section">
+      <div class="quick-keys-header">
+        <span>Quick Keys</span>
+      </div>
+      <div class="quick-keys-grid">
+        @for (key of quickKeyGrid(); track $index) {
+          @if (key) {
+            <button
+              class="quick-key"
+              [style.background]="key.color"
+              (click)="onQuickKeyTap(key)"
+              (contextmenu)="$event.preventDefault(); openQuickKeyConfig($index)"
+            >
+              {{ key.label }}
+            </button>
+          } @else {
+            <button
+              class="quick-key quick-key-empty"
+              (click)="openQuickKeyConfig($index)"
+              aria-label="Add quick key"
+            >
+              <i class="bi bi-plus"></i>
+            </button>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Active Layaways -->
+    @if (layaways().length > 0) {
+      <div class="layaways-section">
+        <div class="quick-keys-header">
+          <span>Active Layaways ({{ layaways().length }})</span>
+        </div>
+        <div class="layaway-list">
+          @for (layaway of layaways(); track layaway.id) {
+            <div class="layaway-card">
+              <div class="layaway-card-info">
+                <span class="layaway-id">LAY-{{ layaway.id.substring(0, 8) }}</span>
+                <span class="layaway-balance">${{ layaway.remainingBalance | number:'1.2-2' }} remaining</span>
+              </div>
+              <div class="layaway-card-actions">
+                <button class="btn-sm btn-primary" (click)="openLayawayPayment(layaway)">
+                  <i class="bi bi-cash"></i> Pay
+                </button>
+                <button class="btn-sm btn-outline" (click)="cancelLayaway(layaway.id)">Cancel</button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ==================== RIGHT PANEL (Cart) ==================== -->
+  <div class="right-panel">
+    <div class="cart-header">
+      <h2>Cart</h2>
+      <div class="cart-header-actions">
+        @if (cartItemCount() > 0) {
+          <span class="cart-count">{{ cartItemCount() }} item(s)</span>
+        }
+        <button class="btn-icon-sm" aria-label="Receipt Settings" (click)="openReceiptSettings()">
+          <i class="bi bi-gear"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cart Items -->
+    <div class="cart-items">
+      @for (item of cart(); track $index) {
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">
+              {{ item.item.name }}
+              @if (item.variation) {
+                <span class="cart-item-variation">{{ item.variation.name }}</span>
+              }
+            </div>
+            @if (item.priceOverride !== null) {
+              <div class="cart-item-override">
+                <span class="original-price">${{ item.unitPrice | number:'1.2-2' }}</span>
+                <span class="override-price">${{ item.priceOverride | number:'1.2-2' }}</span>
+              </div>
+            } @else {
+              <div class="cart-item-price">${{ item.unitPrice | number:'1.2-2' }}</div>
+            }
+          </div>
+
+          <div class="cart-item-controls">
+            @if (item.item.weightBased) {
+              <button class="btn-weight" (click)="openWeightEntry($index)">
+                @if (item.weight) {
+                  {{ item.weight }}lb
+                } @else {
+                  Weight
+                }
+              </button>
+            } @else {
+              <div class="qty-stepper">
+                <button class="qty-btn" aria-label="Decrease quantity" (click)="decrementQuantity($index)">−</button>
+                <span class="qty-value">{{ item.quantity }}</span>
+                <button class="qty-btn" aria-label="Increase quantity" (click)="incrementQuantity($index)">+</button>
+              </div>
+            }
+
+            <div class="cart-item-total">
+              ${{ getCartItemTotal(item) | number:'1.2-2' }}
+            </div>
+
+            <div class="cart-item-actions">
+              <button class="btn-icon-sm" aria-label="Override Price" (click)="openPriceOverride($index)">
+                <i class="bi bi-tag"></i>
+              </button>
+              <button class="btn-icon-sm btn-remove" aria-label="Remove item" (click)="removeCartItem($index)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          @if (item.discount > 0) {
+            <div class="cart-item-discount">
+              Discount: −${{ item.discount | number:'1.2-2' }}
+            </div>
+          }
+        </div>
+      } @empty {
+        <div class="cart-empty">
+          <i class="bi bi-cart3"></i>
+          <p>Scan an item or use quick keys to begin</p>
+        </div>
+      }
+    </div>
+
+    <!-- Cart Summary -->
+    @if (cartItemCount() > 0) {
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>${{ cartSubtotal() | number:'1.2-2' }}</span>
+        </div>
+        @if (cartDiscount() > 0) {
+          <div class="summary-row discount">
+            <span>Discount</span>
+            <span>−${{ cartDiscount() | number:'1.2-2' }}</span>
+          </div>
+        }
+        <div class="summary-row">
+          <span>Tax</span>
+          <span>${{ cartTax() | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>${{ cartTotal() | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="cart-options">
+          <label class="gift-receipt-toggle">
+            <input type="checkbox" [ngModel]="isGiftReceipt()" (ngModelChange)="toggleGiftReceipt()" />
+            Gift receipt
+          </label>
+        </div>
+
+        <div class="cart-actions">
+          <button class="btn-clear" (click)="clearCart()">Clear Cart</button>
+          <button class="btn-layaway" (click)="openLayaway()" aria-label="Create Layaway">
+            <i class="bi bi-safe"></i>
+          </button>
+          <button class="btn-pay" (click)="openPayment()" [disabled]="isProcessing()">
+            @if (isProcessing()) {
+              Processing...
+            } @else {
+              Pay ${{ cartTotal() | number:'1.2-2' }}
+            }
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Search Modal -->
+  @if (activeModal() === 'search') {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+      <div class="modal-content modal-search" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Search Items</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search by name, SKU, or barcode..."
+            aria-label="Search by name, SKU, or barcode"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="updateSearchQuery($event)"
+            autofocus
+          />
+          <div class="search-results">
+            @for (item of searchResults(); track item.id) {
+              <button class="search-result" (click)="selectSearchItem(item)">
+                <div class="result-name">{{ item.name }}</div>
+                <div class="result-meta">
+                  @if (item.sku) { <span>SKU: {{ item.sku }}</span> }
+                  <span>${{ item.basePrice | number:'1.2-2' }}</span>
+                  @if (item.variations.length > 0) {
+                    <span class="badge-sm">{{ item.variations.length }} variations</span>
+                  }
+                </div>
+              </button>
+            } @empty {
+              @if (searchQuery().length >= 2) {
+                <div class="no-results">No items found</div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Variation Picker Modal -->
+  @if (activeModal() === 'variation-picker' && pickerItem()) {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Select Variation — {{ pickerItem()!.name }}</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="variation-list">
+            @for (v of pickerItem()!.variations; track v.id) {
+              @if (v.isActive) {
+                <button class="variation-btn" (click)="selectVariation(v)">
+                  <span class="variation-name">{{ v.name }}</span>
+                  <span class="variation-price">${{ v.price | number:'1.2-2' }}</span>
+                </button>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Payment Modal -->
+  @if (activeModal() === 'payment') {
+    <div class="modal-backdrop">
+      <div class="modal-content modal-payment" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <!-- Method Selection -->
+        @if (paymentStep() === 'method') {
+          <div class="modal-header">
+            <h3>Payment — ${{ cartTotal() | number:'1.2-2' }}</h3>
+            <button class="btn-close" aria-label="Close" (click)="closePayment()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="payment-methods">
+              <button class="payment-method-btn cash" (click)="selectPaymentMethod('cash')">
+                <i class="bi bi-cash-stack"></i>
+                <span>Cash</span>
+              </button>
+              <button class="payment-method-btn card" (click)="selectPaymentMethod('card')">
+                <i class="bi bi-credit-card"></i>
+                <span>Card</span>
+              </button>
+              <button class="payment-method-btn gift" (click)="selectPaymentMethod('gift_card')">
+                <i class="bi bi-gift"></i>
+                <span>Gift Card</span>
+              </button>
+              <button class="payment-method-btn credit" (click)="selectPaymentMethod('store_credit')">
+                <i class="bi bi-wallet2"></i>
+                <span>Store Credit</span>
+              </button>
+            </div>
+            <button class="btn-split" (click)="startSplitTender()">
+              <i class="bi bi-arrows-expand"></i> Split Payment
+            </button>
+          </div>
+        }
+
+        <!-- Cash Payment -->
+        @if (paymentStep() === 'cash') {
+          <div class="modal-header">
+            <h3>Cash Payment</h3>
+            <button class="btn-close" aria-label="Close" (click)="closePayment()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="cash-total">
+              Total: <strong>${{ cartTotal() | number:'1.2-2' }}</strong>
+            </div>
+            <div class="form-group">
+              <label for="pos-cash-amount">Amount Tendered</label>
+              <input
+                id="pos-cash-amount"
+                type="number"
+                step="0.01"
+                [ngModel]="cashTendered()"
+                (ngModelChange)="updateCashTendered($event)"
+                class="cash-input"
+                autofocus
+              />
+            </div>
+            <div class="quick-cash">
+              <button (click)="updateCashTendered('' + cartTotal())">Exact</button>
+              <button (click)="updateCashTendered('5')">$5</button>
+              <button (click)="updateCashTendered('10')">$10</button>
+              <button (click)="updateCashTendered('20')">$20</button>
+              <button (click)="updateCashTendered('50')">$50</button>
+              <button (click)="updateCashTendered('100')">$100</button>
+            </div>
+            @if (cashTendered() >= cartTotal()) {
+              <div class="change-display">
+                Change: <strong>${{ changeAmount() | number:'1.2-2' }}</strong>
+              </div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn-outline" (click)="paymentStep.set('method')">Back</button>
+            <button
+              class="btn-pay-confirm"
+              (click)="processCashPayment()"
+              [disabled]="cashTendered() < cartTotal() || isProcessing()"
+            >
+              Complete Payment
+            </button>
+          </div>
+        }
+
+        <!-- Card Payment -->
+        @if (paymentStep() === 'card') {
+          <div class="modal-header">
+            <h3>Card Payment</h3>
+            <button class="btn-close" aria-label="Close" (click)="closePayment()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body card-payment-body">
+            @if (cardPaymentError()) {
+              <div class="payment-error">{{ cardPaymentError() }}</div>
+            }
+            @if (cardPaymentOrderId()) {
+              <os-payment-terminal
+                [amount]="cartTotal()"
+                [orderId]="cardPaymentOrderId()!"
+                [showOnScreen]="true"
+                [showCardReader]="true"
+                (paymentComplete)="onCardPaymentComplete()"
+                (paymentFailed)="onCardPaymentFailed($event)"
+              />
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn-outline" (click)="paymentStep.set('method')">Back</button>
+          </div>
+        }
+
+        <!-- Gift Card Payment -->
+        @if (paymentStep() === 'gift-card') {
+          <div class="modal-header">
+            <h3>Gift Card Payment</h3>
+            <button class="btn-close" aria-label="Close" (click)="closePayment()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="cash-total">
+              Total: <strong>${{ cartTotal() | number:'1.2-2' }}</strong>
+            </div>
+            <div class="lookup-row">
+              <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="pos-gc-number">Card Number</label>
+                <input
+                  id="pos-gc-number"
+                  type="text"
+                  placeholder="Scan or enter gift card number..."
+                  [ngModel]="giftCardNumber()"
+                  (ngModelChange)="updateGiftCardNumber($event)"
+                  (keydown.enter)="lookupGiftCard()"
+                  autofocus
+                />
+              </div>
+              <button
+                class="btn-primary btn-lookup"
+                (click)="lookupGiftCard()"
+                [disabled]="!giftCardNumber() || isLookingUpGiftCard()"
+              >
+                @if (isLookingUpGiftCard()) {
+                  Looking up...
+                } @else {
+                  Lookup
+                }
+              </button>
+            </div>
+
+            @if (giftCardBalance() !== null) {
+              <div class="balance-display">
+                <i class="bi bi-gift"></i>
+                <div class="balance-info">
+                  <span class="balance-label">Available Balance</span>
+                  <span class="balance-amount">${{ giftCardBalance()! | number:'1.2-2' }}</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="pos-gc-apply">Apply Amount</label>
+                <input
+                  id="pos-gc-apply"
+                  type="number"
+                  step="0.01"
+                  [ngModel]="giftCardApplyAmount()"
+                  (ngModelChange)="updateGiftCardApplyAmount($event)"
+                  [max]="giftCardBalance()!"
+                />
+              </div>
+              @if (giftCardApplyAmount() < cartTotal()) {
+                <div class="partial-notice">
+                  <i class="bi bi-info-circle"></i>
+                  Remaining ${{ cartTotal() - giftCardApplyAmount() | number:'1.2-2' }} will be split to another payment method.
+                </div>
+              }
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn-outline" (click)="paymentStep.set('method')">Back</button>
+            <button
+              class="btn-pay-confirm"
+              (click)="processGiftCardPayment()"
+              [disabled]="giftCardBalance() === null || giftCardApplyAmount() <= 0 || giftCardApplyAmount() > (giftCardBalance() ?? 0) || isProcessing()"
+            >
+              Apply Gift Card
+            </button>
+          </div>
+        }
+
+        <!-- Store Credit Payment -->
+        @if (paymentStep() === 'store-credit') {
+          <div class="modal-header">
+            <h3>Store Credit Payment</h3>
+            <button class="btn-close" aria-label="Close" (click)="closePayment()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="cash-total">
+              Total: <strong>${{ cartTotal() | number:'1.2-2' }}</strong>
+            </div>
+            <div class="lookup-row">
+              <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="pos-sc-customer">Customer ID or Phone</label>
+                <input
+                  id="pos-sc-customer"
+                  type="text"
+                  placeholder="Enter customer ID or phone..."
+                  [ngModel]="storeCreditCustomerId()"
+                  (ngModelChange)="updateStoreCreditCustomerId($event)"
+                  (keydown.enter)="lookupStoreCredit()"
+                  autofocus
+                />
+              </div>
+              <button
+                class="btn-primary btn-lookup"
+                (click)="lookupStoreCredit()"
+                [disabled]="!storeCreditCustomerId() || isLookingUpStoreCredit()"
+              >
+                @if (isLookingUpStoreCredit()) {
+                  Looking up...
+                } @else {
+                  Lookup
+                }
+              </button>
+            </div>
+
+            @if (storeCreditBalance() !== null) {
+              <div class="balance-display balance-credit">
+                <i class="bi bi-wallet2"></i>
+                <div class="balance-info">
+                  <span class="balance-label">Store Credit Balance</span>
+                  <span class="balance-amount">${{ storeCreditBalance()! | number:'1.2-2' }}</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="pos-sc-apply">Apply Amount</label>
+                <input
+                  id="pos-sc-apply"
+                  type="number"
+                  step="0.01"
+                  [ngModel]="storeCreditApplyAmount()"
+                  (ngModelChange)="updateStoreCreditApplyAmount($event)"
+                  [max]="storeCreditBalance()!"
+                />
+              </div>
+              @if (storeCreditApplyAmount() < cartTotal()) {
+                <div class="partial-notice">
+                  <i class="bi bi-info-circle"></i>
+                  Remaining ${{ cartTotal() - storeCreditApplyAmount() | number:'1.2-2' }} will be split to another payment method.
+                </div>
+              }
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn-outline" (click)="paymentStep.set('method')">Back</button>
+            <button
+              class="btn-pay-confirm"
+              (click)="processStoreCreditPayment()"
+              [disabled]="storeCreditBalance() === null || storeCreditApplyAmount() <= 0 || storeCreditApplyAmount() > (storeCreditBalance() ?? 0) || isProcessing()"
+            >
+              Apply Store Credit
+            </button>
+          </div>
+        }
+
+        <!-- Split Tender -->
+        @if (paymentStep() === 'split') {
+          <div class="modal-header">
+            <h3>Split Payment</h3>
+            <button class="btn-close" aria-label="Close" (click)="closePayment()"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="split-summary">
+              <div class="split-summary-row">
+                <span>Order Total</span>
+                <span class="split-total">${{ cartTotal() | number:'1.2-2' }}</span>
+              </div>
+              <div class="split-summary-row">
+                <span>Remaining</span>
+                <span class="split-remaining" [class.paid]="splitRemaining() === 0">
+                  ${{ splitRemaining() | number:'1.2-2' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Applied Payments -->
+            @if (splitPayments().length > 0) {
+              <div class="split-payments-list">
+                @for (payment of splitPayments(); track $index) {
+                  <div class="split-payment-row">
+                    <span class="split-payment-method">{{ getPaymentMethodLabel(payment.method) }}</span>
+                    <span class="split-payment-amount">${{ payment.amount | number:'1.2-2' }}</span>
+                    <button class="btn-icon-sm btn-remove" aria-label="Remove payment" (click)="removeSplitPayment($index)">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Add Payment -->
+            @if (splitRemaining() > 0) {
+              <div class="split-add-section">
+                <div class="split-add-row">
+                  <select
+                    class="split-method-select"
+                    aria-label="Payment method"
+                    [ngModel]="splitMethod()"
+                    (ngModelChange)="updateSplitMethod($event)"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="gift_card">Gift Card</option>
+                    <option value="store_credit">Store Credit</option>
+                  </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    class="split-amount-input"
+                    placeholder="Amount"
+                    aria-label="Split payment amount"
+                    [ngModel]="splitAmount()"
+                    (ngModelChange)="updateSplitAmount($event)"
+                  />
+                  <button class="btn-primary" (click)="addSplitPayment()" [disabled]="splitAmount() <= 0">
+                    Add
+                  </button>
+                </div>
+                <button class="btn-text" (click)="splitAmount.set(splitRemaining())">
+                  Apply remaining (${{ splitRemaining() | number:'1.2-2' }})
+                </button>
+              </div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn-outline" (click)="paymentStep.set('method')">Back</button>
+            <button
+              class="btn-pay-confirm"
+              (click)="completeSplitPayment()"
+              [disabled]="splitRemaining() > 0 || splitPayments().length === 0 || isProcessing()"
+            >
+              Complete Payment
+            </button>
+          </div>
+        }
+
+        <!-- Complete -->
+        @if (paymentStep() === 'complete') {
+          <div class="modal-body payment-complete">
+            <div class="success-icon">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h3>Payment Complete</h3>
+            @if (lastTransaction()) {
+              <p class="receipt-number">Receipt #{{ lastTransaction()!.receiptNumber }}</p>
+            }
+            <button class="btn-primary btn-lg" (click)="startNewTransaction()">
+              New Transaction
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Layaway Modal -->
+  @if (activeModal() === 'layaway') {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Create Layaway</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="layaway-total">
+            Cart Total: <strong>${{ cartTotal() | number:'1.2-2' }}</strong>
+          </div>
+          <div class="form-group">
+            <label for="pos-lay-customer">Customer ID or Phone</label>
+            <input
+              id="pos-lay-customer"
+              type="text"
+              placeholder="Enter customer ID or phone..."
+              [ngModel]="layawayCustomerId()"
+              (ngModelChange)="updateLayawayCustomerId($event)"
+              autofocus
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-lay-deposit">Deposit Amount (min 20%)</label>
+            <input
+              id="pos-lay-deposit"
+              type="number"
+              step="0.01"
+              [ngModel]="layawayDepositAmount()"
+              (ngModelChange)="updateLayawayDepositAmount($event)"
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-lay-method">Deposit Method</label>
+            <select id="pos-lay-method" [ngModel]="layawayDepositMethod()" (ngModelChange)="updateLayawayDepositMethod($event)">
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeModal()">Cancel</button>
+          <button
+            class="btn-primary"
+            (click)="createLayaway()"
+            [disabled]="!layawayCustomerId() || layawayDepositAmount() <= 0 || isProcessing()"
+          >
+            Create Layaway
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Layaway Payment Modal -->
+  @if (activeModal() === 'layaway-payment' && selectedLayaway(); as layaway) {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Layaway Payment — LAY-{{ layaway.id.substring(0, 8) }}</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="layaway-detail">
+            <div class="layaway-detail-row">
+              <span>Total</span>
+              <span>${{ layaway.totalAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="layaway-detail-row">
+              <span>Paid</span>
+              <span>${{ layaway.paidAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="layaway-detail-row remaining">
+              <span>Remaining</span>
+              <span>${{ layaway.remainingBalance | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="pos-laypay-amount">Payment Amount</label>
+            <input
+              id="pos-laypay-amount"
+              type="number"
+              step="0.01"
+              [ngModel]="layawayPaymentAmount()"
+              (ngModelChange)="updateLayawayPaymentAmount($event)"
+              [max]="layaway.remainingBalance"
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-laypay-method">Payment Method</label>
+            <select id="pos-laypay-method" [ngModel]="layawayPaymentMethod()" (ngModelChange)="updateLayawayPaymentMethod($event)">
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+          @if (layawayPaymentAmount() >= layaway.remainingBalance) {
+            <div class="layaway-release-notice">
+              <i class="bi bi-check-circle"></i>
+              This payment will complete the layaway and release the items.
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeModal()">Cancel</button>
+          <button
+            class="btn-pay-confirm"
+            (click)="submitLayawayPayment()"
+            [disabled]="layawayPaymentAmount() <= 0 || layawayPaymentAmount() > layaway.remainingBalance || isProcessing()"
+          >
+            Submit Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Receipt Settings Modal -->
+  @if (activeModal() === 'receipt-settings') {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+      <div class="modal-content modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Receipt Settings</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pos-rcpt-name">Store Name</label>
+            <input
+              id="pos-rcpt-name"
+              type="text"
+              [ngModel]="receiptStoreName()"
+              (ngModelChange)="updateReceiptStoreName($event)"
+              placeholder="Your Store Name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-rcpt-addr">Address</label>
+            <input
+              id="pos-rcpt-addr"
+              type="text"
+              [ngModel]="receiptStoreAddress()"
+              (ngModelChange)="updateReceiptStoreAddress($event)"
+              placeholder="123 Main St, City, State"
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-rcpt-phone">Phone</label>
+            <input
+              id="pos-rcpt-phone"
+              type="text"
+              [ngModel]="receiptStorePhone()"
+              (ngModelChange)="updateReceiptStorePhone($event)"
+              placeholder="(555) 123-4567"
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-rcpt-return">Return Policy</label>
+            <textarea
+              id="pos-rcpt-return"
+              rows="2"
+              [ngModel]="receiptReturnPolicy()"
+              (ngModelChange)="updateReceiptReturnPolicy($event)"
+              placeholder="Returns accepted within 30 days with receipt."
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="pos-rcpt-promo">Promo Message</label>
+            <textarea
+              id="pos-rcpt-promo"
+              rows="2"
+              [ngModel]="receiptPromoMessage()"
+              (ngModelChange)="updateReceiptPromoMessage($event)"
+              placeholder="Thank you for shopping with us!"
+            ></textarea>
+          </div>
+          <div class="receipt-toggles">
+            <label class="toggle-row">
+              <input type="checkbox" [ngModel]="receiptShowSku()" (ngModelChange)="toggleReceiptShowSku()" />
+              Show SKU on receipt
+            </label>
+            <label class="toggle-row">
+              <input type="checkbox" [ngModel]="receiptShowBarcode()" (ngModelChange)="toggleReceiptShowBarcode()" />
+              Show barcode on receipt
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" (click)="saveReceiptSettings()">
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Price Override Modal -->
+  @if (activeModal() === 'price-override') {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.enter)="closeModal()" (keydown.escape)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Price Override</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pos-price-override">New Price</label>
+            <input
+              id="pos-price-override"
+              type="number"
+              step="0.01"
+              [ngModel]="overridePrice()"
+              (ngModelChange)="updateOverridePrice($event)"
+            />
+          </div>
+          <div class="form-group">
+            <label for="pos-price-reason">Reason</label>
+            <input
+              id="pos-price-reason"
+              type="text"
+              [ngModel]="overrideReason()"
+              (ngModelChange)="updateOverrideReason($event)"
+              placeholder="Manager approval, price match, etc."
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" (click)="submitPriceOverride()" [disabled]="!overrideReason()">
+            Apply Override
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Weight Entry Modal -->
+  @if (activeModal() === 'weight-entry') {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.escape)="closeModal()" aria-hidden="true">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Enter Weight</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pos-weight-entry">Weight (lb)</label>
+            <input
+              id="pos-weight-entry"
+              type="number"
+              step="0.01"
+              [ngModel]="weightValue()"
+              (ngModelChange)="updateWeightValue($event)"
+              autofocus
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" (click)="submitWeight()">Apply</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Quick Key Config Modal -->
+  @if (activeModal() === 'quick-key-config') {
+    <div class="modal-backdrop" (click)="closeModal()" (keydown.escape)="closeModal()" aria-hidden="true">
+      <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Configure Quick Key</h3>
+          <button class="btn-close" aria-label="Close" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pos-qk-item">Item</label>
+            <select id="pos-qk-item" [ngModel]="configItemId()" (ngModelChange)="updateConfigItemId($event)">
+              <option value="">Select item...</option>
+              @for (item of catalogService.activeItems(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select>
+          </div>
+          @if (getConfigItemVariations().length > 0) {
+            <div class="form-group">
+              <label for="pos-qk-variation">Variation (optional)</label>
+              <select id="pos-qk-variation" [ngModel]="configVariationId() ?? ''" (ngModelChange)="updateConfigVariationId($event)">
+                <option value="">Any / Default</option>
+                @for (v of getConfigItemVariations(); track v.id) {
+                  <option [value]="v.id">{{ v.name }}</option>
+                }
+              </select>
+            </div>
+          }
+          <div class="form-group">
+            <label for="pos-qk-label">Label</label>
+            <input
+              id="pos-qk-label"
+              type="text"
+              [ngModel]="configLabel()"
+              (ngModelChange)="updateConfigLabel($event)"
+              placeholder="Button label"
+              maxlength="12"
+            />
+          </div>
+          <div class="form-group">
+            <p class="form-label">Color</p>
+            <div class="color-swatches">
+              @for (color of availableColors; track color) {
+                <button
+                  class="color-swatch"
+                  [style.background]="color"
+                  [class.active]="configColor() === color"
+                  (click)="updateConfigColor(color)"
+                  [attr.aria-label]="'Select color ' + color"
+                ></button>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          @if (quickKeys()[configPosition()]; as existingKey) {
+            <button class="btn-danger-sm" (click)="deleteQuickKey(existingKey.id)">Remove</button>
+          }
+          <div class="modal-footer-right">
+            <button class="btn-outline" (click)="closeModal()">Cancel</button>
+            <button class="btn-primary" (click)="saveQuickKey()" [disabled]="!configItemId() || !configLabel()">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

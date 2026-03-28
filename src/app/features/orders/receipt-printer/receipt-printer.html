@@ -1,0 +1,155 @@
+<div class="receipt-printer">
+  @if (showPrintButton()) {
+    <div class="print-controls mb-3 d-print-none">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="print()"
+        [disabled]="isPrinting()"
+      >
+        @if (isPrinting()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Printing...
+        } @else {
+          Print Receipt
+        }
+      </button>
+    </div>
+  }
+
+  <div class="receipt">
+    <!-- Header -->
+    <div class="receipt-header text-center mb-3">
+      <h4 class="restaurant-name mb-1">{{ restaurantName() }}</h4>
+      @if (restaurantAddress()) {
+        <p class="mb-0 small">{{ restaurantAddress() }}</p>
+      }
+      @if (restaurantPhone()) {
+        <p class="mb-0 small">{{ restaurantPhone() }}</p>
+      }
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Order Info -->
+    <div class="order-info mb-3">
+      <div class="d-flex justify-content-between">
+        <span>Order #{{ getOrderNumber() }}</span>
+        <span>{{ order().diningOption.name }}</span>
+      </div>
+      <div class="text-muted small">
+        {{ getFormattedDate(order().timestamps.createdDate) }}
+      </div>
+      @if (getCustomerName()) {
+        <div class="mt-1">
+          <strong>Customer:</strong> {{ getCustomerName() }}
+        </div>
+      }
+      @if (order().table) {
+        <div>
+          <strong>Table:</strong> {{ order().table!.name }}
+        </div>
+      }
+    </div>
+
+    <!-- Dining-specific info -->
+    @if (order().deliveryInfo) {
+      <div class="dining-detail mb-2">
+        <div><strong>Deliver to:</strong> {{ order().deliveryInfo!.address }}@if (order().deliveryInfo!.address2) {, {{ order().deliveryInfo!.address2 }}}@if (order().deliveryInfo!.city) {, {{ order().deliveryInfo!.city }}, {{ order().deliveryInfo!.state }} {{ order().deliveryInfo!.zip }}}</div>
+        @if (order().deliveryInfo!.deliveryNotes) {
+          <div class="small fst-italic">{{ order().deliveryInfo!.deliveryNotes }}</div>
+        }
+      </div>
+    }
+
+    @if (order().curbsideInfo) {
+      <div class="dining-detail mb-2">
+        <div><strong>Curbside:</strong> {{ order().curbsideInfo!.vehicleDescription }}</div>
+      </div>
+    }
+
+    @if (order().cateringInfo) {
+      <div class="dining-detail mb-2">
+        <div><strong>Catering:</strong> {{ order().cateringInfo!.eventType ?? 'Event' }} &mdash; {{ order().cateringInfo!.headcount }} {{ order().cateringInfo!.headcount === 1 ? 'guest' : 'guests' }}</div>
+        @if (order().cateringInfo!.specialInstructions) {
+          <div class="small fst-italic">{{ order().cateringInfo!.specialInstructions }}</div>
+        }
+      </div>
+    }
+
+    <div class="divider"></div>
+
+    <!-- Items -->
+    <div class="receipt-items mb-3">
+      @for (sel of order().checks[0]?.selections ?? []; track sel.guid) {
+        <div class="receipt-item mb-2">
+          <div class="d-flex justify-content-between">
+            <span>
+              <strong>{{ sel.quantity }}x</strong> {{ sel.menuItemName }}
+            </span>
+            <span>{{ sel.totalPrice | currency }}</span>
+          </div>
+          @if (sel.modifiers && sel.modifiers.length > 0) {
+            <div class="item-modifiers ps-3 small text-muted">
+              @for (mod of sel.modifiers; track mod.guid) {
+                <div class="d-flex justify-content-between">
+                  <span>+ {{ mod.name }}</span>
+                  @if (mod.priceAdjustment > 0) {
+                    <span>{{ mod.priceAdjustment | currency }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+          @if (sel.specialInstructions) {
+            <div class="item-note small text-muted fst-italic ps-3">
+              Note: {{ sel.specialInstructions }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Totals -->
+    <div class="receipt-totals mb-3">
+      <div class="d-flex justify-content-between">
+        <span>Subtotal</span>
+        <span>{{ order().subtotal | currency }}</span>
+      </div>
+      <div class="d-flex justify-content-between text-muted">
+        <span>Tax</span>
+        <span>{{ order().taxAmount | currency }}</span>
+      </div>
+      @if (order().tipAmount > 0) {
+        <div class="d-flex justify-content-between text-muted">
+          <span>Tip</span>
+          <span>{{ order().tipAmount | currency }}</span>
+        </div>
+      }
+      <div class="divider my-2"></div>
+      <div class="d-flex justify-content-between total">
+        <strong>Total</strong>
+        <strong>{{ order().totalAmount | currency }}</strong>
+      </div>
+    </div>
+
+    <!-- Special Instructions -->
+    @if (order().specialInstructions) {
+      <div class="divider"></div>
+      <div class="receipt-notes mb-3">
+        <strong>Notes:</strong>
+        <p class="mb-0">{{ order().specialInstructions }}</p>
+      </div>
+    }
+
+    <div class="divider"></div>
+
+    <!-- Footer -->
+    <div class="receipt-footer text-center mt-3">
+      <p class="mb-1">Thank you for your order!</p>
+      <p class="small text-muted mb-0">Powered by GetOrderStack</p>
+    </div>
+  </div>
+</div>

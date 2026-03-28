@@ -1,0 +1,260 @@
+<div class="booking-widget">
+  <div class="booking-header">
+    <h2 class="booking-title">{{ restaurantName() || 'Book a Table' }}</h2>
+    <p class="booking-subtitle">Make a reservation</p>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mx-3 mb-3">{{ error() }}</div>
+  }
+
+  <!-- DATE & TIME STEP -->
+  @if (step() === 'date') {
+    <div class="booking-body">
+      <!-- Party Size -->
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-party-size">Party Size</label>
+        <select
+          id="bw-party-size"
+          class="form-select"
+          [value]="partySize()"
+          (change)="onPartySizeChange($event)"
+        >
+          @for (size of partySizeOptions(); track size) {
+            <option [value]="size">{{ size }} {{ size === 1 ? 'Guest' : 'Guests' }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Date Picker -->
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-date-select">Date</label>
+        <select
+          id="bw-date-select"
+          class="form-select"
+          [value]="selectedDate()"
+          (change)="onDateChange($event)"
+        >
+          <option value="">Select a date</option>
+          @for (date of dateOptions(); track date) {
+            <option [value]="date">{{ formatDateLabel(date) }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Time Slots -->
+      @if (selectedDate()) {
+        <div class="form-group mb-3">
+          <p class="form-label">Available Times</p>
+
+          @if (isLoadingSlots()) {
+            <div class="d-flex justify-content-center p-3">
+              <os-loading-spinner message="Checking availability..." />
+            </div>
+          } @else if (availableSlots().length > 0) {
+            <div class="time-slot-grid">
+              @for (slot of availableSlots(); track slot.time) {
+                <button
+                  type="button"
+                  class="time-slot-btn"
+                  [class.selected]="selectedTime() === slot.time"
+                  (click)="selectTimeSlot(slot)"
+                >
+                  {{ formatTimeLabel(slot.time) }}
+                  <span class="slot-covers small">{{ slot.availableCovers }} left</span>
+                </button>
+              }
+            </div>
+          } @else if (availability()) {
+            <div class="text-center text-muted p-3">
+              No available times for this date and party size.
+            </div>
+          }
+        </div>
+      }
+
+      <button
+        type="button"
+        class="btn btn-primary w-100 booking-next-btn"
+        [disabled]="!canProceedToInfo()"
+        (click)="goToInfo()"
+      >
+        Continue
+      </button>
+    </div>
+  }
+
+  <!-- INFO STEP -->
+  @if (step() === 'info') {
+    <div class="booking-body">
+      <div class="booking-summary-bar mb-3">
+        <span>{{ formatDateLabel(selectedDate()) }}</span>
+        <span>{{ formatTimeLabel(selectedTime()) }}</span>
+        <span>{{ partySize() }} {{ partySize() === 1 ? 'guest' : 'guests' }}</span>
+        <button type="button" class="btn btn-sm btn-link" (click)="goBackToDate()">Change</button>
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-name">Name *</label>
+        <input
+          id="bw-name"
+          type="text"
+          class="form-control"
+          placeholder="Your name"
+          [value]="name()"
+          (input)="onNameInput($event)"
+        />
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-phone">Phone *</label>
+        <input
+          id="bw-phone"
+          type="tel"
+          class="form-control"
+          placeholder="(555) 555-5555"
+          [value]="phone()"
+          (input)="onPhoneInput($event)"
+        />
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-email">Email</label>
+        <input
+          id="bw-email"
+          type="email"
+          class="form-control"
+          placeholder="your@email.com"
+          [value]="email()"
+          (input)="onEmailInput($event)"
+        />
+      </div>
+
+      <!-- Seating Preference -->
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-seating-pref">Seating Preference</label>
+        <select
+          id="bw-seating-pref"
+          class="form-select"
+          [value]="seatingPreference()"
+          (change)="onSeatingChange($event)"
+        >
+          @for (opt of seatingOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Occasion -->
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-occasion-select">Special Occasion</label>
+        <select
+          id="bw-occasion-select"
+          class="form-select"
+          [value]="occasion()"
+          (change)="onOccasionChange($event)"
+        >
+          <option value="">None</option>
+          @for (occ of occasionOptions; track occ) {
+            <option [value]="occ">{{ occ }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Dietary Restrictions -->
+      <div class="form-group mb-3">
+        <p class="form-label">Dietary Restrictions</p>
+        <div class="dietary-grid">
+          @for (opt of dietaryOptions; track opt) {
+            <button
+              type="button"
+              class="dietary-btn"
+              [class.selected]="isDietarySelected(opt)"
+              (click)="toggleDietary(opt)"
+            >{{ opt }}</button>
+          }
+        </div>
+      </div>
+
+      <!-- Special Requests -->
+      <div class="form-group mb-3">
+        <label class="form-label" for="bw-special-requests">Special Requests</label>
+        <textarea
+          id="bw-special-requests"
+          class="form-control"
+          rows="2"
+          placeholder="Any special requests..."
+          [value]="specialRequests()"
+          (input)="onSpecialRequestsInput($event)"
+        ></textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="goBackToDate()">Back</button>
+        <button
+          type="button"
+          class="btn btn-primary flex-fill"
+          [disabled]="!canSubmit() || isSubmitting()"
+          (click)="submitBooking()"
+        >
+          @if (isSubmitting()) {
+            <output class="spinner-border spinner-border-sm me-2"><span class="visually-hidden">Booking...</span></output>Booking...
+          } @else {
+            Book Table
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- CONFIRM STEP -->
+  @if (step() === 'confirm') {
+    <div class="booking-body text-center">
+      <div class="confirm-icon mb-3">
+        <i class="bi bi-check-lg"></i>
+      </div>
+      <h3 class="mb-2">Booking Confirmed!</h3>
+      <p class="text-muted mb-3">We look forward to seeing you.</p>
+
+      @if (confirmedBooking(); as res) {
+        <div class="confirm-details">
+          <div class="confirm-row">
+            <span class="confirm-label">Date</span>
+            <span>{{ res.reservationTime | date:'fullDate' }}</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">Time</span>
+            <span>{{ res.reservationTime | date:'shortTime' }}</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">Party</span>
+            <span>{{ res.partySize }} {{ res.partySize === 1 ? 'guest' : 'guests' }}</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">Name</span>
+            <span>{{ res.customerName }}</span>
+          </div>
+          @if (res.tableNumber) {
+            <div class="confirm-row">
+              <span class="confirm-label">Table</span>
+              <span>{{ res.tableNumber }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="d-flex flex-column gap-2 mt-4">
+        <a
+          [href]="generateIcsUrl()"
+          download="reservation.ics"
+          class="btn btn-outline-secondary"
+        >
+          Add to Calendar
+        </a>
+        <button type="button" class="btn btn-primary" (click)="startNewBooking()">
+          Make Another Reservation
+        </button>
+      </div>
+    </div>
+  }
+</div>

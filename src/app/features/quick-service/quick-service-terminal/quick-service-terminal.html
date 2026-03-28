@@ -1,0 +1,165 @@
+<div class="qsr-terminal">
+  <!-- ==================== LEFT: Item Grid Area ==================== -->
+  <main class="qsr-main">
+
+    <!-- Top Tabs -->
+    <os-top-navigation
+      [tabs]="topTabs"
+      [activeTab]="activeTopTab()"
+      (tabChange)="selectTopTab($event)" />
+
+    <!-- Category pills (always visible except keypad) -->
+    @if (activeTopTab() !== 'keypad') {
+      <div class="category-pills">
+        <button
+          type="button"
+          class="category-pill"
+          [class.active]="selectedCategoryId() === null"
+          (click)="selectCategory('')">
+          All
+        </button>
+        @for (cat of categories(); track cat.id) {
+          <button
+            type="button"
+            class="category-pill"
+            [class.active]="selectedCategoryId() === cat.id"
+            [style.--pill-color]="categoryColorMap().get(cat.id)"
+            (click)="selectCategory(cat.id)">
+            {{ cat.name }}
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Keypad View -->
+    @if (activeTopTab() === 'keypad') {
+      <div class="keypad-view">
+        <div class="keypad-display">
+          <span class="keypad-dollar">$</span>
+          <span class="keypad-amount">{{ keypadValue() || '0' }}</span>
+        </div>
+        <div class="keypad-grid">
+          @for (key of ['1','2','3','4','5','6','7','8','9','00','0','.']; track key) {
+            <button
+              type="button"
+              class="keypad-key"
+              (click)="onKeypadPress(key)">
+              {{ key }}
+            </button>
+          }
+        </div>
+        <div class="keypad-actions">
+          <button type="button" class="keypad-clear" (click)="onKeypadPress('clear')">Clear</button>
+          <button type="button" class="keypad-backspace" (click)="onKeypadPress('backspace')">
+            <i class="bi bi-backspace"></i>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Item Grid -->
+    @if (activeTopTab() !== 'keypad') {
+      <os-item-grid
+        [items]="gridItems()"
+        [isLoading]="isLoading()"
+        tileMode="color"
+        [categoryColorFn]="getCategoryColorFn"
+        (itemClick)="checkout.addItem($event)" />
+    }
+
+    <os-bottom-navigation />
+  </main>
+
+  <!-- ==================== RIGHT: Current Sale Panel ==================== -->
+  <aside class="sale-panel">
+    <div class="sale-header">
+      <h2>Current sale{{ checkout.cartCount() > 0 ? ' (' + checkout.cartCount() + ')' : '' }}</h2>
+      <button type="button" class="sale-more-btn" aria-label="Sale options">
+        <i class="bi bi-three-dots"></i>
+      </button>
+    </div>
+
+    <!-- Customer row (placeholder) -->
+    <button type="button" class="customer-row">
+      <div class="customer-avatar">
+        <i class="bi bi-person-fill"></i>
+      </div>
+      <span class="customer-name">Add customer</span>
+      <i class="bi bi-chevron-right customer-chevron"></i>
+    </button>
+
+    <!-- Line items -->
+    <div class="sale-items">
+      @if (checkout.cartItems().length === 0) {
+        <div class="sale-empty">
+          <p>No items yet</p>
+        </div>
+      } @else {
+        @for (item of checkout.cartItems(); track item.id) {
+          <div class="sale-line-item">
+            <div class="line-item-info">
+              <button type="button" class="line-item-name" (click)="checkout.removeItem(item.id)">
+                @if (item.weightUnit) {
+                  <span class="line-item-qty">{{ item.quantity }} {{ weightUnitLabels[item.weightUnit] }}</span>
+                } @else if (item.quantity > 1) {
+                  <span class="line-item-qty">{{ item.quantity }}x</span>
+                }
+                {{ item.menuItem.name }}
+              </button>
+              @if (item.weightUnit) {
+                <span class="line-item-modifier">@ {{ item.unitPrice | currency:'USD':'symbol':'1.2-2' }}/{{ weightUnitLabels[item.weightUnit] }}</span>
+              }
+              @if (item.modifierSummary) {
+                <span class="line-item-modifier">{{ item.modifierSummary }}</span>
+              }
+            </div>
+            <span class="line-item-price">{{ item.totalPrice | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Totals + actions -->
+    <div class="sale-footer">
+      @if (checkout.cartItems().length > 0) {
+        <div class="sale-totals">
+          <div class="total-row">
+            <span>Tax</span>
+            <span>{{ checkout.tax() | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          <div class="total-divider"></div>
+          <button type="button" class="add-discount-btn">Add discount</button>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="send-btn"
+        [disabled]="checkout.cartItems().length === 0"
+        (click)="checkout.startCheckout('charge', 'quick-service')">
+        @if (checkout.cartItems().length > 0) {
+          <i class="bi bi-send-fill"></i> Send to Kitchen
+        } @else {
+          Send to Kitchen
+        }
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- ==================== WEIGHT SCALE OVERLAY ==================== -->
+@if (checkout.showWeightScale()) {
+  <div class="send-overlay">
+    <div class="send-modal">
+      <os-weight-scale
+        [itemName]="checkout.weightScaleItem()!.name"
+        [unitPrice]="checkout.weightScaleUnitPrice()"
+        [weightUnit]="checkout.weightScaleUnit()"
+        (weightConfirmed)="checkout.onWeightConfirmed($event)"
+        (cancelled)="checkout.closeWeightScale()" />
+    </div>
+  </div>
+}
+
+<!-- ==================== SEND TO KITCHEN OVERLAY ==================== -->
+<os-checkout [mode]="'charge'" [orderSource]="'quick-service'" />

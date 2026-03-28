@@ -1,0 +1,54 @@
+<!-- Hero -->
+<os-mkt-section background="hero">
+  <os-mkt-hero
+    [tag]="hero.tag"
+    [title]="hero.title"
+    [subtitle]="hero.subtitle"
+    alignment="center" />
+</os-mkt-section>
+
+<!-- Mission -->
+<os-mkt-section>
+  <div class="mkt-about-mission">
+    <blockquote class="mkt-about-mission__quote">
+      <i class="bi bi-quote" aria-hidden="true"></i>
+      {{ mission.pullQuote }}
+    </blockquote>
+    @for (p of mission.paragraphs; track $index) {
+      <p class="mkt-about-mission__text">{{ p }}</p>
+    }
+  </div>
+</os-mkt-section>
+
+<!-- Values -->
+<os-mkt-section background="alt">
+  <h2 class="mkt-about-values__heading">What We Believe</h2>
+  <div class="mkt-about-values">
+    @for (card of values; track card.title) {
+      <div class="mkt-about-value-card">
+        <div class="mkt-about-value-card__icon">
+          <i [class]="'bi ' + card.icon" aria-hidden="true"></i>
+        </div>
+        <h3>{{ card.title }}</h3>
+        <p>{{ card.description }}</p>
+      </div>
+    }
+  </div>
+</os-mkt-section>
+
+<!-- Local -->
+<os-mkt-section>
+  <div class="mkt-about-local">
+    <div class="mkt-about-local__icon">
+      <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+    </div>
+    <h2>{{ local.title }}</h2>
+    <p>{{ local.description }}</p>
+    <a routerLink="/contact" class="mkt-about-local__link">
+      Get in Touch <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    </a>
+  </div>
+</os-mkt-section>
+
+<!-- Final CTA -->
+<os-final-cta />

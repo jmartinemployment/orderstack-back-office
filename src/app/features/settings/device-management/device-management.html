@@ -1,0 +1,203 @@
+<div class="device-management">
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-center justify-content-between mb-3">
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-light" (click)="clearError()">Dismiss</button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert alert-success mb-3">{{ successMessage() }}</div>
+  }
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Registered Devices</h5>
+    <button class="btn btn-primary btn-sm" (click)="openGenerateForm()">
+      <i class="bi bi-plus-lg me-1"></i> Generate Device Code
+    </button>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip mb-3">
+    <div class="kpi-card">
+      <div class="kpi-value">{{ activeDevices().length }}</div>
+      <div class="kpi-label">Active</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">{{ pendingDevices().length }}</div>
+      <div class="kpi-label">Pending</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">{{ revokedDevices().length }}</div>
+      <div class="kpi-label">Revoked</div>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center py-4">
+      <output class="spinner-border text-primary">
+        <span class="visually-hidden">Loading...</span>
+      </output>
+    </div>
+  }
+
+  <!-- Active Devices -->
+  @if (activeDevices().length > 0) {
+    <h6 class="section-label mb-2">Active</h6>
+    <div class="device-list mb-3">
+      @for (device of activeDevices(); track device.id) {
+        <button type="button" class="device-row" [class.selected]="selectedDeviceId() === device.id" (click)="selectDevice(device.id)" (keydown.enter)="selectDevice(device.id)">
+          <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="status-dot status-active"></span>
+            <div>
+              <div class="device-name">{{ device.deviceName }}</div>
+              <div class="device-meta">
+                @if (device.pairedAt) {
+                  Paired {{ device.pairedAt | date:'mediumDate' }}
+                }
+              </div>
+            </div>
+          </div>
+          <div class="device-actions">
+            @if (confirmDeleteId() === device.id) {
+              <button class="btn btn-danger btn-sm" (click)="deleteDevice(device.id); $event.stopPropagation()">
+                Confirm
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="cancelDelete(); $event.stopPropagation()">
+                Cancel
+              </button>
+            } @else {
+              <button class="btn btn-sm btn-outline-danger" (click)="confirmDelete(device.id); $event.stopPropagation()" title="Revoke device">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            }
+          </div>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Pending Pairing -->
+  @if (pendingDevices().length > 0) {
+    <h6 class="section-label mb-2">Pending Pairing</h6>
+    <div class="device-list mb-3">
+      @for (device of pendingDevices(); track device.id) {
+        <button type="button" class="device-row" [class.selected]="selectedDeviceId() === device.id" [class.expired]="isExpired(device)" (click)="selectDevice(device.id)" (keydown.enter)="selectDevice(device.id)">
+          <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="status-dot status-pending"></span>
+            <div>
+              <div class="device-name">
+                {{ device.deviceName }}
+                @if (isExpired(device)) {
+                  <span class="badge bg-danger ms-1">Expired</span>
+                }
+              </div>
+              <div class="device-meta">
+                @if (device.deviceCode) {
+                  Code: <code class="device-code">{{ device.deviceCode }}</code>
+                }
+                @if (device.expiresAt) {
+                  · Expires {{ device.expiresAt | date:'short' }}
+                }
+              </div>
+            </div>
+          </div>
+          <div class="device-actions">
+            @if (confirmDeleteId() === device.id) {
+              <button class="btn btn-danger btn-sm" (click)="deleteDevice(device.id); $event.stopPropagation()">
+                Confirm
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="cancelDelete(); $event.stopPropagation()">
+                Cancel
+              </button>
+            } @else {
+              <button class="btn btn-sm btn-outline-danger" (click)="confirmDelete(device.id); $event.stopPropagation()" title="Delete pending device">
+                <i class="bi bi-trash"></i>
+              </button>
+            }
+          </div>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Revoked -->
+  @if (revokedDevices().length > 0) {
+    <h6 class="section-label mb-2">Revoked</h6>
+    <div class="device-list mb-3">
+      @for (device of revokedDevices(); track device.id) {
+        <button type="button" class="device-row revoked" [class.selected]="selectedDeviceId() === device.id" (click)="selectDevice(device.id)" (keydown.enter)="selectDevice(device.id)">
+          <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="status-dot status-revoked"></span>
+            <div>
+              <div class="device-name">{{ device.deviceName }}</div>
+              <div class="device-meta">Revoked</div>
+            </div>
+          </div>
+          <div class="device-actions">
+            @if (confirmDeleteId() === device.id) {
+              <button class="btn btn-danger btn-sm" (click)="deleteDevice(device.id); $event.stopPropagation()">
+                Confirm
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="cancelDelete(); $event.stopPropagation()">
+                Cancel
+              </button>
+            } @else {
+              <button class="btn btn-sm btn-outline-danger" (click)="confirmDelete(device.id); $event.stopPropagation()" title="Remove device">
+                <i class="bi bi-trash"></i>
+              </button>
+            }
+          </div>
+        </button>
+      }
+    </div>
+  }
+
+  @if (!isLoading() && devices().length === 0) {
+    <div class="empty-state text-center py-4">
+      <i class="bi bi-laptop display-4 text-muted mb-2"></i>
+      <p class="text-muted">No devices registered. Generate a code to pair a POS device.</p>
+    </div>
+  }
+
+  <!-- Generate Code Modal -->
+  @if (showGenerateForm()) {
+    <button type="button" class="modal-backdrop" (click)="closeGenerateForm()" (keydown.enter)="closeGenerateForm()"></button>
+    <div class="modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Generate Device Code</h5>
+          <button class="btn-close" (click)="closeGenerateForm()"></button>
+        </div>
+        <div class="modal-body">
+          @if (!generatedDevice()) {
+            <div class="mb-3">
+              <label class="form-label" for="deviceNameInput">Device Name *</label>
+              <input type="text" class="form-control" id="deviceNameInput" [value]="deviceName()" (input)="setDeviceName($any($event.target).value)" placeholder="e.g., Bar POS, Host Stand">
+            </div>
+            <p class="text-muted small">The code will expire in 15 minutes. Enter it on the device to pair.</p>
+          } @else {
+            <div class="text-center py-3">
+              <div class="generated-code">{{ generatedDevice()!.deviceCode }}</div>
+              <p class="text-muted mt-2">Enter this code on the device within 15 minutes.</p>
+              <p class="small text-muted">Device: {{ generatedDevice()!.deviceName }}</p>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-light" (click)="closeGenerateForm()">
+            {{ generatedDevice() ? 'Done' : 'Cancel' }}
+          </button>
+          @if (!generatedDevice()) {
+            <button class="btn btn-primary" (click)="generateCode()" [disabled]="isSaving() || !deviceName()">
+              @if (isSaving()) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+              }
+              Generate
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

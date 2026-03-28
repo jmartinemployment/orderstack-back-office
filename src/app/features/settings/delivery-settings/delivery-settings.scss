@@ -1,0 +1,255 @@
+.delivery-settings {
+  color: var(--os-text-primary);
+}
+
+.provider-options {
+  .form-check {
+    padding: 0.75rem;
+    padding-left: 2rem;
+    border: 1px solid var(--os-border);
+    border-radius: 0.375rem;
+
+    &:has(.form-check-input:checked) {
+      border-color: var(--os-primary);
+      background-color: rgba(0, 106, 255, 0.06);
+    }
+  }
+}
+
+.form-check-input {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+.form-check-label {
+  color: var(--os-text-primary);
+  cursor: pointer;
+}
+
+.form-control {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 106, 255, 0.15);
+  }
+}
+
+.delivery-options .form-control {
+  max-width: 120px;
+}
+
+.credential-card .form-control,
+.credential-card .form-select {
+  max-width: none;
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-size: 0.875rem;
+}
+
+.config-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--os-danger);
+  margin-left: 0.5rem;
+
+  &.configured {
+    background-color: var(--os-success);
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.credential-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.marketplace-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mapping-table-wrap {
+  overflow-x: auto;
+}
+
+.mapping-table {
+  min-width: 720px;
+
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  code {
+    color: var(--os-primary);
+  }
+}
+
+.credential-card {
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: var(--os-bg-card);
+
+  h6 {
+    margin-bottom: 0.75rem;
+  }
+}
+
+// In-House Driver Management
+.driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.driver-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+
+  &.driver-inactive {
+    opacity: 0.55;
+  }
+}
+
+.driver-icon {
+  font-size: 1.25rem;
+  color: var(--os-text-secondary);
+}
+
+.driver-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.driver-name {
+  font-weight: 600;
+  color: var(--os-text-primary);
+}
+
+.driver-meta {
+  font-size: 0.75rem;
+  color: var(--os-text-secondary);
+}
+
+.driver-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.driver-status-available {
+  background-color: rgba(0, 166, 126, 0.1);
+  color: var(--os-success);
+}
+
+.driver-status-busy {
+  background-color: rgba(245, 166, 35, 0.1);
+  color: var(--os-warning);
+}
+
+.driver-status-offline {
+  background-color: var(--os-bg);
+  color: var(--os-text-muted);
+}
+
+.empty-driver-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--os-text-muted);
+  border: 1px dashed var(--os-border);
+  border-radius: var(--os-radius);
+}
+
+// Dispatch Config
+.dispatch-config {
+  .form-control {
+    max-width: 160px;
+  }
+}
+
+// Driver Form Modal
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.driver-form-modal {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 480px;
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+
+  .form-select {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-border);
+    color: var(--os-text-primary);
+
+    &:focus {
+      border-color: var(--os-primary);
+      box-shadow: 0 0 0 0.2rem rgba(0, 106, 255, 0.15);
+    }
+  }
+}

@@ -1,0 +1,673 @@
+.pending-orders {
+  h2 {
+    color: var(--os-text-primary);
+    font-size: 1.375rem;
+    font-weight: 600;
+  }
+}
+
+.draft-indicator {
+  background-color: rgba(245, 166, 35, 0.1);
+  color: var(--os-warning);
+  font-size: 0.75rem;
+}
+
+.order-counts {
+  .badge-count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--os-radius);
+    background-color: var(--os-bg-card);
+    border: 1px solid var(--os-border);
+
+    .count {
+      font-size: 1.5rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--os-text-secondary);
+    }
+
+    &.received .count { color: var(--os-warning); }
+    &.in-preparation .count { color: #fd7e14; }
+    &.ready .count { color: var(--os-success); }
+  }
+}
+
+.search-bar {
+  .input-group-text {
+    background-color: var(--os-bg);
+    border-color: var(--os-border);
+    color: var(--os-text-secondary);
+  }
+
+  .form-control {
+    background-color: var(--os-bg-card);
+    border-color: var(--os-border);
+    color: var(--os-text-primary);
+
+    &::placeholder {
+      color: var(--os-text-muted);
+    }
+
+    &:focus {
+      background-color: var(--os-bg-card);
+      border-color: var(--os-primary);
+      color: var(--os-text-primary);
+      box-shadow: 0 0 0 0.25rem rgba(0, 106, 255, 0.15);
+    }
+  }
+}
+
+.source-filter {
+  background-color: var(--os-bg-card);
+  padding: 0.75rem;
+  border-radius: var(--os-radius);
+  border: 1px solid var(--os-border);
+}
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.order-card {
+  background-color: var(--os-bg-card);
+  border: 2px solid var(--os-border);
+  color: var(--os-text-primary);
+  transition: border-color 0.2s;
+
+  .card-body {
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      background-color: var(--os-bg);
+    }
+
+    // Pass clicks through non-interactive children directly to card-body
+    // so the (click) handler fires as the direct target, not via bubbling
+    .order-meta,
+    .order-items,
+    .order-item,
+    .order-total,
+    .customer-name,
+    .special-instructions,
+    .delivery-detail,
+    .curbside-detail,
+    .catering-detail,
+    .approval-section,
+    .marketplace-sync-alert,
+    .course-group,
+    .driver-assignment-info,
+    .driver-assign-dropdown,
+    .delivery-tracking-card {
+      pointer-events: none;
+    }
+
+    // Keep interactive elements clickable
+    button,
+    a,
+    select,
+    input {
+      pointer-events: auto;
+    }
+  }
+
+  &.status-RECEIVED { border-color: var(--os-warning); }
+  &.status-IN_PREPARATION { border-color: #fd7e14; }
+  &.status-READY_FOR_PICKUP { border-color: var(--os-success); }
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+
+    h5 {
+      color: var(--os-text-primary);
+      font-weight: 600;
+    }
+
+    .time-ago {
+      color: var(--os-text-muted);
+    }
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+.customer-name {
+  color: var(--os-text-primary);
+  font-weight: 500;
+}
+
+.order-items {
+  .order-item {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--os-border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .quantity {
+      font-weight: bold;
+      color: var(--os-primary);
+      margin-right: 0.5rem;
+    }
+
+    .modifiers {
+      padding-left: 1.5rem;
+
+      .modifier {
+        display: block;
+        color: var(--os-text-muted);
+      }
+    }
+  }
+}
+
+.special-instructions {
+  background-color: rgba(245, 166, 35, 0.08);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border-left: 3px solid var(--os-warning);
+}
+
+.order-total {
+  color: var(--os-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  background-color: var(--os-bg-card);
+  border: 1px dashed var(--os-border);
+  border-radius: var(--os-radius);
+}
+
+.payment-paid { background-color: var(--os-success); color: #fff; }
+.payment-pending { background-color: var(--os-warning); color: #000; }
+.payment-failed { background-color: var(--os-danger); color: #fff; }
+.payment-refunded { background-color: #6c757d; color: #fff; }
+
+.marketplace-source {
+  background-color: #0b7285;
+  color: #fff;
+}
+
+.marketplace-sync {
+  color: #fff;
+}
+
+.sync-success {
+  background-color: #198754;
+}
+
+.sync-pending {
+  background-color: #6c757d;
+}
+
+.sync-retrying {
+  background-color: #fd7e14;
+}
+
+.sync-failed {
+  background-color: var(--os-danger);
+}
+
+.marketplace-sync-alert {
+  font-size: 0.75rem;
+  color: var(--os-danger);
+  border-left: 3px solid var(--os-danger);
+  background-color: rgba(229, 62, 62, 0.06);
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+// Dining option detail blocks
+.delivery-detail,
+.curbside-detail,
+.catering-detail {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: var(--os-bg);
+  border-left: 3px solid var(--os-border);
+}
+
+.delivery-detail {
+  border-left-color: #0d6efd;
+}
+
+.curbside-detail {
+  border-left-color: var(--os-warning);
+}
+
+.catering-detail {
+  border-left-color: #6f42c1;
+}
+
+// Delivery state badges
+.delivery-preparing {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.delivery-out {
+  background-color: #0dcaf0;
+  color: #000;
+}
+
+.delivery-done {
+  background-color: var(--os-success);
+  color: #fff;
+}
+
+.approval-section {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(111, 66, 193, 0.06);
+  border-left: 3px solid #6f42c1;
+}
+
+.approval-countdown {
+  font-size: 0.75rem;
+  color: var(--os-warning);
+  margin-bottom: 0.35rem;
+
+  &.urgent {
+    color: var(--os-danger);
+    font-weight: 600;
+    animation: pulse-text 1s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.approval-actions {
+  .btn-success {
+    background-color: var(--os-success);
+    border-color: var(--os-success);
+  }
+}
+
+.profit-badge {
+  font-size: 0.7rem;
+}
+
+.profit-btn {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+}
+
+.btn-success {
+  background-color: var(--os-success);
+  border-color: var(--os-success);
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+}
+
+.print-status-badge {
+  font-size: 0.75rem;
+
+  &.print-printing {
+    background-color: rgba(245, 166, 35, 0.1);
+    color: var(--os-warning);
+  }
+
+  &.print-printed {
+    background-color: rgba(0, 166, 126, 0.1);
+    color: var(--os-success);
+  }
+
+  &.print-failed {
+    background-color: rgba(229, 62, 62, 0.1);
+    color: var(--os-danger);
+  }
+}
+
+// Channel filter
+.channel-filter {
+  background-color: var(--os-bg-card);
+  padding: 0.75rem 1rem;
+  border-radius: var(--os-radius);
+  border: 1px solid var(--os-border);
+}
+
+.channel-btn {
+  border: 1px solid var(--os-border);
+  color: var(--os-text-secondary);
+  background: transparent;
+
+  &:hover {
+    border-color: var(--os-primary);
+    color: var(--os-text-primary);
+  }
+
+  &.active {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+    color: #fff;
+  }
+}
+
+.channel-badge {
+  background-color: var(--os-bg);
+  color: var(--os-text-secondary);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+.curbside-wait-time {
+  color: var(--os-warning);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+// Bulk selection
+.bulk-action-bar {
+  background-color: var(--os-primary-light);
+  border: 1px solid var(--os-primary);
+  border-radius: var(--os-radius);
+  padding: 0.75rem 1rem;
+
+  .selected-count {
+    font-weight: 600;
+    color: var(--os-primary);
+    font-size: 0.875rem;
+  }
+}
+
+.select-all-row {
+  padding-left: 0.25rem;
+}
+
+.bulk-check {
+  cursor: pointer;
+}
+
+.order-card.selected {
+  border-color: var(--os-primary);
+  background-color: var(--os-primary-light);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// Course System — PendingOrders
+.course-group {
+  border-left: 3px solid var(--os-border);
+  padding-left: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--os-border);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.course-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.course-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--os-text-primary);
+}
+
+.course-status-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+.fire-course-btn {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+}
+
+.held-item {
+  opacity: 0.45;
+  border-left: 2px dashed var(--os-border);
+  padding-left: 0.5rem;
+}
+
+// Driver Assignment (GAP-R08)
+.driver-assignment-panel {
+  background-color: rgba(0, 106, 255, 0.06);
+  border: 1px solid var(--os-primary);
+  border-radius: var(--os-radius);
+  padding: 0.75rem 1rem;
+
+  .panel-header {
+    font-size: 0.875rem;
+    color: var(--os-primary);
+  }
+}
+
+.driver-assignment-info {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(0, 166, 126, 0.06);
+  border-left: 3px solid var(--os-success);
+}
+
+.driver-assign-dropdown {
+  .driver-select {
+    max-width: 200px;
+    font-size: 0.75rem;
+  }
+}
+
+.assignment-status-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
+.assignment-assigned {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.assignment-picked-up {
+  background-color: #0dcaf0;
+  color: #000;
+}
+
+.assignment-en-route {
+  background-color: var(--os-primary);
+  color: #fff;
+}
+
+.assignment-delivered {
+  background-color: var(--os-success);
+  color: #fff;
+}
+
+.assignment-cancelled {
+  background-color: var(--os-danger);
+  color: #fff;
+}
+
+// Delivery Tracking (GAP-R08 Phase 2)
+.delivery-tracking-card {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background-color: rgba(0, 106, 255, 0.04);
+  border-left: 3px solid var(--os-primary);
+}
+
+.tracking-header {
+  gap: 0.5rem;
+}
+
+.tracking-eta {
+  font-weight: 600;
+  color: var(--os-primary);
+  font-size: 0.8rem;
+}
+
+.tracking-driver-photo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tracking-driver-icon {
+  font-size: 1.25rem;
+  color: var(--os-text-secondary);
+}
+
+.tracking-link {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--os-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.tracking-pending {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.tracking-assigned {
+  background-color: #0dcaf0;
+  color: #000;
+}
+
+.tracking-picked-up {
+  background-color: var(--os-warning);
+  color: #000;
+}
+
+.tracking-active {
+  background-color: var(--os-primary);
+  color: #fff;
+}
+
+.tracking-delivered {
+  background-color: var(--os-success);
+  color: #fff;
+}
+
+.tracking-failed {
+  background-color: var(--os-danger);
+  color: #fff;
+}
+
+// Confirmation modals
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.delete-confirm-modal {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+  }
+
+  .card-footer {
+    background-color: var(--os-bg-card);
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+// Order Detail Modal
+.order-detail-modal {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  color: var(--os-text-primary);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+
+  .card-header {
+    background-color: var(--os-bg-card);
+    border-bottom: 1px solid var(--os-border);
+
+    h4 {
+      color: var(--os-text-primary);
+      font-weight: 600;
+    }
+  }
+}
+
+.section {
+  h6 {
+    color: var(--os-text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  hr {
+    border-color: var(--os-border);
+  }
+
+  .total {
+    color: var(--os-text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+}
+
+.dining-details {
+  background-color: var(--os-bg);
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+}

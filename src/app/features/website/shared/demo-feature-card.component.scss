@@ -1,0 +1,131 @@
+.mkt-fcard {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  overflow: hidden;
+}
+
+.mkt-fcard__preview {
+  background: linear-gradient(135deg, var(--os-primary-light) 0%, var(--os-bg) 100%);
+  padding: 48px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+
+  @media (max-width: 767.98px) {
+    min-height: 160px;
+    padding: 32px 24px;
+  }
+}
+
+.mkt-fcard__preview-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--os-primary);
+
+  i {
+    font-size: 3rem;
+    opacity: 0.6;
+  }
+
+  span {
+    font-size: 0.875rem;
+    font-weight: 600;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.mkt-fcard__content {
+  padding: 32px 28px;
+
+  @media (max-width: 767.98px) {
+    padding: 24px 20px;
+  }
+}
+
+.mkt-fcard__headline {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+  margin-bottom: 12px;
+  line-height: 1.3;
+
+  @media (max-width: 767.98px) {
+    font-size: 1.125rem;
+  }
+}
+
+.mkt-fcard__desc {
+  font-size: 0.9375rem;
+  color: var(--os-text-secondary);
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+
+.mkt-fcard__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mkt-fcard__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mkt-fcard__step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--os-primary);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.mkt-fcard__step-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--os-radius);
+  background: var(--os-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+
+  i {
+    font-size: 0.875rem;
+    color: var(--os-primary);
+  }
+}
+
+.mkt-fcard__step-body {
+  flex: 1;
+
+  strong {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  p {
+    font-size: 0.8125rem;
+    color: var(--os-text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+}

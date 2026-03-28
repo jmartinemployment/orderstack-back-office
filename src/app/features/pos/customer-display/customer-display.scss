@@ -1,0 +1,301 @@
+.customer-display {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #fafafa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+// ==================== IDLE MODE ====================
+
+.idle-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-screen {
+  text-align: center;
+  padding: 2rem;
+}
+
+.logo-icon {
+  font-size: 5rem;
+  color: var(--os-primary, #006aff);
+  margin-bottom: 1.5rem;
+
+  i {
+    display: block;
+  }
+}
+
+.branding-text {
+  font-size: 2rem;
+  font-weight: 300;
+  color: #333;
+  letter-spacing: -0.02em;
+}
+
+.slideshow {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slideshow-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+// ==================== ACTIVE MODE ====================
+
+.active-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 3rem;
+}
+
+.order-header {
+  margin-bottom: 1.5rem;
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+  }
+}
+
+.order-items {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e8e8e8;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.item-qty {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--os-primary, #006aff);
+  min-width: 2.5rem;
+}
+
+.item-name {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.item-price {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.empty-order {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  color: #aaa;
+  gap: 0.75rem;
+
+  i {
+    font-size: 3rem;
+  }
+
+  span {
+    font-size: 1.25rem;
+  }
+}
+
+.order-totals {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 1.25rem;
+  margin-top: 1rem;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 1.25rem;
+  color: #666;
+
+  &.total-final {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 0.5rem;
+  }
+}
+
+// ==================== TIP MODE ====================
+
+.tip-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 3rem;
+}
+
+.tip-heading {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.tip-subheading {
+  font-size: 1.25rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.tip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  max-width: 600px;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.tip-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.5rem 1rem;
+  background-color: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--os-primary, #006aff);
+    background-color: rgba(0, 106, 255, 0.03);
+  }
+
+  &.selected {
+    border-color: var(--os-primary, #006aff);
+    background-color: rgba(0, 106, 255, 0.08);
+  }
+}
+
+.tip-percent {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.tip-amount {
+  font-size: 1rem;
+  color: #888;
+}
+
+.no-tip-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #f0f0f0;
+    color: #555;
+  }
+
+  &.selected {
+    background-color: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+  }
+}
+
+.tip-summary {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+// ==================== COMPLETE MODE ====================
+
+.complete-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.complete-icon {
+  font-size: 5rem;
+  color: #28a745;
+  margin-bottom: 1.5rem;
+
+  i {
+    display: block;
+  }
+}
+
+.complete-heading {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.complete-message {
+  font-size: 1.25rem;
+  color: #666;
+}

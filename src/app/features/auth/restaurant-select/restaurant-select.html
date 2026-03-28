@@ -1,0 +1,81 @@
+@if (isAuthenticated()) {
+  <div class="restaurant-select-container">
+    <div class="restaurant-select-card card shadow">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <h2 class="card-title mb-1">Select Restaurant</h2>
+          @if (userName()) {
+            <p class="text-muted">Welcome, {{ userName()!.firstName }}</p>
+          }
+        </div>
+
+        @if (error()) {
+          <os-error-display
+            [message]="error()!"
+            [retryable]="true"
+            (dismissed)="clearError()"
+            (retry)="retry()"
+          />
+        }
+
+        @if (isLoading()) {
+          <div class="d-flex justify-content-center p-4">
+            <os-loading-spinner message="Loading restaurants..." />
+          </div>
+        } @else {
+          <div class="restaurant-list">
+            @for (restaurant of restaurants(); track restaurant.id) {
+              <button
+                type="button"
+                class="restaurant-item btn w-100 text-start mb-2"
+                [disabled]="isSelecting()"
+                (click)="selectMerchant(restaurant)"
+              >
+                <div class="d-flex align-items-center gap-3">
+                  @if (restaurant.logo) {
+                    <img [src]="restaurant.logo" [alt]="restaurant.name" width="48" height="48" class="restaurant-logo" />
+                  } @else {
+                    <div class="restaurant-logo-placeholder">
+                      {{ restaurant.name.charAt(0) }}
+                    </div>
+                  }
+                  <div>
+                    <div class="restaurant-name fw-bold">{{ restaurant.name }}</div>
+                    <small class="text-muted">{{ restaurant.address }}</small>
+                  </div>
+                  @if (isSelecting()) {
+                    <span class="spinner-border spinner-border-sm ms-2"></span>
+                  }
+                </div>
+              </button>
+            } @empty {
+              @if (!error()) {
+                <div class="text-center text-muted p-4">
+                  <p class="mb-0">No restaurants available</p>
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <hr class="my-4" />
+
+        <button
+          type="button"
+          class="btn btn-outline-primary w-100 mb-2"
+          routerLink="/business-type"
+        >
+          + Add New Restaurant
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary w-100"
+          (click)="logout()"
+        >
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+}

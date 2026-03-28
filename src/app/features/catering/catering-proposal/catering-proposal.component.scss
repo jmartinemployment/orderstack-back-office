@@ -1,0 +1,462 @@
+:host {
+  display: block;
+}
+
+// --- Layout ---
+
+.proposal-loading,
+.proposal-error,
+.proposal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.proposal-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+// --- Error state ---
+
+.error-card {
+  max-width: 440px;
+  padding: 3rem 2rem;
+  border-radius: 12px;
+  background: var(--bs-body-bg, #fff);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+
+  .error-icon {
+    font-size: 3rem;
+    color: var(--bs-danger, #dc3545);
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 0;
+  }
+}
+
+// --- Success state ---
+
+.success-card {
+  max-width: 480px;
+  padding: 3rem 2rem;
+  border-radius: 12px;
+  background: var(--bs-body-bg, #fff);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+
+  .success-icon-wrapper {
+    font-size: 4rem;
+    color: var(--bs-success, #198754);
+    margin-bottom: 1rem;
+    line-height: 1;
+  }
+
+  h2 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .total {
+    font-size: 1.25rem;
+  }
+}
+
+// --- Header ---
+
+.proposal-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+
+  .business-logo {
+    max-height: 64px;
+    max-width: 200px;
+    object-fit: contain;
+    margin-bottom: 1.25rem;
+  }
+
+  .proposal-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .proposal-subtitle {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 1.05rem;
+    margin-bottom: 0;
+  }
+}
+
+// --- Section titles ---
+
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  color: var(--bs-body-color, #212529);
+}
+
+// --- Event details ---
+
+.event-details {
+  margin-bottom: 2.5rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.detail-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: var(--bs-body-color, #212529);
+}
+
+.location-badge {
+  text-transform: capitalize;
+}
+
+// --- Packages ---
+
+.packages-section {
+  margin-bottom: 2rem;
+}
+
+.packages-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+
+  &.two-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  &.three-col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.package-card {
+  position: relative;
+  border: 2px solid var(--bs-border-color, #dee2e6);
+  border-radius: 12px;
+  padding: 1.75rem 1.5rem 1.5rem;
+  background: var(--bs-body-bg, #fff);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 4px 16px rgba(13, 110, 253, 0.1);
+    transform: translateY(-2px);
+  }
+
+  &.selected {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.15);
+    background: rgba(13, 110, 253, 0.02);
+  }
+
+  &.premium {
+    .package-tier-badge {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+    }
+  }
+}
+
+.package-tier-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  color: #fff;
+  background: var(--bs-secondary, #6c757d);
+  margin-bottom: 0.75rem;
+
+  &[data-tier='standard'] {
+    background: var(--bs-primary, #0d6efd);
+  }
+
+  &[data-tier='custom'] {
+    background: var(--bs-info, #0dcaf0);
+    color: #000;
+  }
+}
+
+.package-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.package-price {
+  margin-bottom: 1rem;
+
+  .price-amount {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--bs-body-color, #212529);
+    line-height: 1.2;
+  }
+
+  .price-model {
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color, #6c757d);
+  }
+}
+
+.package-description {
+  font-size: 0.9rem;
+  color: var(--bs-secondary-color, #6c757d);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.package-minimum {
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color, #6c757d);
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.select-btn {
+  width: 100%;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+// --- Contract acknowledgment ---
+
+.contract-section {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bs-light, #f8f9fa);
+  border-radius: 10px;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+
+  .form-check-label {
+    font-size: 0.95rem;
+
+    a {
+      font-weight: 600;
+    }
+  }
+}
+
+// --- E-signature ---
+
+.esign-section {
+  margin-bottom: 2rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.esign-consent {
+  padding: 1.25rem 1.5rem;
+  background: var(--bs-light, #f8f9fa);
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+
+  .form-check-label {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--bs-body-color, #212529);
+  }
+}
+
+.signature-wrap {
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+}
+
+.signature-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.signature-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.btn-clear-sig {
+  background: none;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color, #6c757d);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--bs-light, #f8f9fa);
+    color: var(--bs-body-color, #212529);
+  }
+}
+
+.signature-canvas {
+  display: block;
+  width: 100%;
+  height: 160px;
+  border: 2px dashed var(--bs-border-color, #dee2e6);
+  border-radius: 8px;
+  cursor: crosshair;
+  background: #fafafa;
+  touch-action: none;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--bs-primary, #0d6efd);
+  }
+
+  &.has-signature {
+    border-style: solid;
+    border-color: var(--bs-success, #198754);
+    background: #fff;
+  }
+}
+
+.signature-hint {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color, #6c757d);
+  text-align: center;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+// --- Approval actions ---
+
+.approval-actions {
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  .approve-btn {
+    min-width: 240px;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+  }
+
+  .hint-text {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 0;
+  }
+}
+
+// --- Notes ---
+
+.notes-section {
+  padding-top: 2rem;
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+
+  p {
+    color: var(--bs-secondary-color, #6c757d);
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+}
+
+// --- Responsive ---
+
+@media (max-width: 767px) {
+  .proposal-content {
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .packages-grid {
+    &.two-col,
+    &.three-col {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .proposal-header .proposal-title {
+    font-size: 1.4rem;
+  }
+
+  .package-price .price-amount {
+    font-size: 1.5rem;
+  }
+}
+
+// --- Print ---
+
+@media print {
+  .select-btn,
+  .approve-btn,
+  .approval-actions,
+  .contract-section {
+    display: none !important;
+  }
+
+  .package-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  .proposal-content {
+    max-width: 100%;
+    padding: 0;
+  }
+}

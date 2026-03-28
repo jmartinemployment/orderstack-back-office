@@ -1,0 +1,94 @@
+:host { display: block; }
+
+.production-page { padding: 1.5rem; max-width: 1200px; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.page-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+.page-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+.summary-bar {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem 1.25rem;
+  background: var(--bs-secondary-bg);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.summary-item {
+  font-size: 0.9rem;
+  color: var(--bs-secondary);
+
+  strong {
+    color: var(--bs-body-color);
+    font-size: 1.25rem;
+    display: block;
+  }
+}
+
+.section { margin-bottom: 2rem; }
+.section__title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+
+.ingredient-table {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+
+  &__header,
+  &__row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    align-items: center;
+  }
+
+  &__header {
+    background: var(--bs-secondary-bg);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary);
+  }
+
+  &__row {
+    border-top: 1px solid var(--bs-border-color);
+
+    &:hover { background: var(--bs-secondary-bg); }
+  }
+}
+
+.job-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+
+  &__header { display: flex; justify-content: space-between; }
+  &__title { font-weight: 600; }
+  &__meta { font-size: 0.8125rem; color: var(--bs-secondary); }
+  &__items { margin-top: 0.75rem; }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--bs-secondary);
+
+  &__icon { font-size: 3rem; display: block; margin-bottom: 1rem; }
+
+  h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--bs-body-color); }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .production-page { padding: 0; }
+  .ingredient-table__row:hover { background: transparent; }
+}

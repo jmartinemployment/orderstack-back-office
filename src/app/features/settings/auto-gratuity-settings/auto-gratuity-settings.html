@@ -1,0 +1,100 @@
+<div class="auto-gratuity-settings">
+  <h5 class="section-title mb-3">Automatic Gratuity</h5>
+  <p class="text-muted small mb-3">
+    Automatically add a gratuity to orders from large parties. The gratuity is shown as a separate
+    line item and cannot be removed by the guest — only by a manager.
+  </p>
+
+  <div class="setting-row mb-3">
+    <div class="form-check form-switch">
+      <input
+        type="checkbox"
+        class="form-check-input"
+        id="autoGratEnabled"
+        [checked]="enabled()"
+        (change)="onEnabledChange($event)"
+      />
+      <label class="form-check-label" for="autoGratEnabled">Enable Auto-Gratuity</label>
+    </div>
+  </div>
+
+  @if (enabled()) {
+    <div class="settings-fields">
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label small" for="minPartySize">Minimum Party Size</label>
+          <input
+            type="number"
+            class="form-control"
+            id="minPartySize"
+            [value]="minPartySize()"
+            (input)="onMinPartySizeInput($event)"
+            min="2"
+            max="50"
+          />
+          <div class="form-text small">Parties of this size or larger</div>
+        </div>
+        <div class="col-6">
+          <label class="form-label small" for="gratuityPercent">Gratuity Percentage</label>
+          <div class="input-group">
+            <input
+              type="number"
+              class="form-control"
+              id="gratuityPercent"
+              [value]="gratuityPercent()"
+              (input)="onGratuityPercentInput($event)"
+              min="5"
+              max="30"
+            />
+            <span class="input-group-text">%</span>
+          </div>
+          <div class="form-text small">Typically 18-20%</div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-check mb-2">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="applyToTakeout"
+            [checked]="applyToTakeout()"
+            (change)="onApplyToTakeoutChange($event)"
+          />
+          <label class="form-check-label" for="applyToTakeout">Apply to takeout orders</label>
+        </div>
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="applyToDelivery"
+            [checked]="applyToDelivery()"
+            (change)="onApplyToDeliveryChange($event)"
+          />
+          <label class="form-check-label" for="applyToDelivery">Apply to delivery orders</label>
+        </div>
+      </div>
+
+      <div class="preview-box mb-3">
+        <div class="preview-label">Preview</div>
+        <div class="preview-text">
+          Auto Gratuity ({{ gratuityPercent() }}%) — applied to parties of {{ minPartySize() }}+
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (isDirty()) {
+    <div class="d-flex gap-2 mt-3">
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Save
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="discard()" [disabled]="isSaving()">
+        Discard
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,959 @@
+<div class="retail-reports px-2">
+  <header class="page-header">
+    <div class="header-left">
+      <h1>Retail Reports</h1>
+      <p class="subtitle">Sales performance, margins, and insights</p>
+    </div>
+  </header>
+
+  <!-- Date Range Controls -->
+  <div class="date-controls">
+    <div class="period-pills">
+      @for (opt of periodOptions; track opt.value) {
+        <button
+          class="pill"
+          [class.active]="selectedPeriod() === opt.value"
+          (click)="selectPeriod(opt.value)"
+        >{{ opt.label }}</button>
+      }
+    </div>
+
+    @if (selectedPeriod() === 'custom') {
+      <div class="custom-dates">
+        <input
+          type="date"
+          class="form-control"
+          aria-label="From date"
+          [value]="customDateFrom()"
+          (input)="updateCustomDateFrom($any($event.target).value)"
+        />
+        <span class="date-separator">to</span>
+        <input
+          type="date"
+          class="form-control"
+          aria-label="To date"
+          [value]="customDateTo()"
+          (input)="updateCustomDateTo($any($event.target).value)"
+        />
+      </div>
+    }
+
+    <div class="comparison-toggle">
+      <label class="toggle-label">
+        <input type="checkbox" [checked]="showComparison()" (change)="toggleComparison()" />
+        Compare
+      </label>
+      @if (showComparison()) {
+        <select
+          class="form-select form-select-sm"
+          aria-label="Comparison mode"
+          [value]="comparisonMode()"
+          (change)="updateComparisonMode($any($event.target).value)"
+        >
+          <option value="previous_period">vs Previous Period</option>
+          <option value="same_period_last_year">vs Same Period Last Year</option>
+        </select>
+      }
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">Overview</button>
+    <button class="tab" [class.active]="activeTab() === 'items'" (click)="setTab('items')">Items</button>
+    <button class="tab" [class.active]="activeTab() === 'categories'" (click)="setTab('categories')">Categories</button>
+    <button class="tab" [class.active]="activeTab() === 'employees'" (click)="setTab('employees')">Employees</button>
+    <button class="tab" [class.active]="activeTab() === 'discounts'" (click)="setTab('discounts')">Discounts</button>
+    <button class="tab" [class.active]="activeTab() === 'tax'" (click)="setTab('tax')">Tax</button>
+    <button class="tab" [class.active]="activeTab() === 'cogs'" (click)="setTab('cogs')">COGS</button>
+    <button class="tab" [class.active]="activeTab() === 'vendor-sales'" (click)="setTab('vendor-sales')">Vendors</button>
+    <button class="tab" [class.active]="activeTab() === 'projected-profit'" (click)="setTab('projected-profit')">Projected Profit</button>
+    <button class="tab" [class.active]="activeTab() === 'forecast'" (click)="setTab('forecast')">Forecast</button>
+    <button class="tab" [class.active]="activeTab() === 'demand'" (click)="setTab('demand')">Demand</button>
+    <button class="tab" [class.active]="activeTab() === 'yoy'" (click)="setTab('yoy')">Year-over-Year</button>
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <output class="spinner-border text-primary"></output>
+      <p>Loading report data...</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i> {{ error() }}
+    </div>
+  }
+
+  <!-- Overview Tab -->
+  @if (activeTab() === 'overview' && !isLoading()) {
+    @if (salesReport(); as report) {
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Revenue</div>
+          <div class="kpi-value">{{ report.totalRevenue | number:'1.2-2' }}</div>
+          @if (revenueChange(); as delta) {
+            <div class="kpi-delta" [class]="getDeltaClass(delta)">
+              <i [class]="getDeltaIcon(delta)"></i> {{ delta | number:'1.1-1' }}%
+            </div>
+          }
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">COGS</div>
+          <div class="kpi-value">{{ report.totalCogs | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Gross Profit</div>
+          <div class="kpi-value">{{ report.grossProfit | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Gross Margin</div>
+          <div class="kpi-value">{{ report.grossMarginPercent | number:'1.1-1' }}%</div>
+          @if (marginChange(); as delta) {
+            <div class="kpi-delta" [class]="getDeltaClass(delta)">
+              <i [class]="getDeltaIcon(delta)"></i> {{ delta | number:'1.1-1' }}pp
+            </div>
+          }
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Units Sold</div>
+          <div class="kpi-value">{{ report.totalUnits | number }}</div>
+          @if (unitsChange(); as delta) {
+            <div class="kpi-delta" [class]="getDeltaClass(delta)">
+              <i [class]="getDeltaIcon(delta)"></i> {{ delta | number:'1.1-1' }}%
+            </div>
+          }
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Transactions</div>
+          <div class="kpi-value">{{ report.totalTransactions | number }}</div>
+          @if (transactionsChange(); as delta) {
+            <div class="kpi-delta" [class]="getDeltaClass(delta)">
+              <i [class]="getDeltaIcon(delta)"></i> {{ delta | number:'1.1-1' }}%
+            </div>
+          }
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg Transaction</div>
+          <div class="kpi-value">${{ report.averageTransactionValue | number:'1.2-2' }}</div>
+          @if (atvChange(); as delta) {
+            <div class="kpi-delta" [class]="getDeltaClass(delta)">
+              <i [class]="getDeltaIcon(delta)"></i> {{ delta | number:'1.1-1' }}%
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Payment Methods Breakdown -->
+      @if (report.salesByPaymentMethod.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">Payment Methods</h3>
+          <div class="payment-bars">
+            @for (pm of report.salesByPaymentMethod; track pm.method) {
+              <div class="payment-row">
+                <div class="payment-label">{{ pm.method }}</div>
+                <div class="payment-bar-wrapper">
+                  <div class="payment-bar" [style.width.%]="getPaymentBarWidth(pm)"></div>
+                </div>
+                <div class="payment-stats">
+                  <span class="payment-amount">${{ pm.totalAmount | number:'1.2-2' }}</span>
+                  <span class="payment-pct">{{ pm.percentage | number:'1.0-0' }}%</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Top Items Quick View -->
+      @if (report.salesByItem.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">
+            Top Items
+            <button class="btn-link" (click)="setTab('items')">View All</button>
+          </h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th class="text-end">Units</th>
+                <th class="text-end">Revenue</th>
+                <th class="text-end">Margin</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of report.salesByItem.slice(0, 10); track item.itemId) {
+                <tr>
+                  <td>
+                    <div class="item-name">{{ item.itemName }}</div>
+                    @if (item.variationName) {
+                      <div class="item-variation">{{ item.variationName }}</div>
+                    }
+                  </td>
+                  <td class="text-end">{{ item.unitsSold | number }}</td>
+                  <td class="text-end">${{ item.revenue | number:'1.2-2' }}</td>
+                  <td class="text-end">
+                    <span class="margin-badge" [class.high]="item.marginPercent >= 50" [class.low]="item.marginPercent < 20">
+                      {{ item.marginPercent | number:'1.0-0' }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- Top Categories Quick View -->
+      @if (report.salesByCategory.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">
+            Categories
+            <button class="btn-link" (click)="setTab('categories')">View All</button>
+          </h3>
+          <div class="category-bars">
+            @for (cat of report.salesByCategory.slice(0, 8); track cat.categoryId) {
+              <div class="category-row">
+                <div class="category-label">{{ cat.categoryName }}</div>
+                <div class="category-bar-wrapper">
+                  <div class="category-bar" [style.width.%]="getCategoryBarWidth(cat.revenue)"></div>
+                </div>
+                <div class="category-amount">${{ cat.revenue | number:'1.0-0' }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    } @else if (!isLoading()) {
+      <div class="empty-state">
+        <i class="bi bi-bar-chart-line"></i>
+        <p>No sales data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Items Tab -->
+  @if (activeTab() === 'items' && !isLoading()) {
+    <div class="tab-toolbar">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search items by name or SKU..."
+          aria-label="Search items by name or SKU"
+          [value]="itemSearch()"
+          (input)="updateItemSearch($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    @if (sortedItemSales().length > 0) {
+      <div class="table-responsive">
+        <table class="data-table sortable">
+          <thead>
+            <tr>
+              <th (click)="sortItems('itemName')" (keydown.enter)="sortItems('itemName')">
+                Item <i [class]="getSortIcon('itemName')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('sku')" (keydown.enter)="sortItems('sku')">
+                SKU <i [class]="getSortIcon('sku')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('unitsSold')" (keydown.enter)="sortItems('unitsSold')">
+                Units <i [class]="getSortIcon('unitsSold')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('revenue')" (keydown.enter)="sortItems('revenue')">
+                Revenue <i [class]="getSortIcon('revenue')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('cogs')" (keydown.enter)="sortItems('cogs')">
+                COGS <i [class]="getSortIcon('cogs')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('profit')" (keydown.enter)="sortItems('profit')">
+                Profit <i [class]="getSortIcon('profit')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('marginPercent')" (keydown.enter)="sortItems('marginPercent')">
+                Margin <i [class]="getSortIcon('marginPercent')"></i>
+              </th>
+              <th class="text-end" (click)="sortItems('discountAmount')" (keydown.enter)="sortItems('discountAmount')">
+                Discounts <i [class]="getSortIcon('discountAmount')"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of sortedItemSales(); track item.itemId + item.variationName) {
+              <tr>
+                <td>
+                  <div class="item-name">{{ item.itemName }}</div>
+                  @if (item.variationName) {
+                    <div class="item-variation">{{ item.variationName }}</div>
+                  }
+                </td>
+                <td class="text-end text-muted">{{ item.sku }}</td>
+                <td class="text-end">{{ item.unitsSold | number }}</td>
+                <td class="text-end">${{ item.revenue | number:'1.2-2' }}</td>
+                <td class="text-end">${{ item.cogs | number:'1.2-2' }}</td>
+                <td class="text-end">${{ item.profit | number:'1.2-2' }}</td>
+                <td class="text-end">
+                  <span class="margin-badge" [class.high]="item.marginPercent >= 50" [class.low]="item.marginPercent < 20">
+                    {{ item.marginPercent | number:'1.0-0' }}%
+                  </span>
+                </td>
+                <td class="text-end">
+                  @if (item.discountAmount > 0) {
+                    <span class="text-danger">-${{ item.discountAmount | number:'1.2-2' }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-box-seam"></i>
+        <p>No item sales data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Categories Tab -->
+  @if (activeTab() === 'categories' && !isLoading()) {
+    @if (categorySalesData().length > 0) {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th class="text-end">Units</th>
+              <th class="text-end">Revenue</th>
+              <th class="text-end">COGS</th>
+              <th class="text-end">Profit</th>
+              <th class="text-end">Margin</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cat of categorySalesData(); track cat.categoryId) {
+              <tr>
+                <td class="fw-medium">{{ cat.categoryName }}</td>
+                <td class="text-end">{{ cat.unitsSold | number }}</td>
+                <td class="text-end">${{ cat.revenue | number:'1.2-2' }}</td>
+                <td class="text-end">${{ cat.cogs | number:'1.2-2' }}</td>
+                <td class="text-end">${{ cat.profit | number:'1.2-2' }}</td>
+                <td class="text-end">
+                  <span class="margin-badge" [class.high]="cat.marginPercent >= 50" [class.low]="cat.marginPercent < 20">
+                    {{ cat.marginPercent | number:'1.0-0' }}%
+                  </span>
+                </td>
+                <td>
+                  <div class="share-bar-wrapper">
+                    <div class="share-bar" [style.width.%]="getCategoryBarWidth(cat.revenue)"></div>
+                    <span class="share-pct">{{ getCategoryBarWidth(cat.revenue) | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="totals-row">
+              <td class="fw-bold">Total</td>
+              <td class="text-end fw-bold">{{ categoryTotalUnits() | number }}</td>
+              <td class="text-end fw-bold">${{ categoryTotalRevenue() | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold">${{ categoryTotalCogs() | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold">${{ categoryTotalProfit() | number:'1.2-2' }}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-grid-3x3-gap"></i>
+        <p>No category sales data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Employees Tab -->
+  @if (activeTab() === 'employees' && !isLoading()) {
+    @if (employeeSalesData().length > 0) {
+      @if (topEmployee(); as top) {
+        <div class="top-performer">
+          <i class="bi bi-trophy"></i>
+          <span>Top Performer: <strong>{{ top.employeeName }}</strong> — ${{ top.revenue | number:'1.2-2' }} revenue, {{ top.transactionCount }} transactions</span>
+        </div>
+      }
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Employee</th>
+              <th class="text-end">Transactions</th>
+              <th class="text-end">Revenue</th>
+              <th class="text-end">Avg Transaction</th>
+              <th class="text-end">Items Sold</th>
+              <th class="text-end">Commission</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (emp of employeeSalesData(); track emp.employeeId; let i = $index) {
+              <tr>
+                <td>
+                  @if (getEmployeeRank(i)) {
+                    <span class="rank-badge" [class]="'rank-' + getEmployeeRank(i)">{{ i + 1 }}</span>
+                  } @else {
+                    <span class="rank-number">{{ i + 1 }}</span>
+                  }
+                </td>
+                <td class="fw-medium">{{ emp.employeeName }}</td>
+                <td class="text-end">{{ emp.transactionCount | number }}</td>
+                <td class="text-end">${{ emp.revenue | number:'1.2-2' }}</td>
+                <td class="text-end">${{ emp.averageTransaction | number:'1.2-2' }}</td>
+                <td class="text-end">{{ emp.itemsSold | number }}</td>
+                <td class="text-end">
+                  @if (emp.commission > 0) {
+                    ${{ emp.commission | number:'1.2-2' }}
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-people"></i>
+        <p>No employee sales data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Discounts Tab -->
+  @if (activeTab() === 'discounts' && !isLoading()) {
+    @if (discountData().length > 0) {
+      <div class="discount-summary">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Discount Impact</div>
+          <div class="kpi-value text-danger">${{ totalDiscountImpact() | number:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Discount</th>
+              <th class="text-end">Times Used</th>
+              <th class="text-end">Total Amount</th>
+              <th class="text-end">Avg Discount</th>
+              <th class="text-end">Revenue Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (disc of discountData(); track disc.discountName) {
+              <tr>
+                <td class="fw-medium">{{ disc.discountName }}</td>
+                <td class="text-end">{{ disc.timesUsed | number }}</td>
+                <td class="text-end text-danger">${{ disc.totalDiscountAmount | number:'1.2-2' }}</td>
+                <td class="text-end">${{ disc.averageDiscount | number:'1.2-2' }}</td>
+                <td class="text-end">${{ disc.revenueImpact | number:'1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-percent"></i>
+        <p>No discount usage for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Tax Tab -->
+  @if (activeTab() === 'tax' && !isLoading()) {
+    @if (taxData().length > 0) {
+      <div class="tax-summary">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Taxable Amount</div>
+          <div class="kpi-value">${{ totalTaxableAmount() | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Tax Collected</div>
+          <div class="kpi-value">${{ totalTaxCollected() | number:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tax Rate</th>
+              <th class="text-end">Rate</th>
+              <th class="text-end">Taxable Amount</th>
+              <th class="text-end">Tax Collected</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tax of taxData(); track tax.taxRateName) {
+              <tr>
+                <td class="fw-medium">{{ tax.taxRateName }}</td>
+                <td class="text-end">{{ tax.taxRate | number:'1.2-2' }}%</td>
+                <td class="text-end">${{ tax.taxableAmount | number:'1.2-2' }}</td>
+                <td class="text-end">${{ tax.taxCollected | number:'1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="totals-row">
+              <td class="fw-bold" colspan="2">Total</td>
+              <td class="text-end fw-bold">${{ totalTaxableAmount() | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold">${{ totalTaxCollected() | number:'1.2-2' }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-receipt"></i>
+        <p>No tax data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- COGS Tab -->
+  @if (activeTab() === 'cogs' && !isLoading()) {
+    @if (cogsReport(); as cogs) {
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total COGS</div>
+          <div class="kpi-value">${{ cogs.totalCogs | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value">${{ cogs.totalRevenue | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Gross Margin</div>
+          <div class="kpi-value">{{ cogs.grossMarginPercent | number:'1.1-1' }}%</div>
+        </div>
+      </div>
+
+      <!-- COGS Trend Chart -->
+      @if (cogs.trend.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">COGS Trend</h3>
+          <div class="trend-chart">
+            @for (point of cogs.trend; track point.period) {
+              <div class="trend-bar-group">
+                <div class="trend-bar-container">
+                  <div class="trend-bar" [style.height.%]="getCogsTrendBarHeight(point.totalCogs)"></div>
+                </div>
+                <div class="trend-label">{{ point.period }}</div>
+                <div class="trend-value">${{ point.totalCogs | number:'1.0-0' }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Per-Item COGS Table -->
+      @if (cogs.rows.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">COGS by Item</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="text-end">SKU</th>
+                  <th class="text-end">Units Sold</th>
+                  <th class="text-end">Avg Cost/Unit</th>
+                  <th class="text-end">Total COGS</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of cogs.rows; track row.itemId) {
+                  <tr>
+                    <td class="fw-medium">{{ row.itemName }}</td>
+                    <td class="text-end text-muted">{{ row.sku }}</td>
+                    <td class="text-end">{{ row.unitsSold | number }}</td>
+                    <td class="text-end">${{ row.avgCostPerUnit | number:'1.2-2' }}</td>
+                    <td class="text-end">${{ row.totalCogs | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-calculator"></i>
+        <p>No COGS data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Vendor Sales Tab -->
+  @if (activeTab() === 'vendor-sales' && !isLoading()) {
+    @if (vendorSalesData().length > 0) {
+      <div class="vendor-cards">
+        @for (vendor of vendorSalesData(); track vendor.vendorId) {
+          <div class="vendor-card" [class.expanded]="expandedVendorId() === vendor.vendorId">
+            <button type="button" class="vendor-header" (click)="toggleVendorExpand(vendor.vendorId)">
+              <div class="vendor-info">
+                <div class="vendor-name">{{ vendor.vendorName }}</div>
+                <div class="vendor-meta">{{ vendor.itemCount }} items · {{ vendor.unitsSold | number }} units</div>
+              </div>
+              <div class="vendor-stats">
+                <div class="vendor-revenue">${{ vendor.revenue | number:'1.2-2' }}</div>
+                <span class="margin-badge" [class.high]="vendor.marginPercent >= 50" [class.low]="vendor.marginPercent < 20">
+                  {{ vendor.marginPercent | number:'1.0-0' }}% margin
+                </span>
+              </div>
+              <i class="bi" [class.bi-chevron-down]="expandedVendorId() !== vendor.vendorId" [class.bi-chevron-up]="expandedVendorId() === vendor.vendorId"></i>
+            </button>
+
+            <div class="vendor-bar">
+              <div class="vendor-bar-fill" [style.width.%]="getVendorShareWidth(vendor.revenue)"></div>
+            </div>
+
+            @if (expandedVendorId() === vendor.vendorId) {
+              <div class="vendor-details">
+                <div class="vendor-detail-grid">
+                  <div class="vendor-detail">
+                    <span class="detail-label">Revenue</span>
+                    <span class="detail-value">${{ vendor.revenue | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="vendor-detail">
+                    <span class="detail-label">COGS</span>
+                    <span class="detail-value">${{ vendor.cogs | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="vendor-detail">
+                    <span class="detail-label">Profit</span>
+                    <span class="detail-value">${{ vendor.profit | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="vendor-detail">
+                    <span class="detail-label">Margin</span>
+                    <span class="detail-value">{{ vendor.marginPercent | number:'1.1-1' }}%</span>
+                  </div>
+                </div>
+
+                @if (vendor.topItems.length > 0) {
+                  <div class="vendor-top-items">
+                    <div class="top-items-label">Top Items</div>
+                    @for (item of vendor.topItems; track item.itemName) {
+                      <div class="top-item-row">
+                        <span class="top-item-name">{{ item.itemName }}</span>
+                        <span class="top-item-revenue">${{ item.revenue | number:'1.2-2' }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-truck"></i>
+        <p>No vendor sales data for the selected period</p>
+      </div>
+    }
+  }
+
+  <!-- Projected Profit Tab -->
+  @if (activeTab() === 'projected-profit' && !isLoading()) {
+    @if (projectedProfitReport(); as pp) {
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Projected Revenue</div>
+          <div class="kpi-value">${{ pp.totalProjectedRevenue | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Projected COGS</div>
+          <div class="kpi-value">${{ pp.totalProjectedCogs | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Projected Profit</div>
+          <div class="kpi-value">${{ pp.totalProjectedProfit | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Overall Margin</div>
+          <div class="kpi-value">{{ pp.overallMarginPercent | number:'1.1-1' }}%</div>
+        </div>
+      </div>
+
+      @if (sortedProjectedProfit().length > 0) {
+        <div class="table-responsive">
+          <table class="data-table sortable">
+            <thead>
+              <tr>
+                <th (click)="sortProfit('itemName')" (keydown.enter)="sortProfit('itemName')">
+                  Item <i [class]="getProfitSortIcon('itemName')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('sku')" (keydown.enter)="sortProfit('sku')">
+                  SKU <i [class]="getProfitSortIcon('sku')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('quantityOnHand')" (keydown.enter)="sortProfit('quantityOnHand')">
+                  On Hand <i [class]="getProfitSortIcon('quantityOnHand')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('unitCost')" (keydown.enter)="sortProfit('unitCost')">
+                  Cost <i [class]="getProfitSortIcon('unitCost')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('unitPrice')" (keydown.enter)="sortProfit('unitPrice')">
+                  Price <i [class]="getProfitSortIcon('unitPrice')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('projectedRevenue')" (keydown.enter)="sortProfit('projectedRevenue')">
+                  Proj. Revenue <i [class]="getProfitSortIcon('projectedRevenue')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('projectedProfit')" (keydown.enter)="sortProfit('projectedProfit')">
+                  Proj. Profit <i [class]="getProfitSortIcon('projectedProfit')"></i>
+                </th>
+                <th class="text-end" (click)="sortProfit('marginPercent')" (keydown.enter)="sortProfit('marginPercent')">
+                  Margin <i [class]="getProfitSortIcon('marginPercent')"></i>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of sortedProjectedProfit(); track row.itemId) {
+                <tr>
+                  <td class="fw-medium">{{ row.itemName }}</td>
+                  <td class="text-end text-muted">{{ row.sku }}</td>
+                  <td class="text-end">{{ row.quantityOnHand | number }}</td>
+                  <td class="text-end">${{ row.unitCost | number:'1.2-2' }}</td>
+                  <td class="text-end">${{ row.unitPrice | number:'1.2-2' }}</td>
+                  <td class="text-end">${{ row.projectedRevenue | number:'1.2-2' }}</td>
+                  <td class="text-end">${{ row.projectedProfit | number:'1.2-2' }}</td>
+                  <td class="text-end">
+                    <span class="margin-badge" [class.high]="row.marginPercent >= 50" [class.low]="row.marginPercent < 20">
+                      {{ row.marginPercent | number:'1.0-0' }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-graph-up-arrow"></i>
+        <p>No projected profit data available</p>
+      </div>
+    }
+  }
+
+  <!-- Forecast Tab -->
+  @if (activeTab() === 'forecast' && !isLoading()) {
+    <div class="forecast-controls">
+      <span class="forecast-label">Forecast window:</span>
+      <button class="pill" [class.active]="forecastDays() === 7" (click)="selectForecastDays(7)">7 days</button>
+      <button class="pill" [class.active]="forecastDays() === 14" (click)="selectForecastDays(14)">14 days</button>
+      <button class="pill" [class.active]="forecastDays() === 30" (click)="selectForecastDays(30)">30 days</button>
+    </div>
+
+    @if (salesForecast(); as forecast) {
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Predicted Revenue</div>
+          <div class="kpi-value">${{ forecast.totalPredictedRevenue | number:'1.2-2' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Predicted Units</div>
+          <div class="kpi-value">{{ forecast.totalPredictedUnits | number }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Confidence</div>
+          <div class="kpi-value">{{ forecast.confidencePercent | number:'1.0-0' }}%</div>
+        </div>
+      </div>
+
+      @if (forecast.dailyForecasts.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">Daily Forecast</h3>
+          <div class="forecast-chart">
+            @for (day of forecast.dailyForecasts; track day.date) {
+              <div class="forecast-bar-group">
+                <div class="forecast-bar-container">
+                  <div class="confidence-band"
+                    [style.top.%]="getConfidenceBandTop(day.confidenceHigh)"
+                    [style.height.%]="getConfidenceBandHeight(day.confidenceLow, day.confidenceHigh)"
+                  ></div>
+                  <div class="forecast-bar" [style.height.%]="getForecastBarHeight(day.predictedRevenue)"></div>
+                </div>
+                <div class="forecast-date">{{ day.date | date:'M/d' }}</div>
+                <div class="forecast-amount">${{ day.predictedRevenue | number:'1.0-0' }}</div>
+                <span class="confidence-badge" [class]="getConfidenceClass(day.confidence)">{{ day.confidence }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-graph-up"></i>
+        <p>No forecast data available</p>
+      </div>
+    }
+  }
+
+  <!-- Demand Tab -->
+  @if (activeTab() === 'demand' && !isLoading()) {
+    <div class="demand-filters">
+      <button class="pill" [class.active]="demandFilter() === 'all'" (click)="setDemandFilter('all')">All Items</button>
+      <button class="pill" [class.active]="demandFilter() === 'stockout'" (click)="setDemandFilter('stockout')">
+        <i class="bi bi-exclamation-triangle"></i> Stock-out Risk
+        @if (stockoutCount() > 0) {
+          <span class="pill-badge">{{ stockoutCount() }}</span>
+        }
+      </button>
+      <button class="pill" [class.active]="demandFilter() === 'peak'" (click)="setDemandFilter('peak')">Peak Season</button>
+    </div>
+
+    @if (filteredDemand().length > 0) {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-end">SKU</th>
+              <th class="text-end">Current Stock</th>
+              <th class="text-end">Avg Daily Demand</th>
+              <th class="text-end">Days to Stockout</th>
+              <th>Season</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredDemand(); track item.itemId) {
+              <tr>
+                <td class="fw-medium">{{ item.itemName }}</td>
+                <td class="text-end text-muted">{{ item.sku }}</td>
+                <td class="text-end">{{ item.currentStock | number }}</td>
+                <td class="text-end">{{ item.avgDailyDemand | number:'1.1-1' }}</td>
+                <td class="text-end">
+                  @if (item.daysUntilStockout !== null) {
+                    <span class="stockout-badge" [class]="getStockoutClass(item.daysUntilStockout)">
+                      {{ item.daysUntilStockout }} days
+                    </span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (item.seasonalPattern) {
+                    <span class="season-badge" [class]="'season-' + item.seasonalPattern">
+                      {{ item.seasonalPattern }}
+                      @if (item.seasonalMultiplier !== 1) {
+                        ({{ item.seasonalMultiplier | number:'1.1-1' }}x)
+                      }
+                    </span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (item.reorderRecommendation) {
+                    <span class="reorder-recommendation">{{ item.reorderRecommendation }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-boxes"></i>
+        <p>No demand forecast data available</p>
+      </div>
+    }
+  }
+
+  <!-- Year-over-Year Tab -->
+  @if (activeTab() === 'yoy' && !isLoading()) {
+    @if (yoyReport(); as yoy) {
+      <!-- Summary Metrics -->
+      <div class="kpi-grid">
+        @for (metric of yoy.summaryMetrics; track metric.metric) {
+          <div class="kpi-card">
+            <div class="kpi-label">{{ metric.metric }}</div>
+            <div class="kpi-value">{{ metric.thisYear | number:'1.2-2' }}</div>
+            <div class="kpi-delta" [class]="getDeltaClass(metric.changePercent)">
+              <i [class]="getDeltaIcon(metric.changePercent)"></i> {{ metric.changePercent | number:'1.1-1' }}%
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Monthly Revenue Comparison -->
+      @if (yoy.monthlyRevenue.length > 0) {
+        <div class="section-card">
+          <h3 class="section-title">Monthly Revenue Comparison</h3>
+          <div class="yoy-chart">
+            @for (month of yoy.monthlyRevenue; track month.month) {
+              <div class="yoy-bar-group">
+                <div class="yoy-bars">
+                  <div class="yoy-bar yoy-last-year" [style.height.%]="getYoyBarHeight(month.lastYear)"></div>
+                  <div class="yoy-bar yoy-this-year" [style.height.%]="getYoyBarHeight(month.thisYear)"></div>
+                </div>
+                <div class="yoy-label">{{ month.month }}</div>
+              </div>
+            }
+          </div>
+          <div class="yoy-legend">
+            <span class="legend-item"><span class="legend-dot yoy-this-year"></span> This Year</span>
+            <span class="legend-item"><span class="legend-dot yoy-last-year"></span> Last Year</span>
+          </div>
+        </div>
+      }
+
+      <!-- Top Growth & Decline -->
+      <div class="yoy-columns">
+        @if (yoy.topGrowthItems.length > 0) {
+          <div class="section-card">
+            <h3 class="section-title"><i class="bi bi-arrow-up-circle text-success"></i> Top Growth</h3>
+            @for (item of yoy.topGrowthItems; track item.itemName) {
+              <div class="yoy-item-row">
+                <span class="yoy-item-name">{{ item.itemName }}</span>
+                <span class="yoy-item-change delta-positive">+{{ item.growthPercent | number:'1.0-0' }}%</span>
+              </div>
+            }
+          </div>
+        }
+
+        @if (yoy.topDeclineItems.length > 0) {
+          <div class="section-card">
+            <h3 class="section-title"><i class="bi bi-arrow-down-circle text-danger"></i> Largest Decline</h3>
+            @for (item of yoy.topDeclineItems; track item.itemName) {
+              <div class="yoy-item-row">
+                <span class="yoy-item-name">{{ item.itemName }}</span>
+                <span class="yoy-item-change delta-negative">-{{ item.declinePercent | number:'1.0-0' }}%</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <i class="bi bi-calendar-range"></i>
+        <p>No year-over-year data available</p>
+      </div>
+    }
+  }
+</div>

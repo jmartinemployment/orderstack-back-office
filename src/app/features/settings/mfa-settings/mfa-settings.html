@@ -1,0 +1,195 @@
+<div class="mfa-settings">
+  <h3 class="mfa-settings__heading">Two-Factor Authentication</h3>
+  <p class="mfa-settings__description text-muted">
+    Protect your account with a one-time code sent to your email address each time you sign in.
+  </p>
+
+  @if (success()) {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ success() }}
+      <button type="button" class="btn-close" (click)="dismissSuccess()" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error() }}
+      <button type="button" class="btn-close" (click)="dismissError()" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (view() === 'status') {
+    <div class="mfa-status-card">
+      <div class="mfa-status-card__badge" [class.mfa-status-card__badge--enabled]="mfaEnabled()">
+        @if (mfaEnabled()) {
+          <i class="bi bi-shield-fill-check me-2"></i>Enabled
+        } @else {
+          <i class="bi bi-shield-exclamation me-2"></i>Not Enabled
+        }
+      </div>
+
+      @if (mfaEnabled()) {
+        <p class="mt-3 text-muted small">
+          When you sign in, a 6-digit code will be sent to your email address.
+          Trusted devices skip MFA for 90 days.
+        </p>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm mt-2"
+          (click)="showDisableConfirm()">
+          <i class="bi bi-shield-x me-1"></i>Disable Two-Factor Authentication
+        </button>
+      } @else {
+        <p class="mt-3 text-muted small">
+          MFA is required for all admin, owner, and manager accounts to meet PCI DSS 8.4.2
+          before going live.
+        </p>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm mt-2"
+          [disabled]="isLoading()"
+          (click)="startSetup()">
+          @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          <i class="bi bi-shield-plus me-1"></i>Enable Two-Factor Authentication
+        </button>
+      }
+    </div>
+
+    <!-- Trusted Devices Section -->
+    @if (mfaEnabled() && trustedDevices().length > 0) {
+      <div class="trusted-devices mt-4">
+        <h4 class="trusted-devices__heading">
+          <i class="bi bi-laptop me-2"></i>Trusted Devices
+        </h4>
+        <p class="text-muted small mb-3">
+          These browsers and devices have been verified and will skip MFA for 90 days.
+        </p>
+
+        <div class="trusted-devices__list">
+          @for (device of trustedDevices(); track device.id) {
+            <div class="trusted-device-card" [class.trusted-device-card--expired]="isExpired(device.expiresAt)">
+              <div class="trusted-device-card__info">
+                <div class="trusted-device-card__name">
+                  <i class="bi bi-display me-1"></i>
+                  {{ device.deviceInfo ?? 'Unknown device' }}
+                </div>
+                @if (device.teamMember && isPrivileged()) {
+                  <div class="trusted-device-card__user text-muted small">
+                    {{ device.teamMember.firstName ?? '' }} {{ device.teamMember.lastName ?? '' }}
+                    @if (device.teamMember.email) {
+                      ({{ device.teamMember.email }})
+                    }
+                  </div>
+                }
+                <div class="trusted-device-card__meta text-muted small">
+                  <span><i class="bi bi-globe2 me-1"></i>{{ device.ipAddress }}</span>
+                  <span class="mx-2">|</span>
+                  <span>Trusted {{ device.trustedAt | date:'MMM d, yyyy' }}</span>
+                  <span class="mx-2">|</span>
+                  @if (isExpired(device.expiresAt)) {
+                    <span class="text-danger">Expired</span>
+                  } @else {
+                    <span>Expires {{ device.expiresAt | date:'MMM d, yyyy' }}</span>
+                  }
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm trusted-device-card__revoke"
+                [disabled]="revoking() === device.id"
+                (click)="revokeTrustedDevice(device.id)"
+                aria-label="Revoke trust for this device">
+                @if (revoking() === device.id) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                } @else {
+                  <i class="bi bi-x-lg"></i>
+                }
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (mfaEnabled() && trustedDevices().length === 0) {
+      <div class="trusted-devices mt-4">
+        <h4 class="trusted-devices__heading">
+          <i class="bi bi-laptop me-2"></i>Trusted Devices
+        </h4>
+        <p class="text-muted small">
+          No trusted devices yet. After verifying MFA on a device, it will appear here.
+        </p>
+      </div>
+    }
+  }
+
+  @if (view() === 'enter-code') {
+    <div class="mfa-setup-step">
+      <div class="mfa-setup-step__number">Step 1 of 1</div>
+      <h4 class="mfa-setup-step__title">Enter Your Verification Code</h4>
+      <p class="text-muted small">
+        We sent a 6-digit code to <strong>{{ maskedEmail() }}</strong>.
+        Enter it below to enable two-factor authentication.
+      </p>
+
+      <form [formGroup]="codeForm" (ngSubmit)="submitCode()" novalidate>
+        <div class="mb-3">
+          <label for="mfa-setup-code" class="form-label">Verification Code</label>
+          <input
+            id="mfa-setup-code"
+            type="text"
+            class="form-control mfa-verify-input"
+            formControlName="code"
+            placeholder="000000"
+            maxlength="6"
+            autocomplete="one-time-code"
+            inputmode="numeric"
+            [class.is-invalid]="codeForm.get('code')?.invalid && codeForm.get('code')?.touched" />
+          @if (codeForm.get('code')?.touched && codeForm.get('code')?.errors?.['required']) {
+            <div class="invalid-feedback">Please enter the 6-digit code.</div>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
+          @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Verifying…
+          } @else {
+            Verify &amp; Enable
+          }
+        </button>
+        <button type="button" class="btn btn-link text-muted ms-3" (click)="startSetup()" [disabled]="isLoading()">
+          Resend code
+        </button>
+      </form>
+    </div>
+  }
+
+  @if (view() === 'disable-confirm') {
+    <div class="mfa-disable-confirm">
+      <div class="alert alert-danger">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Disable Two-Factor Authentication?</h5>
+        <p class="mb-0 small">
+          This will remove MFA from your account. Your account will be less secure.
+          PCI DSS 8.4.2 requires MFA for admin accounts — you must re-enable it before going live.
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-danger"
+          [disabled]="isLoading()"
+          (click)="confirmDisable()">
+          @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          Yes, Disable MFA
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelDisable()">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
+</div>

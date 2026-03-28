@@ -1,0 +1,135 @@
+<div class="bar-settings">
+  @if (showSaveSuccess()) {
+    <div class="alert alert-success mb-3">
+      Bar settings saved successfully.
+    </div>
+  }
+
+  @if (!isManagerOrAbove()) {
+    <div class="text-muted small mb-3">Only managers and owners can modify bar settings.</div>
+  }
+
+  <!-- Beverage Categories -->
+  <div class="panel mb-3">
+    <div class="panel-title">Beverage Categories</div>
+    <p class="text-muted small mb-3">Select which categories appear on the bar's incoming orders screen. If none are selected, the bar will auto-detect categories by name (e.g. "Beer", "Cocktails", "Wine").</p>
+
+    <div class="category-actions mb-2">
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="selectAllCategories()" [disabled]="!isManagerOrAbove()">Select All</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearAllCategories()" [disabled]="!isManagerOrAbove() || selectedCategoryCount() === 0">Clear All</button>
+      <span class="text-muted small ms-2">{{ selectedCategoryCount() }} selected</span>
+    </div>
+
+    <div class="category-grid">
+      @for (cat of allCategories(); track cat.id) {
+        <label class="category-checkbox" [class.selected]="isCategorySelected(cat.id)">
+          <input
+            type="checkbox"
+            [checked]="isCategorySelected(cat.id)"
+            (change)="toggleCategory(cat.id)"
+            [disabled]="!isManagerOrAbove()">
+          <span class="category-name">{{ cat.name }}</span>
+        </label>
+      } @empty {
+        <p class="text-muted small">No categories found. Add items to your catalog first.</p>
+      }
+    </div>
+  </div>
+
+  <!-- Default Mode -->
+  <div class="panel mb-3">
+    <div class="panel-title">Default Mode</div>
+    <p class="text-muted small mb-3">Choose which mode the bar terminal opens in by default.</p>
+
+    <div class="mode-radios">
+      <label class="mode-radio" [class.selected]="defaultMode() === 'create'">
+        <input
+          type="radio"
+          name="barDefaultMode"
+          value="create"
+          [checked]="defaultMode() === 'create'"
+          (change)="onDefaultModeChange('create')"
+          [disabled]="!isManagerOrAbove()">
+        <div class="mode-radio-content">
+          <i class="bi bi-plus-circle"></i>
+          <div>
+            <span class="mode-radio-label">Create Orders</span>
+            <span class="mode-radio-desc">Bartender creates new orders at the bar</span>
+          </div>
+        </div>
+      </label>
+      <label class="mode-radio" [class.selected]="defaultMode() === 'incoming'">
+        <input
+          type="radio"
+          name="barDefaultMode"
+          value="incoming"
+          [checked]="defaultMode() === 'incoming'"
+          (change)="onDefaultModeChange('incoming')"
+          [disabled]="!isManagerOrAbove()">
+        <div class="mode-radio-content">
+          <i class="bi bi-inbox"></i>
+          <div>
+            <span class="mode-radio-label">Incoming Orders</span>
+            <span class="mode-radio-desc">Bar displays beverage orders from other terminals</span>
+          </div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- Sound Alerts -->
+  <div class="panel mb-3">
+    <div class="panel-title">Sound Alerts</div>
+    <p class="text-muted small mb-3">Play a notification sound when new beverage orders arrive in incoming orders mode.</p>
+
+    <div class="form-check form-switch mb-3">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="barSoundEnabled"
+        [checked]="soundEnabled()"
+        (change)="onSoundEnabledToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="barSoundEnabled">Enable sound alerts</label>
+    </div>
+
+    @if (soundEnabled()) {
+      <div class="sound-picker">
+        <label class="form-label" for="barSoundName">Notification Sound</label>
+        <div class="sound-picker-row">
+          <select
+            class="form-select"
+            id="barSoundName"
+            [ngModel]="soundName()"
+            (ngModelChange)="onSoundNameChange($event)"
+            [disabled]="!isManagerOrAbove()">
+            @for (opt of soundOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-preview"
+            (click)="previewSound()"
+            title="Preview sound">
+            <i class="bi bi-play-fill"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Action bar -->
+  @if (hasUnsavedChanges() && isManagerOrAbove()) {
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          Saving...
+        } @else {
+          Save Changes
+        }
+      </button>
+      <button class="btn btn-outline-light" (click)="discard()" [disabled]="isSaving()">Discard</button>
+    </div>
+  }
+</div>

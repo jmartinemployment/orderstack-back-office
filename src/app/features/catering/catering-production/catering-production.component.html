@@ -1,0 +1,95 @@
+<div class="production-page">
+  <div class="page-header no-print">
+    <div>
+      <h1 class="page-title">Production Report</h1>
+      <p class="text-muted">Aggregate ingredient requirements across all jobs for a given date.</p>
+    </div>
+    <div class="page-actions">
+      <input type="date" class="form-control form-control-sm"
+        [value]="selectedDate()"
+        (change)="loadForDate($any($event.target).value)"
+        aria-label="Select date" />
+      <button class="btn btn-outline-secondary btn-sm" (click)="exportCsv()" [disabled]="aggregatedIngredients().length === 0">
+        Export CSV
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="print()">
+        <i class="bi bi-printer"></i> Print
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center py-5 no-print">
+      <div class="spinner-border text-primary"></div>
+    </div>
+  } @else if (!prepListData() || (prepListData()?.jobs?.length ?? 0) === 0) {
+    <div class="empty-state no-print">
+      <i class="bi bi-clipboard-check empty-state__icon"></i>
+      <h3>No jobs scheduled</h3>
+      <p>No prep data available for {{ selectedDate() }}. Try a different date.</p>
+    </div>
+  } @else {
+    <!-- Summary bar -->
+    <div class="summary-bar no-print">
+      <div class="summary-item">
+        <strong>{{ prepListData()?.jobs?.length ?? 0 }}</strong>
+        Jobs
+      </div>
+      <div class="summary-item">
+        <strong>{{ totalGuests() }}</strong>
+        Total Guests
+      </div>
+      <div class="summary-item">
+        <strong>{{ aggregatedIngredients().length }}</strong>
+        Unique Ingredients
+      </div>
+    </div>
+
+    <!-- Aggregated ingredient table -->
+    <div class="section">
+      <h2 class="section__title">Aggregated Ingredient List</h2>
+      <div class="ingredient-table">
+        <div class="ingredient-table__header">
+          <span>Ingredient</span>
+          <span>Qty</span>
+          <span>Unit</span>
+          <span>Est. Cost</span>
+          <span>Jobs</span>
+        </div>
+        @for (ing of aggregatedIngredients(); track ing.name + '|' + ing.unit) {
+          <div class="ingredient-table__row">
+            <div>{{ ing.name }}</div>
+            <div>{{ ing.totalQuantity | number:'1.1-2' }}</div>
+            <div>{{ ing.unit }}</div>
+            <div>{{ ing.unitCost != null ? ('$' + (ing.unitCost | number:'1.2-2')) : 'N/A' }}</div>
+            <div class="text-muted small">{{ ing.jobs.length }} job{{ ing.jobs.length === 1 ? '' : 's' }}</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Per-job breakdown -->
+    <div class="section">
+      <h2 class="section__title">Per-Job Breakdown</h2>
+      @for (job of prepListData()?.jobs ?? []; track job.id) {
+        <div class="job-card">
+          <div class="job-card__header">
+            <div>
+              <div class="job-card__title">{{ job.title }}</div>
+              <div class="job-card__meta">{{ job.headcount }} guests</div>
+            </div>
+          </div>
+          @if (getPackageForJob(job); as pkg) {
+            <div class="job-card__items">
+              @for (itemId of pkg.menuItemIds; track itemId) {
+                <span class="badge bg-secondary me-1">{{ itemId }}</span>
+              }
+            </div>
+          } @else {
+            <p class="text-muted small mb-0 mt-2">No package selected — skipped in aggregation.</p>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

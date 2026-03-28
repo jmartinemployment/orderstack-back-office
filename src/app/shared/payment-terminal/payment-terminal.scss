@@ -1,0 +1,253 @@
+$bg-dark: #03020D;
+$bg-card: #1a1a35;
+$accent: #7E5EF2;
+$accent-hover: #6b4ad4;
+$success: #28a745;
+$danger: #dc3545;
+$text-primary: #e8e8f0;
+$text-muted: #7a7a9e;
+$border: #252545;
+
+:host {
+  display: block;
+}
+
+.payment-terminal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  color: $text-primary;
+}
+
+// === METHOD SELECTION ===
+.payment-methods {
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+}
+
+.payment-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 2rem;
+}
+
+.method-cards {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.method-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 220px;
+  padding: 2rem 1.5rem;
+  background: $bg-card;
+  border: 2px solid $border;
+  border-radius: 20px;
+  color: $text-primary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $accent;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba($accent, 0.15);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.method-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba($accent, 0.12);
+  color: $accent;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.method-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.method-desc {
+  font-size: 0.85rem;
+  color: $text-muted;
+}
+
+.payment-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $accent;
+}
+
+// === SCREEN PAY ===
+.screen-pay {
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  animation: fadeIn 0.3s ease;
+}
+
+.paypal-mount {
+  margin: 2rem auto;
+  max-width: 400px;
+  min-height: 150px;
+}
+
+.cancel-btn {
+  margin-top: 1.5rem;
+  padding: 0.75rem 2rem;
+  background: transparent;
+  border: 2px solid $border;
+  border-radius: 12px;
+  color: $text-muted;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: rgba(#fff, 0.2);
+    color: $text-primary;
+  }
+}
+
+// === CARD READER ===
+.reader-pay {
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.reader-animation {
+  font-size: 5rem;
+  color: $accent;
+  margin: 2rem 0;
+  animation: readerPulse 2s infinite;
+}
+
+@keyframes readerPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+
+.reader-status {
+  font-size: 1.15rem;
+  color: $text-muted;
+  margin-bottom: 2rem;
+}
+
+// === PROCESSING ===
+.payment-processing {
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.processing-text {
+  font-size: 1.15rem;
+  color: $text-muted;
+}
+
+// === SUCCESS ===
+.payment-success {
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: $success;
+  color: #fff;
+  font-size: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  animation: scaleIn 0.4s ease;
+}
+
+.success-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+// === FAILED ===
+.payment-failed {
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.failed-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: $danger;
+  color: #fff;
+  font-size: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.failed-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.failed-message {
+  font-size: 1rem;
+  color: $text-muted;
+  margin-bottom: 1.5rem;
+}
+
+.retry-btn {
+  padding: 0.75rem 2rem;
+  background: $accent;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: $accent-hover; }
+}
+
+// === ANIMATIONS ===
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}

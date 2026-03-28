@@ -1,0 +1,1318 @@
+@if (isAuthenticated()) {
+<div class="booking-manager px-2">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Bookings</h2>
+    <div class="d-flex gap-2">
+      @if (activeTab() === 'events') {
+        <button type="button" class="btn btn-primary" (click)="openEventForm()">
+          + New Event
+        </button>
+      } @else {
+        <button type="button" class="btn btn-primary" (click)="openForm()">
+          + New Booking
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (localError()) {
+    <os-error-display
+      [message]="localError()!"
+      [retryable]="true"
+      (dismissed)="clearLocalError()"
+      (retry)="retry()"
+    />
+  }
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip d-flex flex-wrap gap-3 mb-4">
+    <div class="kpi-chip">
+      <span class="kpi-chip-label">Today</span>
+      <span class="kpi-chip-value">{{ todayCount() }}</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-chip-label">Upcoming</span>
+      <span class="kpi-chip-value">{{ upcomingCount() }}</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-chip-label">Covers Today</span>
+      <span class="kpi-chip-value">{{ totalSeats() }}</span>
+    </div>
+    <div class="kpi-chip">
+      <span class="kpi-chip-label">Avg Turn</span>
+      <span class="kpi-chip-value">{{ avgTableTurnMinutes() }}m</span>
+    </div>
+    @if (waitlistCount() > 0) {
+      <div class="kpi-chip kpi-chip-warning">
+        <span class="kpi-chip-label">Waitlist</span>
+        <span class="kpi-chip-value">{{ waitlistCount() }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-pills res-tabs mb-4">
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'today'" (click)="setTab('today')">
+        Today
+        @if (todayCount() > 0) {
+          <span class="badge bg-info ms-1">{{ todayCount() }}</span>
+        }
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'timeline'" (click)="setTab('timeline')">
+        Timeline
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'upcoming'" (click)="setTab('upcoming')">
+        Upcoming
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'past'" (click)="setTab('past')">
+        Past
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'waitlist'" (click)="setTab('waitlist')">
+        Waitlist
+        @if (waitlistCount() > 0) {
+          <span class="badge bg-warning ms-1">{{ waitlistCount() }}</span>
+        }
+      </button>
+    </li>
+    <li class="nav-item">
+      <button type="button" class="nav-link" [class.active]="activeTab() === 'events'" (click)="setTab('events')">
+        Events
+      </button>
+    </li>
+  </ul>
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading bookings..." />
+    </div>
+  } @else {
+
+    <!-- ═══ TODAY TAB ═══ -->
+    @if (activeTab() === 'today') {
+      <div class="booking-list">
+        @for (res of todayReservations(); track res.id) {
+          <button type="button" class="res-card" (click)="selectBooking(res)" (keydown.enter)="selectBooking(res)" [attr.aria-label]="'View booking for ' + res.customerName">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="res-time">{{ formatTime(res.reservationTime) }}</span>
+                <span class="res-name">{{ res.customerName }}</span>
+                @if (isRecurring(res)) {
+                  <span class="badge badge-recurring">Recurring</span>
+                }
+              </div>
+              <span class="badge" [class]="getStatusClass(res.status)">{{ res.status }}</span>
+            </div>
+            <div class="d-flex gap-3 small text-muted mb-2">
+              <span>Party of {{ res.partySize }}</span>
+              @if (res.tableNumber) {
+                <span>Table {{ res.tableNumber }}</span>
+              }
+              <span>{{ res.customerPhone }}</span>
+            </div>
+            @if (res.preferences) {
+              <div class="pref-badges mb-2">
+                @if (res.preferences.seatingPreference !== 'no_preference') {
+                  <span class="badge badge-pref">{{ getSeatingLabel(res.preferences.seatingPreference) }}</span>
+                }
+                @if (res.preferences.celebration) {
+                  <span class="badge badge-celebration">{{ res.preferences.celebration }}</span>
+                }
+                @if (res.preferences.highChairsNeeded > 0) {
+                  <span class="badge badge-pref">{{ res.preferences.highChairsNeeded }} High Chair{{ res.preferences.highChairsNeeded > 1 ? 's' : '' }}</span>
+                }
+                @if (res.preferences.wheelchairAccessible) {
+                  <span class="badge badge-pref">Wheelchair</span>
+                }
+                @for (diet of res.preferences.dietaryRestrictions; track diet) {
+                  <span class="badge badge-dietary">{{ diet }}</span>
+                }
+              </div>
+            }
+            @if (res.specialRequests) {
+              <p class="small text-muted mb-2">{{ res.specialRequests }}</p>
+            }
+            <div class="d-flex gap-2">
+              @if (res.status === 'pending') {
+                <button type="button" class="btn btn-sm btn-outline-success" (click)="updateStatus(res, 'confirmed'); $event.stopPropagation()">Confirm</button>
+              }
+              @if (res.status === 'confirmed') {
+                <button type="button" class="btn btn-sm btn-outline-info" (click)="updateStatus(res, 'seated'); $event.stopPropagation()">Seat</button>
+              }
+              @if (res.status === 'seated') {
+                <button type="button" class="btn btn-sm btn-outline-success" (click)="updateStatus(res, 'completed'); $event.stopPropagation()">Complete</button>
+              }
+              @if (res.status !== 'cancelled' && res.status !== 'completed' && res.status !== 'no-show') {
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="updateStatus(res, 'cancelled'); $event.stopPropagation()">Cancel</button>
+                <button type="button" class="btn btn-sm btn-outline-warning" (click)="updateStatus(res, 'no-show'); $event.stopPropagation()">No-Show</button>
+              }
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" (click)="openPreferences(res); $event.stopPropagation()">
+                <i class="bi bi-person-gear"></i> Prefs
+              </button>
+            </div>
+          </button>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted">No bookings for today</p>
+            <button type="button" class="btn btn-primary btn-sm" (click)="openForm()">Create one</button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ═══ TIMELINE TAB ═══ -->
+    @if (activeTab() === 'timeline') {
+      <div class="timeline-controls d-flex align-items-center gap-3 mb-3">
+        <label class="form-label mb-0 small fw-semibold" for="bm-timeline-date">Date:</label>
+        <input id="bm-timeline-date" type="date" class="form-control form-control-sm timeline-date-picker"
+          [value]="timelineDate()" (change)="setTimelineDate($event)" />
+
+        <!-- Calendar Sync Toggle -->
+        <button type="button" class="btn btn-sm ms-auto"
+          [class]="isCalendarConnected() ? 'btn-outline-success' : 'btn-outline-secondary'"
+          (click)="toggleCalendarSettings()">
+          <i class="bi bi-google"></i>
+          {{ isCalendarConnected() ? 'Calendar Connected' : 'Connect Calendar' }}
+        </button>
+      </div>
+
+      <!-- Calendar Settings Panel -->
+      @if (showCalendarSettings()) {
+        <div class="calendar-settings-panel mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Google Calendar Integration</h6>
+            <span class="calendar-status" [class]="getCalendarStatusClass()">
+              {{ getCalendarStatusLabel() }}
+            </span>
+          </div>
+
+          @if (calendarConnection(); as conn) {
+            <div class="calendar-connected-info mb-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-envelope"></i>
+                <span class="small">{{ conn.email }}</span>
+                <span class="badge bg-secondary">{{ conn.calendarName }}</span>
+              </div>
+              @if (conn.lastSyncAt) {
+                <div class="small text-muted">Last synced: {{ conn.lastSyncAt | date:'short' }}</div>
+              }
+            </div>
+
+            <div class="calendar-toggles mb-3">
+              <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input" id="calPush"
+                  [checked]="conn.pushReservations" (change)="updateCalendarPush($event)" />
+                <label class="form-check-label" for="calPush">
+                  Push bookings to Google Calendar
+                </label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="calPull"
+                  [checked]="conn.pullBlocks" (change)="updateCalendarPull($event)" />
+                <label class="form-check-label" for="calPull">
+                  Pull blocked times from Google Calendar
+                </label>
+              </div>
+            </div>
+
+            <!-- Calendar Blocks -->
+            @if (calendarBlocks().length > 0) {
+              <div class="calendar-blocks mb-3">
+                <span class="section-label d-block mb-2">Blocked Times from Calendar</span>
+                @for (block of calendarBlocks(); track block.id) {
+                  <div class="calendar-block-card">
+                    <span class="fw-semibold small">{{ block.title }}</span>
+                    <span class="small text-muted ms-2">
+                      @if (block.isAllDay) {
+                        All Day
+                      } @else {
+                        {{ block.startTime | date:'shortTime' }} – {{ block.endTime | date:'shortTime' }}
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="syncCalendarNow()" [disabled]="calendarSyncing()">
+                @if (calendarSyncing()) {
+                  <output class="spinner-border spinner-border-sm me-1"><span class="visually-hidden">Syncing...</span></output> Syncing...
+                } @else {
+                  <i class="bi bi-arrow-repeat"></i> Sync Now
+                }
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="disconnectCalendar()">
+                Disconnect
+              </button>
+            </div>
+          } @else {
+            <p class="small text-muted mb-3">
+              Connect your Google Calendar to sync bookings and pull blocked times automatically.
+            </p>
+            <button type="button" class="btn btn-sm btn-primary" (click)="connectCalendar()">
+              <i class="bi bi-google"></i> Connect Google Calendar
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Capacity Heat Strip -->
+      <div class="capacity-strip mb-3">
+        <div class="capacity-strip-label">Capacity</div>
+        <div class="capacity-strip-bar">
+          @for (h of capacityByHour(); track h.hour) {
+            <div class="capacity-cell"
+              [title]="h.covers + '/' + h.maxCovers + ' covers at ' + h.hour">
+              <div class="capacity-fill"
+                [style.height.%]="getCapacityPercent(h.covers, h.maxCovers)"
+                [style.background-color]="getCapacityColor(h.covers, h.maxCovers)">
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Timeline Grid -->
+      <div class="timeline-container">
+        <!-- Hour Headers -->
+        <div class="timeline-header">
+          <div class="timeline-label-col"></div>
+          <div class="timeline-grid-area">
+            @for (hour of timelineHours(); track hour) {
+              <div class="timeline-hour-mark">{{ hour }}</div>
+            }
+            <!-- Current Time Indicator -->
+            <div class="current-time-line" [style.left]="getCurrentTimeStyle()['left']"></div>
+          </div>
+        </div>
+
+        <!-- Table Rows -->
+        @for (table of timelineTables(); track table.id) {
+          <div class="timeline-row">
+            <div class="timeline-label-col">
+              <span class="table-label">{{ table.name }}</span>
+              @if (table.capacity > 0) {
+                <span class="table-capacity">{{ table.capacity }}p</span>
+              }
+            </div>
+            <div class="timeline-grid-area">
+              @for (block of getBlocksForTable(table.id); track block.booking.id) {
+                <button type="button" class="timeline-block" [class]="getBlockClass(block)"
+                  [style.left]="getBlockStyle(block)['left']"
+                  [style.width]="getBlockStyle(block)['width']"
+                  [title]="block.booking.customerName + ' - Party of ' + block.booking.partySize"
+                  (click)="selectBooking(block.booking)" (keydown.enter)="selectBooking(block.booking)" [attr.aria-label]="'View booking for ' + block.booking.customerName">
+                  <span class="block-name">{{ block.booking.customerName }}</span>
+                  <span class="block-size">{{ block.booking.partySize }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted">No tables configured. Add tables in Floor Plan to use Timeline view.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ═══ UPCOMING TAB ═══ -->
+    @if (activeTab() === 'upcoming') {
+      <!-- Recurring Bookings Summary -->
+      @if (activeRecurring().length > 0) {
+        <div class="recurring-section mb-4">
+          <h6 class="section-label mb-2">Active Recurring Bookings</h6>
+          <div class="recurring-list">
+            @for (rec of activeRecurring(); track rec.id) {
+              <div class="recurring-card d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="fw-semibold">{{ rec.baseBooking.customerName }}</span>
+                  <span class="badge badge-recurring ms-2">{{ getRecurrenceLabel(rec.pattern) }}</span>
+                  @if (rec.baseBooking.partySize) {
+                    <span class="small text-muted ms-2">Party of {{ rec.baseBooking.partySize }}</span>
+                  }
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <button type="button" class="btn btn-sm btn-outline-secondary"
+                    (click)="toggleRecurringActive(rec.id, false)">Pause</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                    (click)="cancelRecurring(rec.id)">Cancel Series</button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="booking-list">
+        @for (res of upcomingReservations(); track res.id) {
+          <button type="button" class="res-card" (click)="selectBooking(res)" (keydown.enter)="selectBooking(res)" [attr.aria-label]="'View booking for ' + res.customerName">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="res-date">{{ res.reservationTime | date:'EEE, MMM d' }}</span>
+                <span class="res-time">{{ formatTime(res.reservationTime) }}</span>
+                <span class="res-name">{{ res.customerName }}</span>
+                @if (isRecurring(res)) {
+                  <span class="badge badge-recurring">Recurring</span>
+                }
+              </div>
+              <span class="badge" [class]="getStatusClass(res.status)">{{ res.status }}</span>
+            </div>
+            <div class="d-flex gap-3 small text-muted">
+              <span>Party of {{ res.partySize }}</span>
+              @if (res.tableNumber) {
+                <span>Table {{ res.tableNumber }}</span>
+              }
+              <span>{{ res.customerPhone }}</span>
+            </div>
+            @if (res.preferences) {
+              <div class="pref-badges mt-1">
+                @if (res.preferences.seatingPreference !== 'no_preference') {
+                  <span class="badge badge-pref">{{ getSeatingLabel(res.preferences.seatingPreference) }}</span>
+                }
+                @if (res.preferences.celebration) {
+                  <span class="badge badge-celebration">{{ res.preferences.celebration }}</span>
+                }
+                @for (diet of res.preferences.dietaryRestrictions; track diet) {
+                  <span class="badge badge-dietary">{{ diet }}</span>
+                }
+              </div>
+            }
+          </button>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted">No upcoming bookings</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ═══ PAST TAB ═══ -->
+    @if (activeTab() === 'past') {
+      <div class="booking-list">
+        @for (res of pastReservations(); track res.id) {
+          <div class="res-card res-past">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div>
+                <span class="res-date">{{ res.reservationTime | date:'MMM d, y' }}</span>
+                <span class="res-time ms-2">{{ formatTime(res.reservationTime) }}</span>
+                <span class="res-name ms-2">{{ res.customerName }}</span>
+              </div>
+              <span class="badge" [class]="getStatusClass(res.status)">{{ res.status }}</span>
+            </div>
+            <div class="d-flex gap-3 small text-muted">
+              <span>Party of {{ res.partySize }}</span>
+              @if (res.tableNumber) {
+                <span>Table {{ res.tableNumber }}</span>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted">No past bookings</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ═══ WAITLIST TAB ═══ -->
+    @if (activeTab() === 'waitlist') {
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Walk-In Waitlist</h5>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="openSmsConfig()">
+            <i class="bi bi-chat-dots"></i> SMS Config
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="openVirtualConfig()">
+            <i class="bi bi-qr-code"></i> Virtual Waitlist
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="toggleWaitlistAnalytics()">
+            <i class="bi bi-bar-chart"></i> Analytics
+          </button>
+          <button type="button" class="btn btn-warning btn-sm" (click)="openWaitlistForm()">
+            + Add to Waitlist
+          </button>
+        </div>
+      </div>
+
+      <!-- Virtual Waitlist Info Bar -->
+      @if (virtualWaitlistConfig(); as vConfig) {
+        @if (vConfig.enabled) {
+          <div class="virtual-waitlist-bar mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-qr-code"></i>
+              <span class="small fw-semibold">Virtual Waitlist Active</span>
+              @if (vConfig.joinUrl) {
+                <span class="small text-muted ms-2">{{ vConfig.joinUrl }}</span>
+                <button type="button" class="btn btn-sm btn-link p-0" (click)="copyJoinLink()" aria-label="Copy join link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              }
+              <span class="badge bg-secondary ms-auto">Max {{ vConfig.maxQueueSize }}</span>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- On My Way Entries -->
+      @if (onMyWayEntries().length > 0) {
+        <div class="on-my-way-section mb-3">
+          <h6 class="section-label mb-2">On Their Way</h6>
+          @for (entry of onMyWayEntries(); track entry.id) {
+            <div class="on-my-way-card d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-geo-alt-fill"></i>
+                <strong>{{ entry.partyName }}</strong>
+                <span class="badge bg-secondary">{{ entry.partySize }} {{ entry.partySize === 1 ? 'guest' : 'guests' }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="small text-muted">Confirmed at {{ getOnMyWayTime(entry) }}</span>
+                <button type="button" class="btn btn-sm btn-outline-info" (click)="seatGuest(entry)">
+                  <i class="bi bi-box-arrow-in-right"></i> Seat Now
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Waitlist Analytics Panel -->
+      @if (showWaitlistAnalytics()) {
+        @if (waitlistAnalytics(); as analytics) {
+          <div class="waitlist-analytics-panel mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">Waitlist Analytics</h6>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="recalculateWaitTimes()">
+                <i class="bi bi-arrow-repeat"></i> Recalculate
+              </button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="analytics-kpis mb-3">
+              <div class="analytics-kpi">
+                <span class="analytics-kpi-value">{{ analytics.avgWaitMinutes }}m</span>
+                <span class="analytics-kpi-label">Avg Wait</span>
+              </div>
+              <div class="analytics-kpi">
+                <span class="analytics-kpi-value analytics-success">{{ (analytics.seatedRate * 100).toFixed(0) }}%</span>
+                <span class="analytics-kpi-label">Seated Rate</span>
+              </div>
+              <div class="analytics-kpi">
+                <span class="analytics-kpi-value analytics-danger">{{ (analytics.noShowRate * 100).toFixed(0) }}%</span>
+                <span class="analytics-kpi-label">No-Show</span>
+              </div>
+              <div class="analytics-kpi">
+                <span class="analytics-kpi-value analytics-warning">{{ (analytics.cancelledRate * 100).toFixed(0) }}%</span>
+                <span class="analytics-kpi-label">Cancelled</span>
+              </div>
+            </div>
+
+            <!-- Wait by Hour -->
+            <div class="analytics-chart-section mb-3">
+              <span class="section-label d-block mb-2">Average Wait by Hour</span>
+              <div class="analytics-bar-chart">
+                @for (h of analytics.byHour; track h.hour) {
+                  <div class="bar-row">
+                    <span class="bar-label">{{ h.hour > 12 ? h.hour - 12 : h.hour }}{{ h.hour >= 12 ? 'PM' : 'AM' }}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill" [style.width.%]="getAnalyticsBarWidth(h.count, analytics)"></div>
+                    </div>
+                    <span class="bar-value">{{ h.avgWait }}m <span class="text-muted">({{ h.count }})</span></span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Wait by Day -->
+            <div class="analytics-chart-section">
+              <span class="section-label d-block mb-2">Average Wait by Day</span>
+              <div class="analytics-bar-chart">
+                @for (d of analytics.byDay; track d.day) {
+                  <div class="bar-row">
+                    <span class="bar-label">{{ d.day }}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill bar-fill-alt" [style.width.%]="getDayBarWidth(d.count, analytics)"></div>
+                    </div>
+                    <span class="bar-value">{{ d.avgWait }}m <span class="text-muted">({{ d.count }})</span></span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Waitlist Queue -->
+      <div class="waitlist-queue">
+        @for (entry of activeWaitlist(); track entry.id) {
+          <div class="waitlist-card" [class.waitlist-notified]="entry.status === 'notified'" [class.waitlist-on-my-way]="isOnMyWay(entry)">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="waitlist-position">{{ entry.position }}</span>
+                <div>
+                  <strong>{{ entry.partyName }}</strong>
+                  <span class="badge bg-secondary ms-2">{{ entry.partySize }} {{ entry.partySize === 1 ? 'guest' : 'guests' }}</span>
+                  @if (entry.status === 'notified') {
+                    <span class="badge bg-success ms-1">Notified</span>
+                  }
+                  @if (isOnMyWay(entry)) {
+                    <span class="badge badge-on-my-way ms-1">
+                      <i class="bi bi-geo-alt-fill"></i> On My Way
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="text-end">
+                <div class="waitlist-wait-time">~{{ getEstimatedWait(entry) }}m wait</div>
+                <div class="text-muted small">Waiting: {{ getElapsedWait(entry.createdAt) }}</div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 small text-muted mb-2">
+              @if (entry.phone) {
+                <span><i class="bi bi-telephone"></i> {{ entry.phone }}</span>
+              }
+              @if (entry.notes) {
+                <span><i class="bi bi-chat-text"></i> {{ entry.notes }}</span>
+              }
+            </div>
+
+            <div class="d-flex gap-2 align-items-center">
+              @if (entry.status === 'waiting') {
+                <button type="button" class="btn btn-sm btn-outline-success" (click)="notifyGuest(entry); $event.stopPropagation()">
+                  <i class="bi bi-bell"></i> Notify
+                </button>
+              }
+              @if (entry.status === 'waiting' || entry.status === 'notified') {
+                <button type="button" class="btn btn-sm btn-outline-info" (click)="seatGuest(entry); $event.stopPropagation()">
+                  <i class="bi bi-box-arrow-in-right"></i> Seat Now
+                </button>
+              }
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeGuest(entry); $event.stopPropagation()" aria-label="Remove guest">
+                <i class="bi bi-x-lg"></i>
+              </button>
+              <div class="ms-auto d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="moveUp(entry)" [disabled]="entry.position <= 1" aria-label="Move up">
+                  <i class="bi bi-arrow-up"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="moveDown(entry)" aria-label="Move down">
+                  <i class="bi bi-arrow-down"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state text-center p-4">
+            <p class="text-muted mb-2">No one on the waitlist</p>
+            <button type="button" class="btn btn-warning btn-sm" (click)="openWaitlistForm()">Add Walk-In</button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ═══ EVENTS TAB ═══ -->
+    @if (activeTab() === 'events') {
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" class="btn btn-sm" [class]="eventFilter() === 'upcoming' ? 'btn-primary' : 'btn-outline-secondary'"
+          (click)="setEventFilter('upcoming')">Upcoming</button>
+        <button type="button" class="btn btn-sm" [class]="eventFilter() === 'past' ? 'btn-primary' : 'btn-outline-secondary'"
+          (click)="setEventFilter('past')">Past</button>
+      </div>
+
+      @if (isLoadingEvents()) {
+        <div class="d-flex justify-content-center p-4">
+          <os-loading-spinner message="Loading events..." />
+        </div>
+      } @else {
+        <div class="event-list">
+          @for (evt of (eventFilter() === 'upcoming' ? upcomingEvents() : pastEvents()); track evt.id) {
+            <button type="button" class="event-card" (click)="selectEvent(evt)" (keydown.enter)="selectEvent(evt)" [attr.aria-label]="'View event: ' + evt.title">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <span class="badge badge-event-type me-2">{{ getEventTypeLabel(evt.bookingType) }}</span>
+                  <strong>{{ evt.title }}</strong>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  @if (evt.isPublished) {
+                    <span class="badge badge-published">Published</span>
+                  } @else {
+                    <span class="badge badge-draft">Draft</span>
+                  }
+                </div>
+              </div>
+              <div class="d-flex gap-3 small text-muted mb-1">
+                <span>{{ evt.date | date:'EEE, MMM d' }}</span>
+                <span>{{ evt.startTime }} – {{ evt.endTime }}</span>
+                <span>{{ evt.currentAttendees }}/{{ evt.maxAttendees }} attendees</span>
+              </div>
+              @if (evt.pricePerPerson > 0) {
+                <div class="small text-muted">${{ evt.pricePerPerson }}/person</div>
+              }
+              <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  (click)="togglePublished(evt); $event.stopPropagation()">
+                  {{ evt.isPublished ? 'Unpublish' : 'Publish' }}
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                  (click)="deleteEvent(evt); $event.stopPropagation()">Delete</button>
+              </div>
+            </button>
+          } @empty {
+            <div class="empty-state text-center p-4">
+              <p class="text-muted mb-2">No {{ eventFilter() }} events</p>
+              <button type="button" class="btn btn-primary btn-sm" (click)="openEventForm()">Create Event</button>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- ═══ WAITLIST FORM MODAL ═══ -->
+  @if (showWaitlistForm()) {
+    <div class="modal-overlay" (click)="closeWaitlistForm()" (keydown.escape)="closeWaitlistForm()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Add to Waitlist</h4>
+          <button type="button" class="btn-close" (click)="closeWaitlistForm()"></button>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="bm-wl-name">Party Name *</label>
+            <input id="bm-wl-name" type="text" class="form-control" placeholder="Smith"
+              [value]="waitlistName()" (input)="onWaitlistField('name', $event)" />
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label" for="bm-wl-size">Party Size *</label>
+              <input id="bm-wl-size" type="number" class="form-control" min="1" max="20"
+                [value]="waitlistSize()" (input)="onWaitlistField('size', $event)" />
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="bm-wl-phone">Phone</label>
+              <input id="bm-wl-phone" type="tel" class="form-control" placeholder="(555) 123-4567"
+                [value]="waitlistPhone()" (input)="onWaitlistField('phone', $event)" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="bm-wl-notes">Notes</label>
+            <textarea id="bm-wl-notes" class="form-control" rows="2" placeholder="High chair, outdoor seating..."
+              [value]="waitlistNotes()" (input)="onWaitlistField('notes', $event)"></textarea>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeWaitlistForm()" [disabled]="waitlistSaving()">Cancel</button>
+          <button type="button" class="btn btn-warning" (click)="saveWaitlistEntry()"
+            [disabled]="!waitlistName().trim() || waitlistSaving()">
+            @if (waitlistSaving()) {
+              <output class="spinner-border spinner-border-sm me-1"><span class="visually-hidden">Saving...</span></output> Saving...
+            } @else {
+              Add to Waitlist
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ NEW RESERVATION MODAL ═══ -->
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="closeForm()" (keydown.escape)="closeForm()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">New Booking</h4>
+          <button type="button" class="btn-close" (click)="closeForm()"></button>
+        </div>
+        <form [formGroup]="bookingForm" (ngSubmit)="saveBooking()">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="bm-res-name">Guest Name *</label>
+                <input id="bm-res-name" type="text" class="form-control" formControlName="customerName" placeholder="John Smith" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="bm-res-phone">Phone *</label>
+                <input id="bm-res-phone" type="tel" class="form-control" formControlName="customerPhone" placeholder="(555) 123-4567" />
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label class="form-label" for="bm-res-email">Email</label>
+              <input id="bm-res-email" type="email" class="form-control" formControlName="customerEmail" placeholder="guest&#64;email.com" />
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-4">
+                <label class="form-label" for="bm-res-party">Party Size *</label>
+                <input id="bm-res-party" type="number" class="form-control" formControlName="partySize" min="1" max="20" />
+              </div>
+              <div class="col-4">
+                <label class="form-label" for="bm-res-date">Date *</label>
+                <input id="bm-res-date" type="date" class="form-control" formControlName="reservationDate" />
+              </div>
+              <div class="col-4">
+                <label class="form-label" for="bm-res-time">Time *</label>
+                <input id="bm-res-time" type="time" class="form-control" formControlName="reservationTime" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="bm-table-select">Table</label>
+              <select id="bm-table-select" class="form-select" formControlName="tableNumber">
+                <option value="">Auto-assign</option>
+                @for (table of availableTables(); track table.id) {
+                  <option [value]="table.tableNumber">
+                    {{ table.tableName || 'Table ' + table.tableNumber }} ({{ table.capacity }} seats)
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="bm-res-requests">Special Requests</label>
+              <textarea id="bm-res-requests" class="form-control" rows="2" formControlName="specialRequests" placeholder="High chair, birthday, dietary needs..."></textarea>
+            </div>
+
+            <!-- Recurring Option -->
+            <div class="recurring-toggle mb-3">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleRecurringForm()">
+                <i class="bi bi-arrow-repeat"></i>
+                {{ showRecurringForm() ? 'Remove Recurring' : 'Make Recurring' }}
+              </button>
+            </div>
+
+            @if (showRecurringForm()) {
+              <div class="recurring-options p-3 mb-3">
+                <div class="row g-3">
+                  <div class="col-6">
+                    <label class="form-label" for="bm-rec-pattern">Repeat Pattern</label>
+                    <select id="bm-rec-pattern" class="form-select" [value]="recurringPattern()" (change)="setRecurringPattern($event)">
+                      <option value="weekly">Weekly</option>
+                      <option value="biweekly">Biweekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="first_weekday">1st Weekday of Month</option>
+                      <option value="last_weekday">Last Weekday of Month</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label" for="bm-rec-end">End Date (optional)</label>
+                    <input id="bm-rec-end" type="date" class="form-control"
+                      [value]="recurringEndDate()" (change)="setRecurringEndDate($event)" />
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="card-footer d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" (click)="closeForm()" [disabled]="isSaving()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="bookingForm.invalid || isSaving()">
+              @if (isSaving()) {
+                <output class="spinner-border spinner-border-sm me-2"><span class="visually-hidden">Saving...</span></output>
+                Saving...
+              } @else if (showRecurringForm()) {
+                Create Recurring
+              } @else {
+                Create Booking
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ NEW EVENT MODAL ═══ -->
+  @if (showEventForm()) {
+    <div class="modal-overlay" (click)="closeEventForm()" (keydown.escape)="closeEventForm()" aria-hidden="true">
+      <div class="modal-content card modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">New Event</h4>
+          <button type="button" class="btn-close" (click)="closeEventForm()"></button>
+        </div>
+        <form [formGroup]="eventForm" (ngSubmit)="saveEvent()">
+          <div class="card-body">
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <label class="form-label" for="bm-ev-type">Type *</label>
+                <select id="bm-ev-type" class="form-select" formControlName="bookingType">
+                  <option value="event">Event</option>
+                  <option value="class">Class</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="bm-ev-title">Title *</label>
+                <input id="bm-ev-title" type="text" class="form-control" formControlName="title" placeholder="Wine Tasting Night" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="bm-ev-desc">Description</label>
+              <textarea id="bm-ev-desc" class="form-control" rows="2" formControlName="description" placeholder="Describe the event..."></textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-4">
+                <label class="form-label" for="bm-ev-date">Date *</label>
+                <input id="bm-ev-date" type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-4">
+                <label class="form-label" for="bm-ev-start">Start Time *</label>
+                <input id="bm-ev-start" type="time" class="form-control" formControlName="startTime" />
+              </div>
+              <div class="col-4">
+                <label class="form-label" for="bm-ev-end">End Time *</label>
+                <input id="bm-ev-end" type="time" class="form-control" formControlName="endTime" />
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-4">
+                <label class="form-label" for="bm-ev-capacity">Max Attendees *</label>
+                <input id="bm-ev-capacity" type="number" class="form-control" formControlName="maxAttendees" min="1" />
+              </div>
+              <div class="col-4">
+                <label class="form-label" for="bm-ev-price">Price per Person ($)</label>
+                <input id="bm-ev-price" type="number" class="form-control" formControlName="pricePerPerson" min="0" step="0.01" />
+              </div>
+              <div class="col-4 d-flex flex-column justify-content-end">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" formControlName="requiresPrepayment" id="requiresPrepayment" />
+                  <label class="form-check-label" for="requiresPrepayment">Require Prepayment</label>
+                </div>
+                <div class="form-check mt-1">
+                  <input type="checkbox" class="form-check-input" formControlName="isPublished" id="isPublished" />
+                  <label class="form-check-label" for="isPublished">Publish Immediately</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" (click)="closeEventForm()" [disabled]="isSavingEvent()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="eventForm.invalid || isSavingEvent()">
+              @if (isSavingEvent()) {
+                <output class="spinner-border spinner-border-sm me-2"><span class="visually-hidden">Creating...</span></output> Creating...
+              } @else {
+                Create Event
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ RESERVATION DETAIL MODAL ═══ -->
+  @if (selectedBooking(); as res) {
+    <div class="modal-overlay" (click)="closeDetail()" (keydown.escape)="closeDetail()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Booking Details</h4>
+          <button type="button" class="btn-close" (click)="closeDetail()"></button>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="mb-0">{{ res.customerName }}</h5>
+              @if (isRecurring(res)) {
+                <span class="badge badge-recurring">Recurring</span>
+              }
+            </div>
+            <span class="badge" [class]="getStatusClass(res.status)">{{ res.status }}</span>
+          </div>
+
+          <div class="detail-grid mb-3">
+            <div class="detail-item">
+              <span class="detail-label">Date & Time</span>
+              <span>{{ res.reservationTime | date:'EEE, MMM d, y' }} at {{ formatTime(res.reservationTime) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Party Size</span>
+              <span>{{ res.partySize }} {{ res.partySize === 1 ? 'guest' : 'guests' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Phone</span>
+              <span>{{ res.customerPhone }}</span>
+            </div>
+            @if (res.customerEmail) {
+              <div class="detail-item">
+                <span class="detail-label">Email</span>
+                <span>{{ res.customerEmail }}</span>
+              </div>
+            }
+            @if (res.tableNumber) {
+              <div class="detail-item">
+                <span class="detail-label">Table</span>
+                <span>{{ res.tableNumber }}</span>
+              </div>
+            }
+            <div class="detail-item">
+              <span class="detail-label">Est. Turn Time</span>
+              <span>{{ getTurnTimeForParty(res.partySize) }} min</span>
+            </div>
+          </div>
+
+          <!-- Guest Preferences -->
+          @if (res.preferences) {
+            <div class="preferences-section mb-3">
+              <span class="detail-label d-block mb-2">Guest Preferences</span>
+              <div class="pref-badges">
+                @if (res.preferences.seatingPreference !== 'no_preference') {
+                  <span class="badge badge-pref">{{ getSeatingLabel(res.preferences.seatingPreference) }}</span>
+                }
+                @if (res.preferences.celebration) {
+                  <span class="badge badge-celebration">{{ res.preferences.celebration }}</span>
+                }
+                @if (res.preferences.highChairsNeeded > 0) {
+                  <span class="badge badge-pref">{{ res.preferences.highChairsNeeded }} High Chair{{ res.preferences.highChairsNeeded > 1 ? 's' : '' }}</span>
+                }
+                @if (res.preferences.wheelchairAccessible) {
+                  <span class="badge badge-pref">Wheelchair Accessible</span>
+                }
+                @for (diet of res.preferences.dietaryRestrictions; track diet) {
+                  <span class="badge badge-dietary">{{ diet }}</span>
+                }
+              </div>
+              @if (res.preferences.notes) {
+                <p class="small text-muted mt-1 mb-0">{{ res.preferences.notes }}</p>
+              }
+            </div>
+          }
+
+          @if (res.specialRequests) {
+            <div class="mb-3">
+              <span class="detail-label d-block mb-1">Special Requests</span>
+              <p class="small mb-0">{{ res.specialRequests }}</p>
+            </div>
+          }
+
+          <div class="d-flex gap-2 flex-wrap">
+            @if (res.status === 'pending') {
+              <button type="button" class="btn btn-sm btn-success" (click)="updateStatus(res, 'confirmed')">Confirm</button>
+            }
+            @if (res.status === 'confirmed') {
+              <button type="button" class="btn btn-sm btn-info" (click)="updateStatus(res, 'seated')">Seat Guest</button>
+            }
+            @if (res.status === 'seated') {
+              <button type="button" class="btn btn-sm btn-success" (click)="updateStatus(res, 'completed')">Complete</button>
+            }
+            @if (res.status !== 'cancelled' && res.status !== 'completed' && res.status !== 'no-show') {
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="updateStatus(res, 'cancelled')">Cancel</button>
+              <button type="button" class="btn btn-sm btn-outline-warning" (click)="updateStatus(res, 'no-show')">No-Show</button>
+            }
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" (click)="openPreferences(res)">
+              <i class="bi bi-person-gear"></i> Edit Preferences
+            </button>
+          </div>
+
+          <div class="mt-3 small text-muted">
+            <div>Created: {{ res.createdAt | date:'medium' }}</div>
+            @if (res.confirmationSent) {
+              <div>Confirmation sent</div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ EVENT DETAIL MODAL ═══ -->
+  @if (selectedEvent(); as evt) {
+    <div class="modal-overlay" (click)="closeEventDetail()" (keydown.escape)="closeEventDetail()" aria-hidden="true">
+      <div class="modal-content card modal-wide" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">{{ evt.title }}</h4>
+          <button type="button" class="btn-close" (click)="closeEventDetail()"></button>
+        </div>
+        <div class="card-body">
+          <div class="d-flex gap-2 align-items-center mb-3">
+            <span class="badge badge-event-type">{{ getEventTypeLabel(evt.bookingType) }}</span>
+            @if (evt.isPublished) {
+              <span class="badge badge-published">Published</span>
+            } @else {
+              <span class="badge badge-draft">Draft</span>
+            }
+          </div>
+
+          <div class="detail-grid mb-3">
+            <div class="detail-item">
+              <span class="detail-label">Date</span>
+              <span>{{ evt.date | date:'EEE, MMM d, y' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Time</span>
+              <span>{{ evt.startTime }} – {{ evt.endTime }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Capacity</span>
+              <span>{{ evt.currentAttendees }}/{{ evt.maxAttendees }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Price</span>
+              <span>{{ evt.pricePerPerson > 0 ? '$' + evt.pricePerPerson + '/person' : 'Free' }}</span>
+            </div>
+          </div>
+
+          @if (evt.description) {
+            <p class="small text-muted mb-3">{{ evt.description }}</p>
+          }
+
+          <!-- Attendees -->
+          @if (evt.attendees.length > 0) {
+            <div class="attendees-section">
+              <span class="detail-label d-block mb-2">Attendees ({{ evt.attendees.length }})</span>
+              <div class="attendee-list">
+                @for (att of evt.attendees; track att.id) {
+                  <div class="attendee-row d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="fw-semibold">{{ att.name }}</span>
+                      <span class="small text-muted ms-2">{{ att.email }}</span>
+                      @if (att.ticketCount > 1) {
+                        <span class="badge bg-secondary ms-1">{{ att.ticketCount }} tickets</span>
+                      }
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                      <span class="badge" [class]="getAttendeePaymentClass(att.paymentStatus)">{{ att.paymentStatus }}</span>
+                      @if (!att.checkedIn) {
+                        <button type="button" class="btn btn-sm btn-outline-success" (click)="checkInAttendee(evt.id, att.id)">Check In</button>
+                      } @else {
+                        <span class="badge badge-checked-in">Checked In</span>
+                      }
+                      @if (att.paymentStatus === 'paid') {
+                        <button type="button" class="btn btn-sm btn-outline-warning" (click)="refundAttendee(evt.id, att.id)">Refund</button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="empty-state text-center p-3">
+              <p class="text-muted small mb-0">No attendees yet</p>
+            </div>
+          }
+
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="togglePublished(evt)">
+              {{ evt.isPublished ? 'Unpublish' : 'Publish' }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteEvent(evt)">Delete Event</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ GUEST PREFERENCES MODAL ═══ -->
+  @if (showPreferencesModal()) {
+    <div class="modal-overlay" (click)="closePreferences()" (keydown.escape)="closePreferences()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Guest Preferences</h4>
+          <button type="button" class="btn-close" (click)="closePreferences()"></button>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="bm-pref-seating">Seating Preference</label>
+            <select id="bm-pref-seating" class="form-select" [value]="prefSeating()" (change)="onPrefField('seating', $event)">
+              <option value="no_preference">No Preference</option>
+              <option value="indoor">Indoor</option>
+              <option value="outdoor">Outdoor</option>
+              <option value="bar">Bar</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label" for="bm-pref-chairs">High Chairs Needed</label>
+              <input id="bm-pref-chairs" type="number" class="form-control" min="0" max="5"
+                [value]="prefHighChairs()" (input)="onPrefField('highChairs', $event)" />
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="wheelchairPref"
+                  [checked]="prefWheelchair()" (change)="onPrefField('wheelchair', $event)" />
+                <label class="form-check-label" for="wheelchairPref">Wheelchair Accessible</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="bm-celebration-select">Celebration / Occasion</label>
+            <select id="bm-celebration-select" class="form-select" [value]="prefCelebration() ?? ''" (change)="onPrefField('celebration', $event)">
+              <option value="">None</option>
+              @for (occ of occasionOptions; track occ) {
+                <option [value]="occ">{{ occ }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <p class="form-label">Dietary Restrictions</p>
+            <div class="dietary-grid">
+              @for (option of dietaryOptions; track option) {
+                <button type="button" class="dietary-chip"
+                  [class.dietary-active]="isDietarySelected(option)"
+                  (click)="toggleDietary(option)">
+                  {{ option }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="bm-pref-notes">Additional Notes</label>
+            <textarea id="bm-pref-notes" class="form-control" rows="2" placeholder="VIP guest, prefers corner booth..."
+              [value]="prefNotes() ?? ''" (input)="onPrefField('notes', $event)"></textarea>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary" (click)="closePreferences()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="savePreferences()">Save Preferences</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ SMS CONFIG MODAL ═══ -->
+  @if (showSmsConfig()) {
+    <div class="modal-overlay" (click)="closeSmsConfig()" (keydown.escape)="closeSmsConfig()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Waitlist SMS Notifications</h4>
+          <button type="button" class="btn-close" (click)="closeSmsConfig()"></button>
+        </div>
+        <div class="card-body">
+          <div class="form-check form-switch mb-3">
+            <input type="checkbox" class="form-check-input" id="smsEnabled"
+              [checked]="smsEnabled()" (change)="onSmsField('enabled', $event)" />
+            <label class="form-check-label fw-semibold" for="smsEnabled">Enable SMS Notifications</label>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="bm-sms-msg">Notification Message</label>
+            <textarea id="bm-sms-msg" class="form-control" rows="3"
+              [value]="smsMessage()" (input)="onSmsField('message', $event)"
+              placeholder="Hi {name}, your table is ready..."></textarea>
+            <div class="form-text">
+              Variables: <code>{{ '{' }}name{{ '}' }}</code> = guest name, <code>{{ '{' }}restaurant{{ '}' }}</code> = restaurant name
+            </div>
+          </div>
+
+          <div class="form-check form-switch mb-3">
+            <input type="checkbox" class="form-check-input" id="smsOnMyWay"
+              [checked]="smsOnMyWay()" (change)="onSmsField('onMyWay', $event)" />
+            <label class="form-check-label" for="smsOnMyWay">
+              Enable "On My Way" replies
+            </label>
+            <div class="form-text">
+              Guests can reply to confirm they're headed to the restaurant
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="bm-sms-remove">Auto-Remove After (minutes)</label>
+            <input id="bm-sms-remove" type="number" class="form-control" min="5" max="60" style="max-width: 120px"
+              [value]="smsAutoRemove()" (input)="onSmsField('autoRemove', $event)" />
+            <div class="form-text">
+              Remove guests who don't respond after this many minutes
+            </div>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeSmsConfig()" [disabled]="smsSaving()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="saveSmsConfig()" [disabled]="smsSaving()">
+            @if (smsSaving()) {
+              <output class="spinner-border spinner-border-sm me-1"><span class="visually-hidden">Saving...</span></output> Saving...
+            } @else {
+              Save Configuration
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ VIRTUAL WAITLIST CONFIG MODAL ═══ -->
+  @if (showVirtualConfig()) {
+    <div class="modal-overlay" (click)="closeVirtualConfig()" (keydown.escape)="closeVirtualConfig()" aria-hidden="true">
+      <div class="modal-content card" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Virtual Waitlist</h4>
+          <button type="button" class="btn-close" (click)="closeVirtualConfig()"></button>
+        </div>
+        <div class="card-body">
+          <div class="form-check form-switch mb-3">
+            <input type="checkbox" class="form-check-input" id="virtualEnabled"
+              [checked]="virtualEnabled()" (change)="onVirtualField('enabled', $event)" />
+            <label class="form-check-label fw-semibold" for="virtualEnabled">Enable Virtual Waitlist</label>
+          </div>
+
+          <p class="small text-muted mb-3">
+            Let guests join your waitlist from their phone using a QR code or link — no staff interaction needed.
+          </p>
+
+          @if (virtualWaitlistConfig(); as vConfig) {
+            @if (vConfig.qrCodeUrl) {
+              <div class="mb-3">
+                <p class="form-label">QR Code</p>
+                <div class="qr-placeholder text-center p-3">
+                  <img [src]="vConfig.qrCodeUrl" alt="Waitlist QR Code" class="qr-code-img" />
+                </div>
+              </div>
+            }
+            @if (vConfig.joinUrl) {
+              <div class="mb-3">
+                <label class="form-label" for="bm-virt-link">Join Link</label>
+                <div class="input-group">
+                  <input id="bm-virt-link" type="text" class="form-control" [value]="vConfig.joinUrl" readonly />
+                  <button type="button" class="btn btn-outline-secondary" (click)="copyJoinLink()" aria-label="Copy join link">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          }
+
+          <div class="mb-3">
+            <label class="form-label" for="bm-virt-maxqueue">Max Queue Size</label>
+            <input id="bm-virt-maxqueue" type="number" class="form-control" min="5" max="200" style="max-width: 120px"
+              [value]="virtualMaxQueue()" (input)="onVirtualField('maxQueue', $event)" />
+            <div class="form-text">
+              Maximum number of guests who can be on the waitlist at once
+            </div>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeVirtualConfig()" [disabled]="virtualSaving()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="saveVirtualConfig()" [disabled]="virtualSaving()">
+            @if (virtualSaving()) {
+              <output class="spinner-border spinner-border-sm me-1"><span class="visually-hidden">Saving...</span></output> Saving...
+            } @else {
+              Save Configuration
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+} @else {
+<div class="auth-required d-flex align-items-center justify-content-center p-5">
+  <div class="text-center">
+    <h3 class="mb-3" style="color: var(--os-warning)">Authentication Required</h3>
+    <p style="color: var(--os-text-secondary)">Please log in to manage bookings.</p>
+  </div>
+</div>
+}

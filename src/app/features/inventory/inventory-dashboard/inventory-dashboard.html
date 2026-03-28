@@ -1,0 +1,616 @@
+@if (isAuthenticated()) {
+<div class="inventory-dashboard px-2">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Inventory Management</h2>
+    <button type="button" class="btn btn-sm btn-primary" (click)="retry()">
+      Refresh
+    </button>
+  </div>
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      [retryable]="true"
+      (retry)="retry()"
+    />
+  }
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    @for (tab of ['overview', 'items', 'predictions', 'cycle-counts']; track tab) {
+      <li class="nav-item">
+        <button
+          type="button"
+          class="nav-link"
+          [class.active]="activeTab() === tab"
+          (click)="setTab($any(tab))"
+        >
+          @switch (tab) {
+            @case ('overview') { Overview }
+            @case ('items') { Items }
+            @case ('predictions') { Predictions }
+            @case ('cycle-counts') { Cycle Counts }
+          }
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading inventory data..." />
+    </div>
+  } @else {
+    <!-- OVERVIEW TAB -->
+    @if (activeTab() === 'overview') {
+      @if (report(); as rpt) {
+        <!-- KPI Cards -->
+        <div class="kpi-cards d-flex flex-wrap gap-3 mb-4">
+          <div class="kpi-card">
+            <span class="kpi-label">Total Items</span>
+            <span class="kpi-value">{{ rpt.totalItems }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Total Value</span>
+            <span class="kpi-value">{{ rpt.totalValue | currency }}</span>
+          </div>
+          <div class="kpi-card" [class.kpi-alert]="rpt.alerts.length > 0">
+            <span class="kpi-label">Active Alerts</span>
+            <span class="kpi-value">{{ rpt.alerts.length }}</span>
+          </div>
+          <div class="kpi-card" [class.kpi-warning]="rpt.lowStockItems.length > 0">
+            <span class="kpi-label">Low Stock</span>
+            <span class="kpi-value">{{ rpt.lowStockItems.length }}</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Linked</span>
+            <span class="kpi-value">{{ linkedItemCount() }}</span>
+          </div>
+          <div class="kpi-card" [class.kpi-warning]="unlinkedItemCount() > 0">
+            <span class="kpi-label">Unlinked</span>
+            <span class="kpi-value">{{ unlinkedItemCount() }}</span>
+          </div>
+        </div>
+
+        <!-- Expired -->
+        @if (expiredItems().length > 0) {
+          <div class="panel mb-4">
+            <h5 class="panel-title mb-2">Expired</h5>
+            @for (exp of expiredItems(); track exp.inventoryItemId) {
+              <div class="alert-card alert-critical">
+                <span class="alert-icon">!!</span>
+                <div class="alert-body">
+                  <div class="alert-header">
+                    <strong>{{ exp.itemName }}</strong>
+                    <span class="badge bg-danger">Expired</span>
+                  </div>
+                  <small class="text-muted">{{ exp.currentStock }} {{ exp.unit }} — Expired {{ exp.expirationDate | date:'shortDate' }}</small>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Expiring Soon -->
+        @if (expiringSoonItems().length > 0) {
+          <div class="panel mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="panel-title mb-0">Expiring Soon</h5>
+              <select class="form-select form-select-sm filter-select"
+                aria-label="Expiration window"
+                [ngModel]="expirationDays()"
+                (ngModelChange)="changeExpirationDays($event)">
+                <option [value]="3">Next 3 days</option>
+                <option [value]="7">Next 7 days</option>
+                <option [value]="14">Next 14 days</option>
+                <option [value]="30">Next 30 days</option>
+              </select>
+            </div>
+            @for (exp of expiringSoonItems(); track exp.inventoryItemId) {
+              <div class="alert-card" [class]="getExpirationUrgencyClass(exp.daysUntilExpiration) === 'urgency-critical' ? 'alert-critical' : getExpirationUrgencyClass(exp.daysUntilExpiration) === 'urgency-warning' ? 'alert-warning-custom' : 'alert-info-custom'">
+                <span class="alert-icon">!</span>
+                <div class="alert-body">
+                  <div class="alert-header">
+                    <strong>{{ exp.itemName }}</strong>
+                    <span class="badge" [class]="getExpirationBadgeClass(exp.daysUntilExpiration)">
+                      {{ getExpirationBadgeLabel(exp.daysUntilExpiration) }}
+                    </span>
+                  </div>
+                  <small class="text-muted">{{ exp.currentStock }} {{ exp.unit }} — Expires {{ exp.expirationDate | date:'shortDate' }}</small>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Alerts Panel -->
+        @if (alerts().length > 0) {
+          <div class="panel mb-4">
+            <h5 class="panel-title">Alerts</h5>
+            @for (alert of alerts(); track alert.itemId + alert.type) {
+              <div class="alert-card" [class]="getAlertSeverityClass(alert.severity)">
+                <span class="alert-icon">{{ getAlertIcon(alert.type) }}</span>
+                <div class="alert-body">
+                  <div class="alert-header">
+                    <strong>{{ alert.itemName }}</strong>
+                    <span class="badge" [class]="'severity-' + alert.severity">{{ alert.severity }}</span>
+                  </div>
+                  <p class="alert-message mb-1">{{ alert.message }}</p>
+                  <small class="alert-action">{{ alert.suggestedAction }}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-info btn-alert-order ms-auto align-self-center" (click)="orderMoreByName(alert.itemName)">
+                  <i class="bi bi-truck"></i> Order More
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Reorder List -->
+        @if (rpt.reorderList.length > 0) {
+          <div class="panel">
+            <h5 class="panel-title">Reorder Recommendations</h5>
+            <div class="reorder-table">
+              <div class="reorder-header d-flex py-2 px-3">
+                <span class="col-reorder-name flex-grow-1">Item</span>
+                <span class="col-reorder-qty">Suggested Qty</span>
+                <span class="col-reorder-cost">Est. Cost</span>
+              </div>
+              @for (reorder of rpt.reorderList; track reorder.item.id) {
+                <div class="reorder-row d-flex align-items-center py-2 px-3">
+                  <span class="col-reorder-name flex-grow-1">
+                    <span class="fw-semibold">{{ reorder.item.name }}</span>
+                    <span class="text-muted small ms-2">{{ reorder.item.currentStock }} {{ reorder.item.unit }} left</span>
+                  </span>
+                  <span class="col-reorder-qty">{{ reorder.suggestedQuantity }} {{ reorder.item.unit }}</span>
+                  <span class="col-reorder-cost fw-bold">{{ reorder.estimatedCost | currency }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      } @else {
+        <div class="text-center text-muted p-4">
+          No inventory report available. Make sure inventory is set up for this restaurant.
+        </div>
+      }
+    }
+
+    <!-- ITEMS TAB -->
+    @if (activeTab() === 'items') {
+      <!-- Toolbar -->
+      <div class="items-toolbar d-flex flex-wrap gap-2 mb-3">
+        <input
+          type="text"
+          class="form-control form-control-sm search-input"
+          placeholder="Search items..."
+          aria-label="Search inventory items"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="setSearchTerm($event)"
+        />
+        <label class="visually-hidden" for="inv-category-filter">Category filter</label>
+        <select
+          id="inv-category-filter"
+          class="form-select form-select-sm filter-select"
+          [ngModel]="categoryFilter()"
+          (ngModelChange)="setCategoryFilter($event)"
+        >
+          @for (cat of categories(); track cat) {
+            <option [value]="cat">{{ cat === 'all' ? 'All Categories' : cat }}</option>
+          }
+        </select>
+        <select
+          class="form-select form-select-sm filter-select"
+          aria-label="Stock level filter"
+          [ngModel]="stockFilter()"
+          (ngModelChange)="setStockFilter($event)"
+        >
+          <option value="all">All Stock</option>
+          <option value="low">Low Stock</option>
+          <option value="out">Out of Stock</option>
+          <option value="overstock">Overstock</option>
+          <option value="ok">OK</option>
+        </select>
+        <button type="button" class="btn btn-sm btn-primary ms-auto" (click)="toggleAddForm()">
+          {{ showAddForm() ? 'Cancel' : '+ Add Item' }}
+        </button>
+      </div>
+
+      <!-- Add Item Form -->
+      @if (showAddForm()) {
+        <div class="add-form panel mb-3">
+          <h6 class="panel-title">Add Inventory Item</h6>
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label small" for="inv-item-name">Name</label>
+              <input id="inv-item-name" type="text" class="form-control form-control-sm" placeholder="Item name"
+                [ngModel]="newItemName()" (ngModelChange)="setNewItemName($event)" />
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small" for="inv-item-unit">Unit</label>
+              <input id="inv-item-unit" type="text" class="form-control form-control-sm"
+                [ngModel]="newItemUnit()" (ngModelChange)="setNewItemUnit($event)" />
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small" for="inv-item-category">Category</label>
+              <input id="inv-item-category" type="text" class="form-control form-control-sm" placeholder="e.g. Produce"
+                [ngModel]="newItemCategory()" (ngModelChange)="setNewItemCategory($event)" />
+            </div>
+            <div class="col-4 col-md-1">
+              <label class="form-label small" for="inv-item-min-stock">Min</label>
+              <input id="inv-item-min-stock" type="number" class="form-control form-control-sm"
+                [ngModel]="newItemMinStock()" (ngModelChange)="setNewItemMinStock($event)" />
+            </div>
+            <div class="col-4 col-md-1">
+              <label class="form-label small" for="inv-item-max-stock">Max</label>
+              <input id="inv-item-max-stock" type="number" class="form-control form-control-sm"
+                [ngModel]="newItemMaxStock()" (ngModelChange)="setNewItemMaxStock($event)" />
+            </div>
+            <div class="col-4 col-md-2">
+              <label class="form-label small" for="inv-item-cost-per-unit">Cost/Unit</label>
+              <input id="inv-item-cost-per-unit" type="number" class="form-control form-control-sm" step="0.01"
+                [ngModel]="newItemCostPerUnit()" (ngModelChange)="setNewItemCostPerUnit($event)" />
+            </div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-12 col-md-4">
+              <label class="form-label small" for="inv-item-supplier">Supplier (optional)</label>
+              <input id="inv-item-supplier" type="text" class="form-control form-control-sm" placeholder="Supplier name"
+                [ngModel]="newItemSupplier()" (ngModelChange)="setNewItemSupplier($event)" />
+            </div>
+            <div class="col-12 col-md-8 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-primary"
+                [disabled]="isSubmitting() || !newItemName()" (click)="addItem()">
+                {{ isSubmitting() ? 'Adding...' : 'Add Item' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Items Table -->
+      <div class="items-table">
+        <div class="table-header d-flex py-2 px-3">
+          <button type="button" class="col-item-name flex-grow-1 table-sort" (click)="setSort('name')">
+            Name {{ sortField() === 'name' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <button type="button" class="col-item-category table-sort" (click)="setSort('category')">
+            Category {{ sortField() === 'category' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <button type="button" class="col-item-stock table-sort" (click)="setSort('currentStock')">
+            Stock {{ sortField() === 'currentStock' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <span class="col-item-range">Min / Max</span>
+          <button type="button" class="col-item-cost table-sort" (click)="setSort('costPerUnit')">
+            Cost/Unit {{ sortField() === 'costPerUnit' ? (sortAsc() ? '&#9650;' : '&#9660;') : '' }}
+          </button>
+          <span class="col-item-supplier">Supplier</span>
+          <span class="col-item-actions">Actions</span>
+        </div>
+
+        @for (item of filteredItems(); track item.id) {
+          <div class="table-row d-flex align-items-center py-2 px-3">
+            <div class="col-item-name flex-grow-1">
+              <span class="fw-semibold">{{ item.name }}</span>
+              @if (item.nameEn) {
+                <span class="text-muted small ms-1">({{ item.nameEn }})</span>
+              }
+              @if (item.linkedVariationId) {
+                <span class="badge bg-info ms-1" style="font-size: 0.6rem;">Linked</span>
+              }
+              @if (item.expirationTracking) {
+                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.6rem;">Exp</span>
+              }
+            </div>
+            <span class="col-item-category text-muted small">{{ item.category }}</span>
+            <div class="col-item-stock">
+              <div class="d-flex align-items-center gap-2">
+                <div class="stock-bar">
+                  <div
+                    class="stock-fill"
+                    [class]="getStockBarClass(item)"
+                    [style.width.%]="getStockPercent(item)"
+                  ></div>
+                </div>
+                <span class="stock-label">{{ item.currentStock }} {{ item.unit }}</span>
+              </div>
+            </div>
+            <span class="col-item-range text-muted small">{{ item.minStock }} / {{ item.maxStock }}</span>
+            <span class="col-item-cost">{{ item.costPerUnit | currency }}</span>
+            <span class="col-item-supplier text-muted small">{{ item.supplier ?? '-' }}</span>
+            <div class="col-item-actions d-flex gap-1">
+              <button type="button" class="btn btn-xs btn-outline-success" title="Restock"
+                (click)="openStockAction(item, 'restock')">+</button>
+              <button type="button" class="btn btn-xs btn-outline-warning" title="Record Usage"
+                (click)="openStockAction(item, 'usage')">-</button>
+              <button type="button" class="btn btn-xs btn-outline-info" title="Adjust"
+                (click)="openStockAction(item, 'adjustment')">=</button>
+              <button type="button" class="btn btn-xs btn-outline-light" title="AI Predict"
+                (click)="predictItem(item)">AI</button>
+            </div>
+          </div>
+        } @empty {
+          <div class="text-center text-muted p-4">
+            No items match your filters
+          </div>
+        }
+      </div>
+    }
+
+    <!-- PREDICTIONS TAB -->
+    @if (activeTab() === 'predictions') {
+      @if (sortedPredictions().length > 0) {
+        <div class="predictions-list">
+          @for (pred of sortedPredictions(); track pred.inventoryItemId) {
+            <div class="prediction-card" [class]="getPredictionUrgencyClass(pred.daysUntilEmpty)">
+              <div class="pred-header d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1">{{ pred.itemName }}</h6>
+                  <span class="text-muted small">{{ pred.currentStock }} {{ pred.unit }} remaining</span>
+                </div>
+                <span class="badge" [class]="getConfidenceClass(pred.confidence)">
+                  {{ pred.confidence }}
+                </span>
+              </div>
+              <div class="pred-body d-flex flex-wrap gap-3 mt-2">
+                <div class="pred-stat">
+                  <span class="pred-stat-label">Avg Daily Use</span>
+                  <span class="pred-stat-value">{{ pred.avgDailyUsage | number:'1.1-1' }} {{ pred.unit }}</span>
+                </div>
+                <div class="pred-stat">
+                  <span class="pred-stat-label">Days Until Empty</span>
+                  <span class="pred-stat-value days-value">
+                    @if (pred.daysUntilEmpty >= 999) {
+                      Plenty
+                    } @else {
+                      {{ pred.daysUntilEmpty }}
+                    }
+                  </span>
+                </div>
+                <div class="pred-stat">
+                  <span class="pred-stat-label">Predicted Empty</span>
+                  <span class="pred-stat-value">
+                    @if (pred.daysUntilEmpty >= 999) {
+                      N/A
+                    } @else {
+                      {{ pred.predictedEmptyDate }}
+                    }
+                  </span>
+                </div>
+                @if (pred.reorderRecommended) {
+                  <div class="pred-stat">
+                    <span class="pred-stat-label">Reorder Qty</span>
+                    <span class="pred-stat-value reorder-value">{{ pred.reorderQuantity }} {{ pred.unit }}</span>
+                  </div>
+                }
+              </div>
+              @if (pred.reorderRecommended) {
+                <div class="pred-reorder mt-2">
+                  <small class="text-warning">Reorder recommended</small>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="text-center text-muted p-4">
+          No predictions available. Use the AI Predict button on individual items to generate forecasts.
+        </div>
+      }
+    }
+
+    <!-- CYCLE COUNTS TAB -->
+    @if (activeTab() === 'cycle-counts') {
+      <!-- Active Count -->
+      @if (activeCycleCount(); as activeCount) {
+        <div class="panel mb-4">
+          <h5 class="panel-title">Active Cycle Count</h5>
+          <div class="cycle-count-table">
+            <div class="table-header d-flex py-2 px-3">
+              <span class="flex-grow-1">Item</span>
+              <span style="flex: 0 0 100px; text-align: right;">Expected</span>
+              <span style="flex: 0 0 120px; text-align: center;">Actual</span>
+              <span style="flex: 0 0 100px; text-align: right;">Variance</span>
+            </div>
+            @for (entry of cycleCountEntries(); track entry.inventoryItemId; let i = $index) {
+              <div class="table-row d-flex align-items-center py-2 px-3">
+                <span class="flex-grow-1 fw-semibold">{{ entry.itemName }} <span class="text-muted small">({{ entry.unit }})</span></span>
+                <span style="flex: 0 0 100px; text-align: right;">{{ entry.expectedQuantity }}</span>
+                <span style="flex: 0 0 120px; text-align: center;">
+                  <input type="number" class="form-control form-control-sm"
+                    style="width: 80px; display: inline-block;"
+                    [attr.aria-label]="'Actual quantity for ' + entry.itemName"
+                    [value]="entry.actualQuantity ?? ''"
+                    (input)="updateCycleEntry(i, $any($event.target).valueAsNumber)" min="0" />
+                </span>
+                <span style="flex: 0 0 100px; text-align: right;"
+                  [class]="getCycleCountVarianceClass(entry.varianceQuantity)">
+                  @if (entry.actualQuantity !== null) {
+                    {{ entry.varianceQuantity > 0 ? '+' : '' }}{{ entry.varianceQuantity }}
+                  } @else {
+                    -
+                  }
+                </span>
+              </div>
+            }
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-sm btn-primary"
+              [disabled]="isSubmitting()" (click)="submitCycleCount()">
+              {{ isSubmitting() ? 'Submitting...' : 'Submit Count' }}
+            </button>
+          </div>
+        </div>
+      } @else {
+        <!-- Start new count -->
+        <div class="panel mb-4">
+          <h5 class="panel-title">Start Cycle Count</h5>
+          <div class="d-flex gap-2 align-items-end">
+            <div>
+              <label class="form-label small" for="inv-cycle-count-category">Category (optional)</label>
+              <select id="inv-cycle-count-category" class="form-select form-select-sm filter-select"
+                [ngModel]="cycleCountCategory()"
+                (ngModelChange)="setCycleCountCategory($event)">
+                @for (cat of categories(); track cat) {
+                  <option [value]="cat === 'all' ? '' : cat">{{ cat === 'all' ? 'All Items' : cat }}</option>
+                }
+              </select>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary"
+              [disabled]="isStartingCount()" (click)="startCycleCount()">
+              {{ isStartingCount() ? 'Starting...' : 'Start Count' }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Count History -->
+      @if (submittedCycleCounts().length > 0) {
+        <div class="panel mb-4">
+          <h5 class="panel-title">Count History</h5>
+          @for (count of submittedCycleCounts(); track count.id) {
+            <div class="alert-card alert-info-custom">
+              <div class="alert-body">
+                <div class="alert-header">
+                  <strong>{{ count.submittedAt | date:'short' }}</strong>
+                  @if (count.category) {
+                    <span class="badge bg-secondary">{{ count.category }}</span>
+                  }
+                  <span class="badge" [class.bg-success]="count.totalVarianceValue === 0"
+                    [class.bg-warning]="count.totalVarianceValue !== 0">
+                    Variance: {{ count.totalVarianceValue | currency }}
+                  </span>
+                </div>
+                <small class="text-muted">{{ count.entries.length }} items counted</small>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Unit Conversions -->
+      <div class="panel">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="panel-title mb-0">Unit Conversions</h5>
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="toggleConversionForm()">
+            {{ showConversionForm() ? 'Cancel' : '+ Add' }}
+          </button>
+        </div>
+        @if (showConversionForm()) {
+          <div class="d-flex gap-2 align-items-end mb-3">
+            <div>
+              <label class="form-label small" for="inv-conv-from-unit">From</label>
+              <input id="inv-conv-from-unit" type="text" class="form-control form-control-sm" placeholder="e.g. lb"
+                [ngModel]="convFromUnit()" (ngModelChange)="setConvFromUnit($event)" />
+            </div>
+            <span class="text-muted align-self-center pb-1">=</span>
+            <div>
+              <label class="form-label small" for="inv-conv-factor">Factor</label>
+              <input id="inv-conv-factor" type="number" class="form-control form-control-sm" step="0.01" min="0"
+                [ngModel]="convFactor()" (ngModelChange)="setConvFactor($event)" />
+            </div>
+            <div>
+              <label class="form-label small" for="inv-conv-to-unit">To</label>
+              <input id="inv-conv-to-unit" type="text" class="form-control form-control-sm" placeholder="e.g. oz"
+                [ngModel]="convToUnit()" (ngModelChange)="setConvToUnit($event)" />
+            </div>
+            <button type="button" class="btn btn-sm btn-primary"
+              [disabled]="isSubmitting() || !convFromUnit() || !convToUnit()"
+              (click)="addConversion()">Add</button>
+          </div>
+        }
+        @if (unitConversions().length > 0) {
+          @for (conv of unitConversions(); track conv.id) {
+            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary">
+              <span class="text-white small">1 {{ conv.fromUnit }} = {{ conv.factor }} {{ conv.toUnit }}</span>
+              <button type="button" class="btn btn-xs btn-outline-danger" (click)="deleteConversion(conv.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          }
+        } @else if (!showConversionForm()) {
+          <p class="text-muted small mb-0">No unit conversions defined. Add common conversions like lb/oz, gal/qt.</p>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Stock Action Modal -->
+@if (showStockModal() && selectedItem(); as item) {
+  <button type="button" class="modal-backdrop" aria-label="Close modal" (click)="closeStockModal()"></button>
+  <div class="stock-modal">
+    <div class="modal-header-custom d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">{{ getStockActionLabel() }}: {{ item.name }}</h5>
+      <button type="button" class="btn-close" (click)="closeStockModal()"></button>
+    </div>
+    <div class="modal-body-custom">
+      <div class="mb-3">
+        <label class="form-label small" for="inv-stock-quantity">
+          @switch (stockActionType()) {
+            @case ('restock') { Quantity to add }
+            @case ('usage') { Quantity used }
+            @case ('adjustment') { New stock level }
+          }
+        </label>
+        <input
+          id="inv-stock-quantity"
+          type="number"
+          class="form-control"
+          min="0"
+          [ngModel]="stockQuantity()"
+          (ngModelChange)="setStockQuantity($event)"
+        />
+        <small class="text-muted">
+          Current: {{ item.currentStock }} {{ item.unit }}
+        </small>
+      </div>
+      @if (stockActionType() === 'restock') {
+        <div class="mb-3">
+          <label class="form-label small" for="inv-invoice-number">Invoice # (optional)</label>
+          <input
+            id="inv-invoice-number"
+            type="text"
+            class="form-control"
+            [ngModel]="invoiceNumber()"
+            (ngModelChange)="setInvoiceNumber($event)"
+          />
+        </div>
+      } @else {
+        <div class="mb-3">
+          <label class="form-label small" for="inv-stock-reason">Reason</label>
+          <input
+            id="inv-stock-reason"
+            type="text"
+            class="form-control"
+            placeholder="e.g. Dinner service, Inventory count"
+            [ngModel]="stockReason()"
+            (ngModelChange)="setStockReason($event)"
+          />
+        </div>
+      }
+    </div>
+    <div class="modal-footer-custom d-flex justify-content-end gap-2">
+      <button type="button" class="btn btn-sm btn-outline-info" (click)="orderMore(item)">
+        <i class="bi bi-truck"></i> Order More
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-light" (click)="closeStockModal()">Cancel</button>
+      <button
+        type="button"
+        class="btn btn-sm btn-primary"
+        [disabled]="isSubmitting() || stockQuantity() <= 0"
+        (click)="submitStockAction()"
+      >
+        {{ isSubmitting() ? 'Saving...' : getStockActionLabel() }}
+      </button>
+    </div>
+  </div>
+}
+} @else {
+  <div class="auth-required d-flex align-items-center justify-content-center p-5">
+    <div class="text-center">
+      <h3 class="text-warning mb-3">Authentication Required</h3>
+      <p class="text-light">Please log in to manage inventory.</p>
+    </div>
+  </div>
+}

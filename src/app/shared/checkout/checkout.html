@@ -1,0 +1,297 @@
+@if (checkout.checkoutStep() !== 'idle') {
+  <div class="checkout-overlay">
+    <div class="checkout-modal">
+      <button type="button" class="btn-close" aria-label="Close" (click)="checkout.cancelCheckout()"></button>
+
+      <!-- Step: Dining Option -->
+      @if (checkout.checkoutStep() === 'dining-option') {
+        <div class="checkout-step">
+          @if (mode() === 'charge') {
+            <h2 class="checkout-title">How are you dining?</h2>
+            <p class="checkout-subtitle">Select your dining preference</p>
+          } @else {
+            <h2 class="checkout-title">Order type</h2>
+            <p class="checkout-subtitle">Where is this order going?</p>
+          }
+          <div class="dining-options">
+            <button
+              type="button"
+              class="dining-option-card"
+              (click)="checkout.selectDiningOption('dine_in')">
+              <div class="dining-option-icon">
+                <i class="bi bi-cup-hot-fill"></i>
+              </div>
+              <span class="dining-option-label">Dine In</span>
+              @if (mode() === 'charge') {
+                <span class="dining-option-desc">Eat here at the restaurant</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="dining-option-card"
+              (click)="checkout.selectDiningOption('takeout')">
+              <div class="dining-option-icon">
+                <i class="bi bi-bag-fill"></i>
+              </div>
+              <span class="dining-option-label">Takeout</span>
+              @if (mode() === 'charge') {
+                <span class="dining-option-desc">Take your order to go</span>
+              }
+            </button>
+          </div>
+          <button type="button" class="checkout-cancel-btn" (click)="checkout.cancelCheckout()">Cancel</button>
+        </div>
+      }
+
+      <!-- Step: Table Selection (Dine In only) -->
+      @if (checkout.checkoutStep() === 'table-select') {
+        <div class="checkout-step">
+          <h2 class="checkout-title">Select {{ mode() === 'charge' ? 'your' : '' }} table</h2>
+          <p class="checkout-subtitle">{{ mode() === 'charge' ? "Choose where you're seated" : 'Choose the table for this order' }}</p>
+
+          @if (checkout.tablesLoading()) {
+            <div class="table-loading">
+              <output class="spinner-border text-primary">
+                <span class="visually-hidden">Loading tables...</span>
+              </output>
+            </div>
+          } @else {
+            <div class="table-grid">
+              @for (table of checkout.availableTables(); track table.id) {
+                <button
+                  type="button"
+                  class="table-card"
+                  (click)="checkout.selectTable(table)">
+                  <span class="table-number">{{ table.tableNumber }}</span>
+                  <span class="table-name">{{ table.tableName ?? 'Table ' + table.tableNumber }}</span>
+                  <span class="table-capacity">
+                    <i class="bi bi-people-fill"></i> {{ table.capacity }}
+                  </span>
+                </button>
+              }
+            </div>
+
+            @if (checkout.availableTables().length === 0) {
+              <p class="no-tables-msg">No tables available right now</p>
+            }
+          }
+
+          <div class="checkout-step-actions">
+            @if (mode() === 'charge') {
+              <button type="button" class="checkout-skip-btn" (click)="checkout.skipTableSelection()">
+                Skip — server will seat me
+              </button>
+            }
+            <button type="button" class="checkout-cancel-btn" (click)="checkout.cancelCheckout()">Cancel</button>
+          </div>
+        </div>
+      }
+
+      <!-- Step: Customer Info -->
+      @if (checkout.checkoutStep() === 'customer-info') {
+        <div class="checkout-step">
+          @if (mode() === 'send') {
+            <h2 class="checkout-title">Who is this order for?</h2>
+            <p class="checkout-subtitle">Add a name to identify this order. Optional for table orders.</p>
+          } @else {
+            <h2 class="checkout-title">Get notified when it's ready</h2>
+            <p class="checkout-subtitle">We'll text or email you when your order is ready for pickup. All fields are optional.</p>
+          }
+
+          <div class="customer-info-form">
+            <div class="form-field">
+              <label class="form-label" for="checkoutCustomerName">Name</label>
+              <input
+                type="text"
+                class="form-control"
+                id="checkoutCustomerName"
+                placeholder="Customer name"
+                [ngModel]="checkout.customerName()"
+                (ngModelChange)="checkout.onCustomerNameChange($event)"
+                autocomplete="name">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="checkoutCustomerPhone">Phone</label>
+              <input
+                type="tel"
+                class="form-control"
+                id="checkoutCustomerPhone"
+                placeholder="(555) 123-4567"
+                [ngModel]="checkout.customerPhone()"
+                (ngModelChange)="checkout.onCustomerPhoneChange($event)"
+                autocomplete="tel">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="checkoutCustomerEmail">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                id="checkoutCustomerEmail"
+                placeholder="you@example.com"
+                [ngModel]="checkout.customerEmail()"
+                (ngModelChange)="checkout.onCustomerEmailChange($event)"
+                autocomplete="email">
+            </div>
+          </div>
+
+          <div class="checkout-step-actions">
+            <button
+              type="button"
+              class="checkout-continue-btn"
+              (click)="checkout.submitCustomerInfo()">
+              @if (mode() === 'send') {
+                Send to kitchen
+              } @else if (checkout.hasCustomerContact()) {
+                Continue
+              } @else {
+                Continue without info
+              }
+            </button>
+            @if (mode() === 'send' && checkout.diningOption() === 'dine_in') {
+              <button type="button" class="checkout-skip-btn" (click)="checkout.skipCustomerInfo()">
+                Skip — table order
+              </button>
+            }
+            @if (mode() === 'charge') {
+              <button type="button" class="checkout-skip-btn" (click)="checkout.skipCustomerInfo()">
+                Skip — just give me an order number
+              </button>
+            }
+            <button type="button" class="checkout-cancel-btn" (click)="checkout.cancelCheckout()">Cancel</button>
+          </div>
+        </div>
+      }
+
+      <!-- Creating Order spinner -->
+      @if (checkout.isCreatingOrder()) {
+        <div class="checkout-step checkout-step-centered">
+          <output class="spinner-border text-primary">
+            <span class="visually-hidden">{{ mode() === 'send' ? 'Sending order...' : 'Creating order...' }}</span>
+          </output>
+          <p class="checkout-subtitle">{{ mode() === 'send' ? 'Sending to kitchen...' : 'Placing your order...' }}</p>
+        </div>
+      }
+
+      <!-- Step: Sending (send mode) -->
+      @if (checkout.checkoutStep() === 'sending' && !checkout.isCreatingOrder()) {
+        <div class="checkout-step checkout-step-centered">
+          <output class="spinner-border text-primary">
+            <span class="visually-hidden">Sending order...</span>
+          </output>
+          <p class="checkout-subtitle">Sending to kitchen...</p>
+        </div>
+      }
+
+      <!-- Step: Payment (charge mode only) -->
+      @if (checkout.checkoutStep() === 'payment' && checkout.createdOrderId()) {
+        <div class="checkout-step">
+          <h2 class="checkout-title">Payment</h2>
+          <p class="checkout-amount">{{ checkout.total() | currency:'USD':'symbol':'1.2-2' }}</p>
+          <os-payment-terminal
+            [amount]="checkout.total()"
+            [orderId]="checkout.createdOrderId()!"
+            [showOnScreen]="checkout.showOnScreenPayment()"
+            [showCardReader]="checkout.showCardReader()"
+            (paymentComplete)="checkout.onPaymentComplete()"
+            (paymentFailed)="checkout.onPaymentFailed($event)" />
+          <button type="button" class="checkout-cancel-btn" (click)="checkout.cancelCheckout()">Cancel</button>
+        </div>
+      }
+
+      <!-- Step: Loyalty Prompt (charge mode, after payment if eligible) -->
+      @if (checkout.checkoutStep() === 'loyalty-prompt') {
+        <div class="checkout-step checkout-step-centered">
+          <div class="loyalty-icon">
+            <i class="bi bi-star-fill"></i>
+          </div>
+          <h2 class="checkout-title">Join our rewards program?</h2>
+          <p class="checkout-subtitle">
+            Earn points on every order and unlock exclusive rewards. It's free to join!
+          </p>
+          <div class="checkout-step-actions">
+            <button type="button" class="checkout-continue-btn" (click)="checkout.joinLoyalty()">
+              Join rewards
+            </button>
+            <button type="button" class="checkout-skip-btn" (click)="checkout.skipLoyalty()">
+              No thanks
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Success -->
+      @if (checkout.checkoutStep() === 'success') {
+        <div class="checkout-step checkout-step-centered">
+          <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          @if (checkout.isCounterService()) {
+            <h2 class="checkout-title">Order sent!</h2>
+            @if (checkout.orderNumber()) {
+              <p class="checkout-order-number">#{{ checkout.orderNumber() }}</p>
+            }
+            <p class="checkout-subtitle">Listen for your order number.</p>
+            <button type="button" class="checkout-done-btn" (click)="checkout.finishAndNewOrder()">
+              New order
+            </button>
+          } @else if (mode() === 'send') {
+            <h2 class="checkout-title">Order sent!</h2>
+            @if (checkout.orderNumber()) {
+              <p class="checkout-order-number">#{{ checkout.orderNumber() }}</p>
+            }
+            <p class="checkout-subtitle">The kitchen is preparing this order.</p>
+            <button type="button" class="checkout-done-btn" (click)="checkout.finishAndNewOrder()">
+              New order
+            </button>
+          } @else {
+            <h2 class="checkout-title">Order placed!</h2>
+            @if (checkout.orderNumber()) {
+              <p class="checkout-order-number">#{{ checkout.orderNumber() }}</p>
+            }
+            <p class="checkout-subtitle">
+              @if (checkout.hasCustomerContact()) {
+                Your order is being prepared. We'll notify you when it's ready!
+              } @else if (checkout.diningOption() === 'dine_in' && checkout.selectedTable()) {
+                Your order is being prepared. You're at Table {{ checkout.selectedTable()!.tableNumber }}.
+              } @else if (checkout.diningOption() === 'dine_in') {
+                Your order is being prepared. Please take a seat.
+              } @else {
+                Your order is being prepared. We'll call your number when it's ready.
+              }
+            </p>
+            <button type="button" class="checkout-done-btn" (click)="checkout.finishAndNewOrder()">
+              Start new order
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Failed -->
+      @if (checkout.checkoutStep() === 'failed') {
+        <div class="checkout-step checkout-step-centered">
+          <div class="failed-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <h2 class="checkout-title">Something went wrong</h2>
+          <p class="checkout-subtitle">{{ checkout.checkoutError() }}</p>
+          <div class="checkout-step-actions">
+            @if (mode() === 'charge' && checkout.createdOrderId()) {
+              <button type="button" class="checkout-retry-btn" (click)="checkout.retryPayment()">
+                Retry payment
+              </button>
+            }
+            @if (mode() === 'send') {
+              <button type="button" class="checkout-retry-btn" (click)="checkout.retrySend()">
+                Try again
+              </button>
+            }
+            <button type="button" class="checkout-cancel-btn" (click)="checkout.cancelCheckout()">
+              Go back
+            </button>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+}

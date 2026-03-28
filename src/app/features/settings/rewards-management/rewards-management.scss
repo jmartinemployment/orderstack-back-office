@@ -1,0 +1,86 @@
+.rewards-management {
+  color: var(--os-text-primary);
+}
+
+.table-dark {
+  --bs-table-bg: var(--os-bg-card);
+  --bs-table-border-color: var(--os-border);
+}
+
+.tier-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  &[data-tier='bronze'] {
+    background-color: #f7ebe0;
+    color: #7a4a1c;
+  }
+
+  &[data-tier='silver'] {
+    background-color: #ededed;
+    color: #4a4a4a;
+  }
+
+  &[data-tier='gold'] {
+    background-color: #f6f0d8;
+    color: #6b5700;
+  }
+
+  &[data-tier='platinum'] {
+    background-color: #eaeaea;
+    color: #484848;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+
+.modal-content {
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  color: var(--os-text-primary);
+}
+
+.form-control,
+.form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 106, 255, 0.15);
+  }
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}

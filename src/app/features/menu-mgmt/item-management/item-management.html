@@ -1,0 +1,879 @@
+@if (isAuthenticated()) {
+<div class="item-management">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Menu Items</h2>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-light" (click)="exportCsv()">
+        <i class="bi bi-download"></i> Export CSV
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-light" (click)="openImportModal()">
+        <i class="bi bi-upload"></i> Import CSV
+      </button>
+      <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+        + Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar mb-3">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control"
+        placeholder="Search items by name, description, or SKU..."
+        aria-label="Search items by name, description, or SKU"
+        [value]="searchQuery()" (input)="setSearchQuery($any($event.target).value)" />
+      @if (searchQuery()) {
+        <button class="btn btn-outline-light" (click)="setSearchQuery('')">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Category Filter -->
+  <div class="category-filter mb-3">
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-sm"
+        [class.btn-primary]="!selectedCategoryId()"
+        [class.btn-outline-light]="selectedCategoryId()"
+        (click)="selectCategory(null)">All Items</button>
+      @for (category of categories(); track category.id) {
+        <button type="button" class="btn btn-sm"
+          [class.btn-primary]="selectedCategoryId() === category.id"
+          [class.btn-outline-light]="selectedCategoryId() !== category.id"
+          (click)="selectCategory(category.id)">{{ category.name }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- Sort Controls -->
+  <div class="sort-bar d-flex gap-2 mb-3">
+    <span class="text-muted small align-self-center">Sort:</span>
+    <button class="btn btn-sm btn-outline-light" (click)="setSort('name')">
+      Name <i class="bi" [class]="getSortIcon('name')"></i>
+    </button>
+    <button class="btn btn-sm btn-outline-light" (click)="setSort('price')">
+      Price <i class="bi" [class]="getSortIcon('price')"></i>
+    </button>
+    <button class="btn btn-sm btn-outline-light" (click)="setSort('category')">
+      Category <i class="bi" [class]="getSortIcon('category')"></i>
+    </button>
+    <button class="btn btn-sm btn-outline-light" (click)="setSort('prepTime')">
+      Prep Time <i class="bi" [class]="getSortIcon('prepTime')"></i>
+    </button>
+    <span class="text-muted small align-self-center ms-auto">
+      {{ filteredItems().length }} item{{ filteredItems().length !== 1 ? 's' : '' }}
+    </span>
+  </div>
+
+  @if (localError()) {
+    <os-error-display [message]="localError()!" [retryable]="true"
+      (dismissed)="clearLocalError()" (retry)="retry()" />
+  }
+
+  @if (!crudSupported()) {
+    <div class="alert alert-info small py-2 px-3 mb-3">
+      Edit, delete, and availability toggle are not yet available.
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading items..." />
+    </div>
+  } @else {
+    <div class="items-grid">
+      @for (item of filteredItems(); track item.id) {
+        <div class="item-card card" [class.unavailable]="item.isActive === false" [class.eighty-sixed]="item.eightySixed">
+          @if (item.imageUrl || item.image) {
+            <img [src]="item.imageUrl || item.image" [alt]="item.name" class="card-img-top" loading="lazy" />
+          }
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="card-title mb-1">
+                  {{ item.name }}
+                  @if (item.eightySixed) {
+                    <span class="badge bg-danger ms-1">86'd</span>
+                  } @else if (item.popular || item.isPopular) {
+                    <span class="badge bg-warning text-dark ms-1">Popular</span>
+                  }
+                </h5>
+                <span class="category-badge badge bg-secondary">{{ getCategoryName(item.categoryId || '') }}</span>
+                @if (item.sku) {
+                  <span class="badge bg-dark ms-1">SKU: {{ item.sku }}</span>
+                }
+                @if (item.prepTimeMinutes) {
+                  <span class="badge bg-info ms-1">{{ item.prepTimeMinutes }}m prep</span>
+                }
+                @if (item.cost) {
+                  <span class="badge bg-dark ms-1">Cost: {{ item.cost | currency }}</span>
+                }
+              </div>
+              <span class="price fw-bold">{{ item.price | currency }}</span>
+            </div>
+
+            <!-- Catering pricing badges -->
+            @if (item.cateringPricing && item.cateringPricing.length > 0) {
+              <div class="catering-pricing-badges mb-2">
+                @for (tier of item.cateringPricing; track $index) {
+                  <span class="badge bg-primary me-1">
+                    {{ tier.label ? tier.label + ': ' : '' }}{{ tier.price | currency }}/{{ tier.model === 'per_person' ? 'person' : tier.model === 'per_tray' ? 'tray' : 'flat' }}
+                  </span>
+                }
+              </div>
+            }
+
+            <!-- Allergen badges -->
+            @if (item.allergens && item.allergens.length > 0) {
+              <div class="allergen-badges mb-2">
+                @for (allergen of item.allergens; track allergen.type) {
+                  <span class="badge allergen-badge me-1" [class.contains]="allergen.severity === 'contains'"
+                    [class.may-contain]="allergen.severity === 'may_contain'"
+                    [class.facility]="allergen.severity === 'facility'">
+                    {{ getAllergenLabel(allergen.type) }}
+                  </span>
+                }
+              </div>
+            }
+
+            <!-- Channel visibility -->
+            @if (item.channelVisibility) {
+              <div class="channel-badges mb-2">
+                @if (item.channelVisibility.pos) { <span class="badge channel-badge">POS</span> }
+                @if (item.channelVisibility.onlineOrdering) { <span class="badge channel-badge">Online</span> }
+                @if (item.channelVisibility.kiosk) { <span class="badge channel-badge">Kiosk</span> }
+                @if (item.channelVisibility.deliveryApps) { <span class="badge channel-badge">Delivery</span> }
+              </div>
+            }
+
+            @if (item.modifierGroups && item.modifierGroups.length > 0) {
+              <div class="modifier-tags mb-2">
+                @for (mg of item.modifierGroups; track mg.id) {
+                  <span class="badge modifier-badge me-1">{{ mg.name }}</span>
+                }
+              </div>
+            }
+
+            @if (item.description) {
+              <p class="card-text small text-muted mb-2">{{ item.description }}</p>
+            }
+
+            @if (item.dietary && item.dietary.length > 0) {
+              <div class="dietary-badges mb-2">
+                @for (diet of item.dietary; track diet) {
+                  <span class="badge bg-info me-1">{{ diet }}</span>
+                }
+              </div>
+            }
+
+            @if (item.eightySixed) {
+              <div class="alert alert-danger py-1 px-2 small mb-2">
+                86'd{{ item.eightySixReason ? ': ' + item.eightySixReason : '' }}
+              </div>
+            } @else if (item.isActive === false) {
+              <div class="alert alert-warning py-1 px-2 small mb-2">Currently unavailable</div>
+            }
+
+            <div class="item-actions d-flex flex-wrap gap-2 mt-auto">
+              <button type="button" class="btn btn-sm"
+                [class.btn-danger]="!item.eightySixed"
+                [class.btn-outline-success]="item.eightySixed"
+                (click)="toggleEightySix(item)">
+                {{ item.eightySixed ? 'Un-86' : '86 Item' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-light flex-fill" [disabled]="!crudSupported()"
+                (click)="toggleActive(item)">
+                {{ item.isActive !== false ? "86'd" : 'Available' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="!crudSupported()"
+                (click)="openEditForm(item)">Edit</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="!crudSupported()"
+                (click)="confirmDelete(item)">Delete</button>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state text-center p-5">
+          <p class="text-muted mb-3">
+            @if (searchQuery()) { No items match "{{ searchQuery() }}" }
+            @else if (selectedCategoryId()) { No items in this category }
+            @else { No menu items yet }
+          </p>
+          @if (!searchQuery()) {
+            <button type="button" class="btn btn-primary" (click)="openCreateForm()">Add your first item</button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== ITEM FORM MODAL ==================== -->
+  @if (showForm()) {
+    <div class="modal-overlay" (keydown.escape)="closeForm()" role="dialog" aria-modal="true">
+      <div class="modal-content card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">{{ editingItem() ? 'Edit Item' : 'New Item' }}</h4>
+          <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close"></button>
+        </div>
+        <form [formGroup]="itemForm" (ngSubmit)="saveItem()">
+          <div class="card-body form-scrollable">
+            <!-- Basic Info -->
+            <div class="row g-3">
+              <div class="col-12 col-md-8">
+                <label class="form-label" for="itemName">Item Name *</label>
+                <input type="text" class="form-control" id="itemName" formControlName="name" placeholder="e.g., Chicken Tacos"
+                  [class.is-invalid]="itemForm.controls.name.touched && itemForm.controls.name.invalid" />
+                @if (itemForm.controls.name.touched && itemForm.controls.name.invalid) {
+                  <div class="invalid-feedback">Item name is required (min 2 characters)</div>
+                }
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="itemPrice">Price *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" class="form-control" id="itemPrice" formControlName="price" min="0" step="0.01"
+                    [class.is-invalid]="itemForm.controls.price.touched && itemForm.controls.price.invalid" />
+                </div>
+                @if (itemForm.controls.price.touched && itemForm.controls.price.invalid) {
+                  <div class="invalid-feedback">Price is required</div>
+                }
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-12 col-md-3">
+                <label class="form-label" for="itemCategory">Category *</label>
+                <select class="form-select" id="itemCategory" formControlName="categoryId"
+                  [class.is-invalid]="itemForm.controls.categoryId.touched && itemForm.controls.categoryId.invalid">
+                  <option value="">Select...</option>
+                  @for (category of categories(); track category.id) {
+                    <option [value]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+                @if (itemForm.controls.categoryId.touched && itemForm.controls.categoryId.invalid) {
+                  <div class="invalid-feedback">Category is required</div>
+                }
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label" for="itemCost">Cost ($)</label>
+                <input type="number" class="form-control" id="itemCost" formControlName="cost" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label" for="itemPrepTime">Prep (min)</label>
+                <input type="number" class="form-control" id="itemPrepTime" formControlName="prepTimeMinutes" min="0" placeholder="0">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label" for="itemDisplayOrder">Sort Order</label>
+                <input type="number" class="form-control" id="itemDisplayOrder" formControlName="displayOrder" min="0" placeholder="Auto">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="itemReportingCategory">Reporting Category</label>
+                <select class="form-select" id="itemReportingCategory" formControlName="reportingCategoryId">
+                  <option value="">None</option>
+                  @for (rc of reportingCategories(); track rc.id) {
+                    <option [value]="rc.id">{{ rc.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label class="form-label" for="itemDescription">Description</label>
+              <textarea class="form-control" id="itemDescription" rows="2" formControlName="description"
+                placeholder="Brief description of the item..."></textarea>
+            </div>
+
+            <!-- Image Upload -->
+            <div class="mb-3">
+              <span class="form-label">Item Photo</span>
+              @if (imagePreview() || editingItem()?.imageUrl) {
+                <div class="image-preview-container">
+                  <img [src]="imagePreview() || editingItem()?.imageUrl" alt="Item preview" class="image-preview" />
+                  <div class="image-preview-actions">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeImage()" [disabled]="isUploadingImage()">
+                      <i class="bi bi-trash"></i> Remove
+                    </button>
+                    <label class="btn btn-sm btn-outline-light" [class.disabled]="isUploadingImage()">
+                      <i class="bi bi-arrow-repeat"></i> Replace
+                      <input type="file" class="d-none" accept="image/jpeg,image/png,image/webp"
+                        aria-label="Replace item image"
+                        (change)="onImageFileSelected($event)" />
+                    </label>
+                  </div>
+                  @if (isUploadingImage()) {
+                    <div class="upload-overlay">
+                      <span class="spinner-border spinner-border-sm"></span> Uploading...
+                    </div>
+                  }
+                </div>
+              } @else {
+                <button type="button" class="image-dropzone" (click)="imageFileInput.click()" (keydown.enter)="imageFileInput.click()">
+                  <i class="bi bi-camera"></i>
+                  <span>Click to upload a photo</span>
+                  <span class="dropzone-hint">JPG, PNG, or WebP — max 2MB</span>
+                  <input #imageFileInput type="file" class="d-none" accept="image/jpeg,image/png,image/webp"
+                    aria-label="Upload item image"
+                    (change)="onImageFileSelected($event)" />
+                  @if (isUploadingImage()) {
+                    <div class="mt-2">
+                      <span class="spinner-border spinner-border-sm"></span> Uploading...
+                    </div>
+                  }
+                </button>
+              }
+            </div>
+
+            <!-- Legacy Image URL (fallback) -->
+            <div class="mb-3">
+              <label class="form-label small text-muted" for="itemImageUrl">Image URL (optional)</label>
+              <input type="url" class="form-control form-control-sm" id="itemImageUrl" formControlName="image" placeholder="https://..." />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="itemDietary">Dietary Tags</label>
+              <input type="text" class="form-control" id="itemDietary" formControlName="dietary"
+                placeholder="e.g., Vegetarian, Gluten-Free, Vegan" />
+              <small class="text-muted">Separate with commas</small>
+            </div>
+
+            <!-- SKU / Barcode Section (collapsible) -->
+            <div class="collapsible-section">
+              <button type="button" class="section-toggle" (click)="toggleSkuSection()">
+                <i class="bi" [class.bi-chevron-right]="!showSkuSection()" [class.bi-chevron-down]="showSkuSection()"></i>
+                SKU & Barcode
+              </button>
+              @if (showSkuSection()) {
+                <div class="section-body">
+                  <div class="row g-2">
+                    <div class="col-md-4">
+                      <label class="form-label small" for="itemSku">SKU</label>
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="itemSku" formControlName="sku" placeholder="Auto or manual">
+                        @if (editingItem()) {
+                          <button type="button" class="btn btn-outline-light" (click)="generateSku()" title="Auto-generate">
+                            <i class="bi bi-magic"></i>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small" for="itemBarcode">Barcode</label>
+                      <input type="text" class="form-control form-control-sm" id="itemBarcode" formControlName="barcode" placeholder="UPC/EAN code">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small" for="itemBarcodeFormat">Format</label>
+                      <select class="form-select form-select-sm" id="itemBarcodeFormat" formControlName="barcodeFormat">
+                        <option value="">None</option>
+                        <option value="UPC-A">UPC-A</option>
+                        <option value="EAN-13">EAN-13</option>
+                        <option value="CODE-128">CODE-128</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Channel Visibility Section (collapsible) -->
+            <div class="collapsible-section">
+              <button type="button" class="section-toggle" (click)="toggleChannelSection()">
+                <i class="bi" [class.bi-chevron-right]="!showChannelSection()" [class.bi-chevron-down]="showChannelSection()"></i>
+                Channel Visibility
+              </button>
+              @if (showChannelSection()) {
+                <div class="section-body">
+                  <div class="d-flex flex-wrap gap-3">
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" id="ch-pos"
+                        [checked]="formChannelVisibility().pos"
+                        (change)="setChannelVisibility('pos', $any($event.target).checked)">
+                      <label class="form-check-label" for="ch-pos">POS</label>
+                    </div>
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" id="ch-online"
+                        [checked]="formChannelVisibility().onlineOrdering"
+                        (change)="setChannelVisibility('onlineOrdering', $any($event.target).checked)">
+                      <label class="form-check-label" for="ch-online">Online Ordering</label>
+                    </div>
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" id="ch-kiosk"
+                        [checked]="formChannelVisibility().kiosk"
+                        (change)="setChannelVisibility('kiosk', $any($event.target).checked)">
+                      <label class="form-check-label" for="ch-kiosk">Kiosk</label>
+                    </div>
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" id="ch-delivery"
+                        [checked]="formChannelVisibility().deliveryApps"
+                        (change)="setChannelVisibility('deliveryApps', $any($event.target).checked)">
+                      <label class="form-check-label" for="ch-delivery">Delivery Apps</label>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Allergens Section (collapsible) -->
+            <div class="collapsible-section">
+              <button type="button" class="section-toggle" (click)="toggleAllergenSection()">
+                <i class="bi" [class.bi-chevron-right]="!showAllergenSection()" [class.bi-chevron-down]="showAllergenSection()"></i>
+                Allergens
+                @if (formAllergens().length > 0) {
+                  <span class="badge bg-warning text-dark ms-2">{{ formAllergens().length }}</span>
+                }
+              </button>
+              @if (showAllergenSection()) {
+                <div class="section-body">
+                  <div class="allergen-grid">
+                    @for (type of allergenTypes; track type) {
+                      <div class="allergen-item">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input"
+                            [id]="'allergen-' + type"
+                            [checked]="hasAllergen(type)"
+                            (change)="toggleAllergen(type)">
+                          <label class="form-check-label" [for]="'allergen-' + type">
+                            {{ getAllergenLabel(type) }}
+                          </label>
+                        </div>
+                        @if (hasAllergen(type)) {
+                          <select class="form-select form-select-sm severity-select"
+                            [value]="getAllergenSeverity(type)"
+                            (change)="setAllergenSeverity(type, $any($event.target).value)"
+                            aria-label="Allergen severity">
+                            <option value="contains">Contains</option>
+                            <option value="may_contain">May contain</option>
+                            <option value="facility">Same facility</option>
+                          </select>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Availability Windows Section (collapsible) -->
+            <div class="collapsible-section">
+              <button type="button" class="section-toggle" (click)="toggleAvailabilitySection()">
+                <i class="bi" [class.bi-chevron-right]="!showAvailabilitySection()" [class.bi-chevron-down]="showAvailabilitySection()"></i>
+                Availability Windows
+                @if (formAvailabilityWindows().length > 0) {
+                  <span class="badge bg-info ms-2">{{ formAvailabilityWindows().length }}</span>
+                }
+              </button>
+              @if (showAvailabilitySection()) {
+                <div class="section-body">
+                  @for (window of formAvailabilityWindows(); track $index; let i = $index) {
+                    <div class="availability-window mb-3">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+                          placeholder="Label (e.g., Breakfast)" aria-label="Availability window label" [value]="window.label"
+                          (input)="updateAvailabilityWindow(i, 'label', $any($event.target).value)">
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeAvailabilityWindow(i)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                      <div class="d-flex flex-wrap gap-1 mb-2">
+                        @for (day of dayLabels; track $index; let d = $index) {
+                          <button type="button" class="btn btn-sm day-btn"
+                            [class.btn-primary]="isAvailabilityDaySelected(i, d)"
+                            [class.btn-outline-light]="!isAvailabilityDaySelected(i, d)"
+                            (click)="toggleAvailabilityDay(i, d)">{{ day }}</button>
+                        }
+                      </div>
+                      <div class="d-flex gap-2 align-items-center">
+                        <input type="time" class="form-control form-control-sm" style="max-width: 130px;"
+                          aria-label="Start time"
+                          [value]="window.startTime"
+                          (input)="updateAvailabilityWindow(i, 'startTime', $any($event.target).value)">
+                        <span class="text-muted small">to</span>
+                        <input type="time" class="form-control form-control-sm" style="max-width: 130px;"
+                          aria-label="End time"
+                          [value]="window.endTime"
+                          (input)="updateAvailabilityWindow(i, 'endTime', $any($event.target).value)">
+                      </div>
+                    </div>
+                  }
+                  <button type="button" class="btn btn-sm btn-outline-light" (click)="addAvailabilityWindow()">
+                    <i class="bi bi-plus-lg"></i> Add Window
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Catering Pricing Model (catering mode only) -->
+            @if (platformService.isCateringMode()) {
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="itemCateringPricingModel">Catering Pricing Model</label>
+                  <select class="form-select" id="itemCateringPricingModel" [value]="formCateringPricingModel() ?? ''"
+                    (change)="setCateringPricingModel($any($event.target).value)">
+                    <option value="">None</option>
+                    <option value="per_person">Per Person</option>
+                    <option value="per_tray">Per Tray</option>
+                    <option value="flat">Flat Fee</option>
+                  </select>
+                </div>
+              </div>
+            }
+
+            <!-- Catering Pricing Section (collapsible, catering mode only) -->
+            @if (platformService.isCateringMode()) {
+              <div class="collapsible-section">
+                <button type="button" class="section-toggle" (click)="toggleCateringPricingSection()">
+                  <i class="bi" [class.bi-chevron-right]="!showCateringPricingSection()" [class.bi-chevron-down]="showCateringPricingSection()"></i>
+                  Catering Pricing
+                  @if (cateringPricingTiers().length > 0) {
+                    <span class="badge bg-primary ms-2">{{ cateringPricingTiers().length }}</span>
+                  }
+                </button>
+                @if (showCateringPricingSection()) {
+                  <div class="section-body">
+                    @for (tier of cateringPricingTiers(); track $index; let i = $index) {
+                      <div class="catering-tier-row mb-3 p-2 border rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="fw-semibold small">Tier {{ i + 1 }}</span>
+                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removePricingTier(i)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                        <div class="row g-2">
+                          <div class="col-md-3">
+                            <span class="form-label small">Pricing Model</span>
+                            <select class="form-select form-select-sm" aria-label="Tier pricing model" [value]="tier.model"
+                              (change)="updatePricingTier(i, 'model', $any($event.target).value)">
+                              <option value="per_person">Per Person</option>
+                              <option value="per_tray">Per Tray</option>
+                              <option value="flat">Flat Rate</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2">
+                            <span class="form-label small">Price ($)</span>
+                            <input type="number" class="form-control form-control-sm" min="0" step="0.01"
+                              aria-label="Tier price"
+                              [value]="tier.price"
+                              (input)="updatePricingTier(i, 'price', +$any($event.target).value)">
+                          </div>
+                          <div class="col-md-2">
+                            <span class="form-label small">Min Qty</span>
+                            <input type="number" class="form-control form-control-sm" min="0"
+                              aria-label="Minimum quantity"
+                              [value]="tier.minimumQuantity ?? ''"
+                              (input)="updatePricingTier(i, 'minimumQuantity', $any($event.target).value ? +$any($event.target).value : undefined)">
+                          </div>
+                          @if (tier.model === 'per_tray') {
+                            <div class="col-md-2">
+                              <span class="form-label small">Serves</span>
+                              <input type="number" class="form-control form-control-sm" min="1"
+                                aria-label="Serves quantity"
+                                [value]="tier.servesQuantity ?? ''"
+                                (input)="updatePricingTier(i, 'servesQuantity', $any($event.target).value ? +$any($event.target).value : undefined)">
+                            </div>
+                          }
+                          <div class="col-md-3">
+                            <span class="form-label small">Label</span>
+                            <input type="text" class="form-control form-control-sm"
+                              placeholder="e.g. Half Tray"
+                              aria-label="Tier label"
+                              [value]="tier.label ?? ''"
+                              (input)="updatePricingTier(i, 'label', $any($event.target).value || undefined)">
+                          </div>
+                        </div>
+                      </div>
+                    } @empty {
+                      <p class="text-muted small mb-2">No pricing tiers set. Add tiers to enable this item for catering packages.</p>
+                    }
+                    <button type="button" class="btn btn-sm btn-outline-light" (click)="addPricingTier()">
+                      <i class="bi bi-plus-lg"></i> Add Pricing Tier
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Nutrition Facts Section (collapsible) -->
+            <div class="collapsible-section">
+              <button type="button" class="section-toggle" (click)="toggleNutritionSection()">
+                <i class="bi" [class.bi-chevron-right]="!showNutritionSection()" [class.bi-chevron-down]="showNutritionSection()"></i>
+                Nutrition Facts
+              </button>
+              @if (showNutritionSection()) {
+                <div class="section-body">
+                  <div class="row g-2">
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Serving Size</span>
+                      <input type="text" class="form-control form-control-sm"
+                        placeholder="e.g., 1 slice (120g)"
+                        aria-label="Serving size"
+                        [value]="formNutrition().servingSize ?? ''"
+                        (input)="updateNutrition('servingSize', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Calories</span>
+                      <input type="number" class="form-control form-control-sm" min="0"
+                        aria-label="Calories"
+                        [value]="formNutrition().calories"
+                        (input)="updateNutrition('calories', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Total Fat (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Total fat in grams"
+                        [value]="formNutrition().totalFat"
+                        (input)="updateNutrition('totalFat', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Saturated Fat (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Saturated fat in grams"
+                        [value]="formNutrition().saturatedFat"
+                        (input)="updateNutrition('saturatedFat', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Trans Fat (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Trans fat in grams"
+                        [value]="formNutrition().transFat"
+                        (input)="updateNutrition('transFat', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Cholesterol (mg)</span>
+                      <input type="number" class="form-control form-control-sm" min="0"
+                        aria-label="Cholesterol in milligrams"
+                        [value]="formNutrition().cholesterol"
+                        (input)="updateNutrition('cholesterol', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Sodium (mg)</span>
+                      <input type="number" class="form-control form-control-sm" min="0"
+                        aria-label="Sodium in milligrams"
+                        [value]="formNutrition().sodium"
+                        (input)="updateNutrition('sodium', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Total Carbs (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Total carbohydrates in grams"
+                        [value]="formNutrition().totalCarbs"
+                        (input)="updateNutrition('totalCarbs', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Dietary Fiber (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Dietary fiber in grams"
+                        [value]="formNutrition().dietaryFiber"
+                        (input)="updateNutrition('dietaryFiber', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Total Sugars (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Total sugars in grams"
+                        [value]="formNutrition().totalSugars"
+                        (input)="updateNutrition('totalSugars', $any($event.target).value)">
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="form-label small">Protein (g)</span>
+                      <input type="number" class="form-control form-control-sm" min="0" step="0.1"
+                        aria-label="Protein in grams"
+                        [value]="formNutrition().protein"
+                        (input)="updateNutrition('protein', $any($event.target).value)">
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Item Type (all modes) -->
+            <div class="form-section">
+              <h6 class="form-section__title">Item Type</h6>
+              <select class="form-select form-select-sm" [value]="itemCategory() ?? ''" (change)="itemCategory.set($any($event.target).value || null)" aria-label="Item category">
+                <option value="">Food (default)</option>
+                <option value="beverage">Beverage</option>
+                <option value="equipment-rental">Equipment Rental</option>
+                <option value="service-fee">Service Fee</option>
+              </select>
+              @if (itemCategory() === 'beverage') {
+                <select class="form-select form-select-sm mt-2" [value]="beverageType() ?? ''" (change)="beverageType.set($any($event.target).value || null)" aria-label="Beverage type">
+                  <option value="">Select type...</option>
+                  <option value="spirit">Spirits</option>
+                  <option value="wine">Wine</option>
+                  <option value="beer">Beer</option>
+                  <option value="non-alcoholic">Non-Alcoholic</option>
+                  <option value="coffee-tea">Coffee &amp; Tea</option>
+                </select>
+              }
+            </div>
+
+            <!-- Allergens, Recipe, Supplier -->
+            <div class="form-section">
+              <h6 class="form-section__title">Allergens</h6>
+              <div class="allergen-chips">
+                @for (a of ['gluten', 'dairy', 'nuts', 'shellfish', 'soy', 'eggs', 'fish', 'sesame']; track a) {
+                  <button type="button" class="chip" [class.chip--active]="cateringAllergens().includes(a)" (click)="toggleCateringAllergen(a)">{{ a }}</button>
+                }
+              </div>
+              <h6 class="form-section__title mt-3">Dietary Flags</h6>
+              <div class="allergen-chips">
+                @for (f of ['vegan', 'vegetarian', 'halal', 'kosher', 'gf', 'df']; track f) {
+                  <button type="button" class="chip" [class.chip--active]="dietaryFlags().includes(f)" (click)="toggleDietaryFlag(f)">{{ f }}</button>
+                }
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h6 class="form-section__title">Recipe &amp; Ingredients</h6>
+              @if (linkedRecipe()) {
+                <div class="recipe-info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-success">Has Recipe</span>
+                    <a class="btn btn-sm btn-outline-secondary" routerLink="/app/food-cost" [queryParams]="{tab: 'recipes'}">Edit Recipe</a>
+                  </div>
+                  <small class="text-muted d-block mt-1">
+                    Cost/serving: {{ linkedRecipe()?.costPerServing != null ? ('$' + (linkedRecipe()!.costPerServing! | number:'1.2-2')) : 'N/A' }}
+                    &middot; {{ linkedRecipe()?.ingredients?.length ?? 0 }} ingredients
+                  </small>
+                </div>
+              } @else {
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted small">No recipe linked</span>
+                  <a class="btn btn-sm btn-outline-primary" routerLink="/app/food-cost" [queryParams]="{tab: 'recipes'}">Create Recipe</a>
+                </div>
+              }
+            </div>
+
+            <div class="form-section">
+              <label for="vendor-select" class="form-section__title">Supplier</label>
+              <select id="vendor-select" class="form-select form-select-sm" [value]="vendorId() ?? ''" (change)="vendorId.set($any($event.target).value || null)">
+                <option value="">No supplier linked</option>
+                @for (v of vendors(); track v.id) {
+                  <option [value]="v.id">{{ v.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Modifier Groups -->
+            @if (modifierGroups().length > 0) {
+              <div class="mb-3 mt-3">
+                <span class="form-label">Modifier Groups</span>
+                <div class="modifier-group-grid">
+                  @for (group of modifierGroups(); track group.id) {
+                    <button type="button" class="form-check modifier-group-check" (click)="toggleModifierGroup(group.id)" (keydown.enter)="toggleModifierGroup(group.id)">
+                      <input class="form-check-input" type="checkbox"
+                        [id]="'mod-group-' + group.id"
+                        [checked]="isModifierGroupSelected(group.id)"
+                        (click)="$event.stopPropagation()"
+                        (keydown.enter)="$event.stopPropagation()">
+                      <label class="form-check-label" [for]="'mod-group-' + group.id">
+                        {{ group.name }}
+                        <span class="text-muted small">({{ group.modifiers.length }} options)</span>
+                      </label>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="d-flex gap-4">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="isActive" formControlName="isActive" />
+                <label class="form-check-label" for="isActive">Available</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="isPopular" formControlName="isPopular" />
+                <label class="form-check-label" for="isPopular">Mark as Popular</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-light" (click)="closeForm()" [disabled]="isSaving()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="itemForm.invalid || isSaving()">
+              @if (isSaving()) {
+                <span class="spinner-border spinner-border-sm me-2"></span> Saving...
+              } @else {
+                {{ editingItem() ? 'Update' : 'Create' }} Item
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== DELETE CONFIRMATION MODAL ==================== -->
+  @if (deleteTarget(); as target) {
+    <div class="modal-overlay" (click)="onDeleteOverlayClick($event)" (keydown.escape)="cancelDelete()" role="dialog" aria-modal="true">
+      <div class="delete-confirm-modal card">
+        <div class="card-header">
+          <h5 class="mb-0">Delete Item</h5>
+        </div>
+        <div class="card-body">
+          <p>Are you sure you want to delete <strong>"{{ target.name }}"</strong>?</p>
+          <p class="text-muted small mb-0">This action cannot be undone.</p>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="executeDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== CSV IMPORT MODAL ==================== -->
+  @if (showImportModal()) {
+    <div class="modal-overlay" (click)="onImportOverlayClick($event)" (keydown.escape)="closeImportModal()" role="dialog" aria-modal="true">
+      <div class="import-modal card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Import Menu Items</h5>
+          <button type="button" class="btn-close" (click)="closeImportModal()" aria-label="Close"></button>
+        </div>
+        <div class="card-body">
+          @if (importResult(); as result) {
+            <div class="import-results">
+              <h6 class="text-white mb-2">Import Complete</h6>
+              <div class="d-flex gap-3 mb-2">
+                <span class="badge bg-success">{{ result.created }} created</span>
+                <span class="badge bg-info">{{ result.updated }} updated</span>
+                <span class="badge bg-secondary">{{ result.skipped }} skipped</span>
+              </div>
+              @if (result.errors.length > 0) {
+                <div class="import-errors mt-2">
+                  <strong class="text-danger small">Errors:</strong>
+                  @for (err of result.errors; track $index) {
+                    <div class="text-danger small">{{ err }}</div>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="import-dropzone text-center p-4">
+              <i class="bi bi-file-earmark-spreadsheet" style="font-size: 2rem;"></i>
+              <p class="text-muted mt-2 mb-3">Upload a CSV file with your menu items</p>
+              <input type="file" class="form-control" accept=".csv,.xlsx"
+                aria-label="Choose CSV file to import"
+                (change)="handleImportFile($event)" [disabled]="isImporting()">
+              @if (isImporting()) {
+                <div class="mt-3">
+                  <span class="spinner-border spinner-border-sm me-1"></span> Importing...
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+          <button class="btn btn-outline-light" (click)="closeImportModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+} @else {
+  <div class="auth-required d-flex align-items-center justify-content-center p-5">
+    <div class="text-center">
+      <h3 class="text-warning mb-3">Authentication Required</h3>
+      <p class="text-light">Please log in to manage menu items.</p>
+    </div>
+  </div>
+}

@@ -1,0 +1,318 @@
+<div class="printer-settings">
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading printers..." />
+    </div>
+  }
+
+  @if (error()) {
+    <os-error-display
+      [message]="error()!"
+      [retryable]="true"
+      (retry)="retry()"
+    />
+  }
+
+  <!-- KPI Strip -->
+  <div class="d-flex flex-wrap gap-3 mb-4">
+    <div class="kpi-card">
+      <span class="kpi-label">Total Printers</span>
+      <span class="kpi-value">{{ totalPrinters() }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Active</span>
+      <span class="kpi-value">{{ activePrinters() }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Default</span>
+      <span class="kpi-value kpi-text">{{ defaultPrinter()?.name ?? 'None' }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Online</span>
+      <span class="kpi-value">{{ onlinePrinters() }}</span>
+    </div>
+  </div>
+
+  <!-- CloudPRNT Config Banner -->
+  @if (cloudPrntConfig(); as config) {
+    <div class="cloudprnt-banner mb-4">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 class="mb-0">Printer Registered!</h5>
+        <button type="button" class="btn btn-sm btn-outline-light" (click)="dismissConfig()">Dismiss</button>
+      </div>
+      @if (newlyCreatedPrinter(); as np) {
+        <p class="mb-2 small">{{ np.name }} is ready for configuration.</p>
+      }
+      <div class="mb-2">
+        <span class="form-label small" id="cloudprnt-url-label">CloudPRNT Server URL</span>
+        <div class="d-flex gap-2">
+          <code class="cloudprnt-url flex-fill">{{ config.serverUrl }}</code>
+          <button type="button" class="btn btn-sm btn-outline-info" (click)="copyCloudPrntUrl()">
+            {{ copiedUrl() ? 'Copied!' : 'Copy' }}
+          </button>
+        </div>
+      </div>
+      <p class="small text-muted mb-0">{{ config.instructions }}</p>
+    </div>
+  }
+
+  <!-- Toolbar -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted small">{{ totalPrinters() }} printer{{ totalPrinters() !== 1 ? 's' : '' }}</span>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-light" (click)="retry()">Refresh</button>
+      <button type="button" class="btn btn-sm btn-primary" (click)="toggleAddForm()">
+        {{ showAddForm() ? 'Cancel' : '+ Add Printer' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  @if (showAddForm()) {
+    <div class="panel mb-4">
+      <h6 class="panel-title">Register New Printer</h6>
+      <div class="row mb-3">
+        <div class="col-md-6 mb-2">
+          <label class="form-label" for="printerFormName">Name *</label>
+          <input
+            type="text"
+            class="form-control"
+            id="printerFormName"
+            [value]="formName()"
+            (input)="onFormField('name', $event)"
+            placeholder="Kitchen Printer"
+          />
+        </div>
+        <div class="col-md-6 mb-2">
+          <label class="form-label" for="printerFormModel">Model</label>
+          <select class="form-select" id="printerFormModel" [value]="formModel()" (change)="onFormSelect('model', $event)">
+            @for (m of printerModels; track m) {
+              <option [value]="m">{{ m }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6 mb-2">
+          <label class="form-label" for="printerFormMac">MAC Address *</label>
+          <input
+            type="text"
+            class="form-control"
+            id="printerFormMac"
+            [class.mac-valid]="formMacAddress().length > 0 && macAddressValid()"
+            [class.mac-invalid]="formMacAddress().length > 0 && !macAddressValid()"
+            [value]="formMacAddress()"
+            (input)="onMacInput($event)"
+            placeholder="00:11:62:AB:CD:EF"
+            maxlength="17"
+          />
+        </div>
+        <div class="col-md-6 mb-2">
+          <label class="form-label" for="printerFormIp">IP Address</label>
+          <input
+            type="text"
+            class="form-control"
+            id="printerFormIp"
+            [value]="formIpAddress()"
+            (input)="onFormField('ipAddress', $event)"
+            placeholder="192.168.1.100"
+          />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-4 mb-2">
+          <label class="form-label" for="printerFormWidth">Print Width</label>
+          <input
+            type="number"
+            class="form-control"
+            id="printerFormWidth"
+            [value]="formPrintWidth()"
+            (input)="onFormNumber('printWidth', $event)"
+            min="32"
+            max="80"
+          />
+        </div>
+        <div class="col-md-8 mb-2 d-flex align-items-end">
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="formIsDefault"
+              [checked]="formIsDefault()"
+              (change)="onFormCheckbox('isDefault', $event)"
+            />
+            <label class="form-check-label" for="formIsDefault">Set as default printer</label>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="isSubmitting() || !macAddressValid() || !formName().trim()"
+        (click)="addPrinter()"
+      >
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm me-1"></span> Registering...
+        } @else {
+          Register Printer
+        }
+      </button>
+    </div>
+  }
+
+  <!-- Printer List -->
+  <div class="printer-list">
+    @for (printer of printers(); track printer.id) {
+      <div class="printer-card panel mb-3">
+        @if (editingPrinter()?.id === printer.id) {
+          <!-- Edit View -->
+          <h6 class="panel-title">Edit Printer</h6>
+          <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+              <label class="form-label" for="printerEditName">Name</label>
+              <input
+                type="text"
+                class="form-control"
+                id="printerEditName"
+                [value]="editName()"
+                (input)="onEditField('name', $event)"
+              />
+            </div>
+            <div class="col-md-6 mb-2">
+              <label class="form-label" for="printerEditModel">Model</label>
+              <select class="form-select" id="printerEditModel" [value]="editModel()" (change)="onEditSelect('model', $event)">
+                @for (m of printerModels; track m) {
+                  <option [value]="m">{{ m }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+              <label class="form-label" for="printerEditIp">IP Address</label>
+              <input
+                type="text"
+                class="form-control"
+                id="printerEditIp"
+                [value]="editIpAddress()"
+                (input)="onEditField('ipAddress', $event)"
+              />
+            </div>
+            <div class="col-md-4 mb-2">
+              <label class="form-label" for="printerEditWidth">Print Width</label>
+              <input
+                type="number"
+                class="form-control"
+                id="printerEditWidth"
+                [value]="editPrintWidth()"
+                (input)="onEditNumber('printWidth', $event)"
+                min="32"
+                max="80"
+              />
+            </div>
+          </div>
+          <div class="form-check mb-3">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="editIsDefault"
+              [checked]="editIsDefault()"
+              (change)="onEditCheckbox('isDefault', $event)"
+            />
+            <label class="form-check-label" for="editIsDefault">Default printer</label>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-primary" (click)="saveEdit()">Save</button>
+            <button type="button" class="btn btn-sm btn-outline-light" (click)="cancelEdit()">Cancel</button>
+          </div>
+        } @else {
+          <!-- Normal View -->
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="status-dot" [class]="getStatusClass(printer)"></span>
+              <strong>{{ printer.name }}</strong>
+              @if (printer.isDefault) {
+                <span class="default-badge">Default</span>
+              }
+            </div>
+            <span class="badge" [class.bg-success]="getStatusText(printer) === 'Online'"
+              [class.bg-danger]="getStatusText(printer) === 'Offline'"
+              [class.bg-secondary]="getStatusText(printer) === 'Disabled'">
+              {{ getStatusText(printer) }}
+            </span>
+          </div>
+          <div class="printer-meta small text-muted mb-2">
+            <span>{{ printer.model }}</span>
+            <span class="mx-1">&middot;</span>
+            <span>MAC: {{ printer.macAddress }}</span>
+            @if (printer.ipAddress) {
+              <span class="mx-1">&middot;</span>
+              <span>IP: {{ printer.ipAddress }}</span>
+            }
+            <span class="mx-1">&middot;</span>
+            <span>Width: {{ printer.printWidth }}</span>
+          </div>
+          <div class="small text-muted mb-3">
+            Last poll:
+            @if (printer.lastPollAt) {
+              {{ printer.lastPollAt | date:'short' }}
+            } @else {
+              Never
+            }
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="btn btn-xs btn-outline-info"
+              [disabled]="testingPrinterId() === printer.id"
+              (click)="testPrint(printer.id)"
+            >
+              @if (testingPrinterId() === printer.id) {
+                <span class="spinner-border spinner-border-sm"></span>
+              } @else {
+                Test Print
+              }
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-light" (click)="startEdit(printer)">Edit</button>
+            <button
+              type="button"
+              class="btn btn-xs"
+              [class.btn-outline-success]="!printer.isActive"
+              [class.btn-outline-warning]="printer.isActive"
+              (click)="toggleActive(printer)"
+            >
+              {{ printer.isActive ? 'Disable' : 'Enable' }}
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-danger" (click)="confirmDelete(printer)">Delete</button>
+          </div>
+          @if (testResult() && testingPrinterId() === null && getLastTestedId() === printer.id) {
+            <div class="mt-2 small" [class.text-success]="testResult() === 'Test print sent'" [class.text-danger]="testResult() !== 'Test print sent'">
+              {{ testResult() }}
+            </div>
+          }
+        }
+      </div>
+    } @empty {
+      <div class="panel text-center py-4">
+        <p class="text-muted mb-0">No printers registered</p>
+        <p class="text-muted small">Click "+ Add Printer" to register your first Star printer.</p>
+      </div>
+    }
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  @if (deletingPrinter(); as dp) {
+    <button type="button" class="modal-backdrop" (click)="cancelDelete()" (keydown.enter)="cancelDelete()"></button>
+    <div class="stock-modal">
+      <h5 class="mb-3">Delete Printer</h5>
+      <div class="alert alert-warning small mb-3">
+        This will remove the printer and any queued print jobs will fail.
+      </div>
+      <p class="mb-3">Delete <strong>{{ dp.name }}</strong>?</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-sm btn-outline-light" (click)="cancelDelete()">Cancel</button>
+        <button type="button" class="btn btn-sm btn-danger" (click)="executeDelete()">Delete</button>
+      </div>
+    </div>
+  }
+</div>

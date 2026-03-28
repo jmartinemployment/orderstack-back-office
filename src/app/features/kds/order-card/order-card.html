@@ -1,0 +1,433 @@
+<div class="order-card" [class.urgent]="isUrgent()" [class.rushed]="isRushed()" [class.throttled]="isThrottledOrder()" [class.has-allergy-alert]="sentimentAlert()?.flags?.includes('allergy')" [class.has-critical-alert]="sentimentAlert()?.urgency === 'critical'">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <span class="order-number fw-bold">#{{ order().orderNumber }}</span>
+      <span class="badge" [class]="orderTypeClass()">{{ orderTypeLabel() }}</span>
+      @if (isMarketplace() && marketplaceSourceLabel(); as sourceLabel) {
+        <span class="badge marketplace-source-badge">{{ sourceLabel }}</span>
+        <span class="badge marketplace-sync-badge" [class]="marketplaceSyncClass()">{{ marketplaceSyncLabel() }}</span>
+      }
+      @if (isRushed()) {
+        <span class="badge bg-danger rush-badge">RUSH</span>
+      }
+      @if (isExpoQueue()) {
+        <span class="badge bg-expo expo-badge">EXPO</span>
+      }
+      @if (deliveryProviderLabel(); as label) {
+        <span class="badge" [class]="deliveryProviderClass()">{{ label }}</span>
+      }
+      @if (isPartialOrder()) {
+        <span class="badge bg-partial-order">{{ filteredSelections().length }} of {{ allSelections().length }} items</span>
+      }
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="elapsed-time" [class]="prepColorClass()">
+        {{ formatElapsed(elapsedMinutes()) }}
+      </span>
+      @if (estimatedPrepMinutes() > 0 && remainingMinutes() !== null) {
+        <span class="prep-eta small" [class]="prepColorClass()">
+          @if (remainingMinutes()! > 0) {
+            {{ remainingMinutes() }}m left
+          } @else {
+            overdue
+          }
+        </span>
+      }
+      <os-status-badge [status]="order().guestOrderStatus" />
+      @if (order().guestOrderStatus === 'READY_FOR_PICKUP' && printStatus() !== 'none') {
+        <span class="print-status-badge badge ms-1" [class]="'print-' + printStatus()">
+          @switch (printStatus()) {
+            @case ('printing') {
+              <span class="spinner-border spinner-border-sm me-1"></span> Printing
+            }
+            @case ('printed') { &#10003; Printed }
+            @case ('failed') { &#9888; Print Failed }
+          }
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- Prep Time Progress Bar -->
+  @if (estimatedPrepMinutes() > 0) {
+    <div class="prep-bar-container">
+      <div
+        class="prep-bar"
+        [class]="prepColorClass()"
+        [style.width.%]="prepProgress() > 100 ? 100 : prepProgress()"
+      ></div>
+    </div>
+  }
+
+  <div class="card-body">
+    @if (order().table) {
+      <div class="table-info mb-2">
+        <small class="text-muted">Table:</small>
+        <span class="fw-bold ms-1">{{ order().table!.name }}</span>
+      </div>
+    }
+
+    @if (order().customer?.firstName && order().diningOption.type !== 'dine-in') {
+      <div class="customer-info mb-2">
+        <small class="text-muted">Customer:</small>
+        <span class="fw-bold ms-1">{{ order().customer!.firstName }} {{ order().customer!.lastName }}</span>
+        @if (order().customer!.phone) {
+          <span class="ms-2 small text-muted">{{ order().customer!.phone }}</span>
+        }
+      </div>
+    }
+
+    @if (order().deliveryInfo) {
+      <div class="dining-info delivery-info mb-2 small">
+        <span class="badge bg-info me-1">Delivery</span>
+        {{ order().deliveryInfo!.address }}
+        @if (order().deliveryInfo!.city) {
+          , {{ order().deliveryInfo!.city }}
+        }
+      </div>
+      @if (dispatchStatusLabel(); as statusLabel) {
+        <div class="dispatch-status mb-2 small">
+          <span class="badge bg-secondary">{{ statusLabel }}</span>
+          @if (order().deliveryInfo!.estimatedDeliveryAt) {
+            <span class="ms-2 text-muted">ETA: {{ order().deliveryInfo!.estimatedDeliveryAt }}</span>
+          }
+        </div>
+      }
+      @if (deliveryQuote(); as quote) {
+        <div class="dispatch-quote mb-2 small">
+          <span class="badge bg-success">{{ quote.fee | currency }}</span>
+          <span class="ms-2 text-muted">Quoted ETA: {{ quote.estimatedDeliveryAt }}</span>
+        </div>
+      }
+      @if (dispatchError()) {
+        <div class="dispatch-error mb-2 small text-danger">
+          {{ dispatchError() }}
+        </div>
+      }
+    }
+
+    @if (isMarketplace() && marketplaceSyncState() === 'FAILED') {
+      <div class="marketplace-sync-alert mb-2 small">
+        Marketplace sync failed.
+        @if (order().marketplace?.lastPushError) {
+          <span class="text-muted ms-1">{{ order().marketplace?.lastPushError }}</span>
+        }
+      </div>
+    }
+
+    @if (order().curbsideInfo) {
+      <div class="dining-info curbside-info mb-2 small">
+        <span class="badge bg-warning text-dark me-1">Curbside</span>
+        {{ order().curbsideInfo!.vehicleDescription }}
+        @if (order().curbsideInfo!.arrivalNotified) {
+          <span class="badge bg-success ms-1">Customer Arrived</span>
+        }
+      </div>
+    }
+
+    @if (order().cateringInfo) {
+      <div class="dining-info catering-info mb-2 small">
+        <span class="badge bg-purple me-1">Catering</span>
+        {{ order().cateringInfo!.headcount }} {{ order().cateringInfo!.headcount === 1 ? 'guest' : 'guests' }}
+        @if (order().cateringInfo!.eventType) {
+          &mdash; {{ order().cateringInfo!.eventType }}
+        }
+      </div>
+    }
+
+    @if (order().approvalStatus && order().approvalStatus !== 'APPROVED') {
+      <div class="approval-status mb-2">
+        <span class="badge"
+          [class.bg-warning]="order().approvalStatus === 'NEEDS_APPROVAL'"
+          [class.bg-danger]="order().approvalStatus === 'NOT_APPROVED'">
+          {{ order().approvalStatus === 'NEEDS_APPROVAL' ? 'Awaiting Approval' : 'Rejected' }}
+        </span>
+      </div>
+    }
+
+    @if (isThrottledOrder()) {
+      <div class="throttle-info mb-2">
+        <span class="badge bg-throttle me-2">THROTTLED</span>
+        <span class="small">{{ throttleReasonLabel() }}</span>
+        @if (throttleHoldDuration()) {
+          <span class="small text-muted ms-2">Held {{ throttleHoldDuration() }}</span>
+        }
+      </div>
+    }
+
+    <!-- Course-grouped items OR prep-time-only stagger -->
+    @if (showGroupedView()) {
+      @for (group of courseGroups(); track group.label) {
+        <div class="course-group mb-2">
+          <!-- Hide header when single "Immediate" group with no actual courses -->
+          @if (hasCourses() || courseGroups().length > 1) {
+            <div class="course-header d-flex align-items-center gap-2 mb-1">
+              <span class="course-label fw-semibold">{{ group.label }}</span>
+              <span
+                class="badge course-status-badge"
+                [class.bg-secondary]="group.fireStatus === 'PENDING'"
+                [class.bg-primary]="group.fireStatus === 'FIRED'"
+                [class.bg-success]="group.fireStatus === 'READY'"
+              >
+                {{ group.fireStatus }}
+              </span>
+
+              <!-- Server fires: Fire button for pending courses -->
+              @if (coursePacingMode() === 'server_fires' && group.fireStatus === 'PENDING' && group.course) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-warning ms-auto fire-course-btn"
+                  (click)="onFireCourse(group.course.guid)"
+                >
+                  Fire {{ group.label }}
+                </button>
+              }
+
+              <!-- Auto-fire: Countdown display -->
+              @if (coursePacingMode() === 'auto_fire_timed' && group.fireStatus === 'PENDING' && group.course) {
+                <div class="auto-fire-panel ms-auto text-end">
+                  <span class="auto-fire-countdown small text-warning">
+                    @if (getCountdownDisplay(group.course.guid)) {
+                      Fires in {{ getCountdownDisplay(group.course.guid) }}
+                    } @else {
+                      Waiting
+                    }
+                  </span>
+                  @if (getDelayBreakdown(group.course.guid); as breakdown) {
+                    <div class="auto-fire-rationale">
+                      {{ getDelayRationale(breakdown) }}
+                    </div>
+                    <div class="auto-fire-rationale-meta">
+                      {{ getDelayRationaleMeta(breakdown) }} • target delay {{ formatCountdown(breakdown.computedDelaySeconds) }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <ul class="order-items list-unstyled mb-0">
+            @for (item of group.selections; track item.selection.guid) {
+              @let courseStart = getCourseStartTime(group.course);
+              @let fireState = getItemFireState(item, courseStart ?? undefined);
+
+              <li
+                class="order-item d-flex justify-content-between"
+                [class.held-item]="fireState !== 'active'"
+                [class.item-firing]="fireState === 'active' && item.fireDelaySeconds > 0"
+              >
+                <div>
+                  <span class="quantity badge bg-secondary me-2">{{ item.selection.quantity }}x</span>
+                  <span class="item-name">{{ item.selection.menuItemName }}</span>
+                  @if (item.selection.modifiers.length > 0) {
+                    <div class="modifiers ms-4">
+                      @for (mod of item.selection.modifiers; track mod.guid) {
+                        <small class="text-muted d-block">+ {{ mod.name }}</small>
+                      }
+                    </div>
+                  }
+                  @if (item.selection.specialInstructions) {
+                    <div class="special-instructions ms-4">
+                      <small class="text-warning fst-italic">{{ item.selection.specialInstructions }}</small>
+                    </div>
+                  }
+
+                  <!-- Fire delay info (only when prep firing enabled and item has a delay) -->
+                  @if (prepTimeFiringEnabled() && item.fireDelaySeconds > 0) {
+                    @switch (fireState) {
+                      @case ('countdown') {
+                        <div class="item-fire-info d-flex align-items-center gap-2">
+                          <span class="item-countdown badge bg-warning text-dark">
+                            Fires in {{ formatCountdown(getItemCountdownSeconds(item, courseStart ?? undefined)) }}
+                          </span>
+                          <button
+                            type="button"
+                            class="btn btn-xs btn-outline-light fire-now-btn"
+                            (click)="onFireItemNow(item.selection.guid)"
+                          >
+                            Fire Now
+                          </button>
+                        </div>
+                      }
+                      @case ('waiting') {
+                        <div class="item-fire-info">
+                          <span class="fire-delay-badge badge bg-secondary">
+                            {{ getFireDelayDisplay(item.fireDelaySeconds) }}
+                          </span>
+                        </div>
+                      }
+                      @case ('active') {
+                        <span class="badge bg-success">Firing</span>
+                      }
+                    }
+                  }
+                  @if (item.selection.isRemake) {
+                    <span class="badge bg-info remake-badge">Remade</span>
+                  }
+                </div>
+                @if (canRemake()) {
+                  <button
+                    type="button"
+                    class="btn btn-xs remake-btn"
+                    [class.remake-confirm]="remakeConfirmGuid() === item.selection.guid"
+                    (click)="onRemakeItem(item.selection.guid)"
+                    title="Remake item">
+                    @if (remakeConfirmGuid() === item.selection.guid) {
+                      Confirm?
+                    } @else {
+                      <i class="bi bi-arrow-repeat"></i>
+                    }
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    } @else {
+      <!-- Default flat list (no courses / pacing disabled) -->
+      <ul class="order-items list-unstyled mb-0">
+        @for (sel of filteredSelections(); track sel.guid) {
+          <li class="order-item d-flex justify-content-between">
+            <div>
+              <span class="quantity badge bg-secondary me-2">{{ sel.quantity }}x</span>
+              <span class="item-name">{{ sel.menuItemName }}</span>
+              @if (sel.modifiers.length > 0) {
+                <div class="modifiers ms-4">
+                  @for (mod of sel.modifiers; track mod.guid) {
+                    <small class="text-muted d-block">+ {{ mod.name }}</small>
+                  }
+                </div>
+              }
+              @if (sel.specialInstructions) {
+                <div class="special-instructions ms-4">
+                  <small class="text-warning fst-italic">{{ sel.specialInstructions }}</small>
+                </div>
+              }
+              @if (sel.isRemake) {
+                <span class="badge bg-info remake-badge">Remade</span>
+              }
+            </div>
+            @if (canRemake()) {
+              <button
+                type="button"
+                class="btn btn-xs remake-btn"
+                [class.remake-confirm]="remakeConfirmGuid() === sel.guid"
+                (click)="onRemakeItem(sel.guid)"
+                title="Remake item">
+                @if (remakeConfirmGuid() === sel.guid) {
+                  Confirm?
+                } @else {
+                  <i class="bi bi-arrow-repeat"></i>
+                }
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (order().specialInstructions) {
+      <div class="order-instructions mt-3 p-2 bg-warning-subtle rounded">
+        <small class="fw-bold">Note:</small>
+        <p class="mb-0 small">{{ order().specialInstructions }}</p>
+      </div>
+    }
+
+    @if (sentimentAlert(); as alert) {
+      @if (alert.flags.includes('allergy')) {
+        <div class="allergy-alert">
+          <i class="bi bi-exclamation-triangle-fill"></i> {{ alert.summary }}
+        </div>
+      }
+      @if (alert.urgency === 'critical') {
+        <div class="critical-pulse"></div>
+      }
+    }
+  </div>
+
+  @if (nextAction() || isExpoQueue() || showThrottleReleaseButton() || showThrottleHoldButton()) {
+    <div class="card-footer d-flex gap-2">
+      @if (showThrottleReleaseButton()) {
+        <button
+          type="button"
+          class="btn btn-warning flex-grow-1 throttle-release-btn"
+          (click)="onReleaseThrottle()"
+        >
+          RELEASE NOW
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="btn flex-grow-1 bump-button"
+          [class.btn-primary]="!isExpoQueue()"
+          [class.btn-expo-check]="isExpoQueue()"
+          (click)="onBump()"
+        >
+          {{ bumpLabel() }}
+        </button>
+        @if (showCollectPayment() && order().guestOrderStatus === 'READY_FOR_PICKUP') {
+          <button
+            type="button"
+            class="btn btn-sm btn-collect-payment"
+            (click)="collectPayment.emit(order().guid)"
+          >
+            <i class="bi bi-credit-card"></i> Pay
+          </button>
+        }
+      }
+      @if (showThrottleHoldButton()) {
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-warning throttle-hold-btn"
+          (click)="onThrottleHold()"
+          title="Hold this ticket in throttled queue"
+        >
+          Hold
+        </button>
+      }
+      @if (!isThrottleQueue()) {
+        <button
+          type="button"
+          class="btn btn-sm rush-btn"
+          [class.btn-outline-danger]="!isRushed()"
+          [class.btn-danger]="isRushed()"
+          (click)="onRush()"
+          title="Toggle rush priority"
+          aria-label="Toggle rush priority"
+        >
+          !
+        </button>
+      }
+      @if (showDispatchButton()) {
+        <button
+          type="button"
+          class="btn btn-sm btn-dispatch"
+          [disabled]="isDispatchButtonDisabled()"
+          (click)="onDispatchDriver()"
+        >
+          @if (dispatchState() === 'quoting' || dispatchState() === 'dispatching') {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          {{ dispatchButtonLabel() }}
+          @if (deliveryQuote(); as quote) {
+            @if (dispatchState() !== 'quoting' && dispatchState() !== 'dispatching') {
+              ({{ quote.fee | currency }})
+            }
+          }
+        </button>
+      }
+      @if (printStatus() === 'failed') {
+        <button type="button" class="btn btn-sm btn-outline-warning retry-print-btn"
+          (click)="onRetryPrint()">Retry Print</button>
+      }
+      @if (canRecall() && !isThrottleQueue()) {
+        <button type="button" class="btn btn-sm recall-btn btn-outline-warning"
+          (click)="onRecall()"
+          title="Recall to previous status">
+          &#x21A9;
+        </button>
+      }
+    </div>
+  }
+</div>

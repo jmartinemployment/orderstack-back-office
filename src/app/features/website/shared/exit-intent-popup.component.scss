@@ -1,0 +1,153 @@
+.mkt-exit-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: exitFadeIn 0.2s ease-out;
+}
+
+.mkt-exit-modal {
+  position: relative;
+  background: var(--os-bg-card);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow-lg);
+  padding: 40px 32px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  animation: exitSlideIn 0.2s ease-out;
+}
+
+.mkt-exit-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--os-text-secondary);
+  font-size: 1rem;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--os-text-primary);
+  }
+}
+
+.mkt-exit-modal__headline {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--os-text-primary);
+  margin: 0 0 12px;
+}
+
+.mkt-exit-modal__subtext {
+  font-size: 0.9375rem;
+  color: var(--os-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.mkt-exit-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  input {
+    padding: 12px 14px;
+    border: 1px solid var(--os-border);
+    border-radius: var(--os-radius-lg);
+    font-size: 0.9375rem;
+    color: var(--os-text-primary);
+    background: var(--os-bg-card);
+    outline: none;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      border-color: var(--os-primary);
+    }
+
+    &--error {
+      border-color: #dc2626;
+    }
+
+    &::placeholder {
+      color: var(--os-text-secondary);
+      opacity: 0.5;
+    }
+  }
+}
+
+.mkt-exit-modal__error {
+  font-size: 0.75rem;
+  color: #dc2626;
+  text-align: left;
+  margin-top: -4px;
+}
+
+.mkt-exit-modal__btn {
+  padding: 12px 24px;
+  background: var(--os-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--os-radius-lg);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.mkt-exit-modal__disclaimer {
+  font-size: 0.75rem;
+  color: var(--os-text-secondary);
+  opacity: 0.6;
+  margin: 12px 0 0;
+}
+
+.mkt-exit-modal__thanks {
+  padding: 16px 0;
+
+  i {
+    font-size: 3rem;
+    color: #16a34a;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--os-text-primary);
+    margin: 0;
+  }
+}
+
+@keyframes exitFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes exitSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,109 @@
+
+
+
+.panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+
+  .panel-title {
+    color: var(--os-text-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  min-width: 140px;
+  flex: 1;
+
+  .kpi-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--os-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .kpi-value {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: var(--os-text-primary);
+    line-height: 1;
+  }
+}
+
+.form-control, .form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: none;
+    background-color: var(--os-bg-card);
+    color: var(--os-text-primary);
+  }
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.3rem;
+}
+
+.form-check-input {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+
+  &:checked {
+    background-color: var(--os-primary);
+    border-color: var(--os-primary);
+  }
+}
+
+.form-check-label {
+  color: var(--os-text-secondary);
+  font-size: 0.85rem;
+}
+
+.input-group-text {
+  background-color: var(--os-bg);
+  border-color: var(--os-border);
+  color: var(--os-text-muted);
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  background-color: var(--os-primary);
+  border-color: var(--os-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--os-primary-hover);
+    border-color: var(--os-primary-hover);
+  }
+}
+
+.alert-success {
+  background-color: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--os-success);
+}

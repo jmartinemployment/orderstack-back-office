@@ -1,0 +1,61 @@
+:host { display: block; }
+
+.beverages-page { padding: 1.5rem; max-width: 1200px; }
+
+.page-header { margin-bottom: 1.5rem; }
+.page-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+
+.kpi-card {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+
+  &__value { font-size: 2rem; font-weight: 700; line-height: 1; }
+  &__label { font-size: 0.8125rem; color: var(--bs-secondary); margin-top: 0.25rem; }
+}
+
+.section { margin-bottom: 2rem; }
+.section__title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+
+.bev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.bev-card {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  padding: 1rem;
+
+  &__name { font-weight: 600; margin-bottom: 0.25rem; }
+  &__price { font-size: 0.875rem; color: var(--bs-secondary); }
+}
+
+.allergen-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.badge-sm { font-size: 0.65rem; }
+
+.convert-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.convert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  background: var(--bs-body-bg);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--bs-secondary);
+
+  &__icon { font-size: 3rem; display: block; margin-bottom: 1rem; }
+
+  h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--bs-body-color); }
+}

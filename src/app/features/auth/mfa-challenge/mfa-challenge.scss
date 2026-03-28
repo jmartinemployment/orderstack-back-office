@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.mfa-challenge {
+  text-align: center;
+
+  &__icon {
+    font-size: 3rem;
+    color: var(--os-primary, #2563eb);
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  &__subtitle {
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  &__code-input {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5rem;
+    text-align: center;
+    height: 3.5rem;
+    border-radius: 0.5rem;
+  }
+
+  &__actions {
+    font-size: 0.875rem;
+  }
+}
+
+.btn-verify {
+  height: 2.75rem;
+  font-weight: 600;
+}

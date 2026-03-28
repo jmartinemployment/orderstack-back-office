@@ -1,0 +1,125 @@
+@if (visible) {
+  <button type="button" class="offcanvas-backdrop" aria-label="Close panel" (click)="close()"></button>
+  <div class="offcanvas-panel">
+    <div class="offcanvas-header d-flex justify-content-between align-items-center px-3 py-3 border-bottom">
+      <h5 class="mb-0">{{ isEditMode ? 'Edit Job' : 'New Catering Job' }}</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="close()"></button>
+    </div>
+
+    <div class="offcanvas-body px-3 py-3">
+      @if (validationErrors().length > 0) {
+        <div class="alert alert-danger py-2 mb-3">
+          @for (err of validationErrors(); track err) {
+            <div class="small">{{ err }}</div>
+          }
+        </div>
+      }
+
+      <div class="mb-3">
+        <label class="form-label" for="event-form-title">Job Title <span class="text-danger">*</span></label>
+        <input id="event-form-title" type="text" class="form-control" [(ngModel)]="title" placeholder="e.g. Johnson Wedding Reception" aria-label="Job title">
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label" for="event-form-event-type">Event Type <span class="text-danger">*</span></label>
+          <select id="event-form-event-type" class="form-select" [(ngModel)]="eventType">
+            @for (t of eventTypes; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label" for="event-form-status">Status <span class="text-danger">*</span></label>
+          <select id="event-form-status" class="form-select" [(ngModel)]="status">
+            @for (s of statuses; track s.value) {
+              <option [value]="s.value">{{ s.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="event-form-fulfillment-date">Fulfillment Date <span class="text-danger">*</span></label>
+        <input id="event-form-fulfillment-date" type="date" class="form-control" [(ngModel)]="fulfillmentDate" aria-label="Fulfillment date">
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label" for="event-form-start-time">Start Time <span class="text-danger">*</span></label>
+          <input id="event-form-start-time" type="time" class="form-control" [(ngModel)]="startTime" aria-label="Start time">
+        </div>
+        <div class="col-6">
+          <label class="form-label" for="event-form-end-time">End Time <span class="text-danger">*</span></label>
+          <input id="event-form-end-time" type="time" class="form-control" [(ngModel)]="endTime" aria-label="End time">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="event-form-headcount">Headcount <span class="text-danger">*</span></label>
+        <input id="event-form-headcount" type="number" class="form-control" [(ngModel)]="headcount" min="1" aria-label="Headcount">
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Location <span class="text-danger">*</span></div>
+        <div class="d-flex gap-3">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="locationType" id="locOnSite" value="on_site" [(ngModel)]="locationType">
+            <label class="form-check-label" for="locOnSite">On-Site</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="locationType" id="locOffSite" value="off_site" [(ngModel)]="locationType">
+            <label class="form-check-label" for="locOffSite">Off-Site</label>
+          </div>
+        </div>
+      </div>
+
+      @if (locationType === 'off_site') {
+        <div class="mb-3">
+          <label class="form-label" for="event-form-location-address">Location Address <span class="text-danger">*</span></label>
+          <input id="event-form-location-address" type="text" class="form-control" [(ngModel)]="locationAddress" placeholder="123 Main St, City, State" aria-label="Location address">
+        </div>
+      }
+
+      <hr>
+
+      <div class="mb-3">
+        <label class="form-label" for="event-form-client-name">Client Name <span class="text-danger">*</span></label>
+        <input id="event-form-client-name" type="text" class="form-control" [(ngModel)]="clientName" aria-label="Client name">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="event-form-company-name">Company</label>
+        <input id="event-form-company-name" type="text" class="form-control" [(ngModel)]="companyName" placeholder="e.g. Acme Corp" aria-label="Company name">
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="form-label" for="event-form-client-phone">Client Phone</label>
+          <input id="event-form-client-phone" type="tel" class="form-control" [(ngModel)]="clientPhone" aria-label="Client phone">
+        </div>
+        <div class="col-6">
+          <label class="form-label" for="event-form-client-email">Client Email</label>
+          <input id="event-form-client-email" type="email" class="form-control" [(ngModel)]="clientEmail" aria-label="Client email">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="event-form-notes">Notes</label>
+        <textarea id="event-form-notes" class="form-control" rows="3" [(ngModel)]="notes" placeholder="Special requests, dietary needs, setup instructions..." aria-label="Notes"></textarea>
+      </div>
+    </div>
+
+    <div class="offcanvas-footer d-flex justify-content-end gap-2 px-3 py-3 border-top">
+      <button type="button" class="btn btn-outline-secondary" (click)="close()" [disabled]="isSaving()">
+        Cancel
+      </button>
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        {{ isEditMode ? 'Save Changes' : 'Create Job' }}
+      </button>
+    </div>
+  </div>
+}

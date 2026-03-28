@@ -1,0 +1,315 @@
+@if (isAuthenticated()) {
+<div class="category-management">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Menu Categories</h2>
+    <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+      + Add Category
+    </button>
+  </div>
+
+  @if (localError()) {
+    <os-error-display
+      [message]="localError()!"
+      [retryable]="true"
+      (dismissed)="clearLocalError()"
+      (retry)="retry()"
+    />
+  }
+
+  @if (!crudSupported()) {
+    <div class="alert alert-info small py-2 px-3 mb-3">
+      Edit, delete, and visibility toggle are not yet available.
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center p-5">
+      <os-loading-spinner message="Loading categories..." />
+    </div>
+  } @else {
+    <div class="categories-list">
+      @for (category of categories(); track category.id) {
+        <div class="category-card card mb-2" [class.inactive]="category.isActive === false">
+          <div class="card-body d-flex align-items-center justify-content-between">
+            <div class="category-info">
+              <h5 class="mb-1">
+                {{ category.name }}
+                @if (category.isActive === false) {
+                  <span class="badge bg-secondary ms-2">Inactive</span>
+                }
+              </h5>
+              @if (category.description) {
+                <p class="text-muted small mb-0">{{ category.description }}</p>
+              }
+            </div>
+            <div class="category-actions d-flex gap-2">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-light"
+                [disabled]="!crudSupported()"
+                (click)="toggleActive(category)"
+                [title]="category.isActive ? 'Deactivate' : 'Activate'"
+              >
+                {{ category.isActive ? 'Hide' : 'Show' }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                [disabled]="!crudSupported()"
+                (click)="openEditForm(category)"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                [disabled]="!crudSupported()"
+                (click)="confirmDelete(category)"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state text-center p-5">
+          <p class="text-muted mb-3">No categories yet</p>
+          <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+            Create your first category
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Reporting Categories Section -->
+    <div class="reporting-section mt-4">
+      <button
+        type="button"
+        class="reporting-toggle d-flex align-items-center gap-2 w-100 text-start"
+        (click)="toggleReportingSection()"
+      >
+        <i class="bi" [class.bi-chevron-right]="!showReportingSection()" [class.bi-chevron-down]="showReportingSection()"></i>
+        <span class="reporting-toggle-label">Reporting Categories</span>
+        <span class="badge bg-secondary ms-auto">{{ reportingCategories().length }}</span>
+      </button>
+
+      @if (showReportingSection()) {
+        <div class="reporting-content mt-3">
+          <p class="reporting-help text-muted small mb-3">
+            Reporting categories group items for sales reports, independent of menu organization.
+            Assign reporting categories to items in the Item Management panel for sales tax reporting and P&amp;L breakdowns.
+          </p>
+
+          <div class="d-flex justify-content-end mb-2">
+            <button type="button" class="btn btn-sm btn-primary" (click)="openReportingCreateForm()">
+              + Add Reporting Category
+            </button>
+          </div>
+
+          @for (rc of reportingCategories(); track rc.id) {
+            <div class="reporting-card d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="reporting-order-badge">{{ rc.displayOrder }}</span>
+                <span class="reporting-name">{{ rc.name }}</span>
+              </div>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-xs btn-outline-primary" (click)="openReportingEditForm(rc)">Edit</button>
+                <button type="button" class="btn btn-xs btn-outline-danger" (click)="confirmDeleteReporting(rc)">Delete</button>
+              </div>
+            </div>
+          } @empty {
+            <div class="text-center py-3">
+              <p class="text-muted small mb-0">No reporting categories defined</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Category Form Modal -->
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="onCategoryOverlayClick($event)">
+      <div class="modal-content card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">
+            {{ editingCategory() ? 'Edit Category' : 'New Category' }}
+          </h4>
+          <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close"></button>
+        </div>
+        <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label" for="categoryName">Category Name *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="categoryName"
+                formControlName="name"
+                placeholder="e.g., Appetizers, Main Course"
+              />
+              @if (categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched) {
+                <small class="text-danger">Name is required (min 2 characters)</small>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="categoryDescription">Description</label>
+              <textarea
+                class="form-control"
+                id="categoryDescription"
+                rows="2"
+                formControlName="description"
+                placeholder="Optional description..."
+              ></textarea>
+            </div>
+
+            <div class="form-check">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="isActive"
+                formControlName="isActive"
+              />
+              <label class="form-check-label" for="isActive">Active (visible on menu)</label>
+            </div>
+          </div>
+
+          <div class="card-footer d-flex gap-2 justify-content-end">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              (click)="closeForm()"
+              [disabled]="isSaving()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="categoryForm.invalid || isSaving()"
+            >
+              @if (isSaving()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Saving...
+              } @else {
+                {{ editingCategory() ? 'Update' : 'Create' }} Category
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Reporting Category Form Modal -->
+  @if (showReportingForm()) {
+    <div class="modal-overlay" (click)="onReportingOverlayClick($event)">
+      <div class="modal-content card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">
+            {{ editingReportingCategory() ? 'Edit' : 'New' }} Reporting Category
+          </h4>
+          <button type="button" class="btn-close" (click)="closeReportingForm()" aria-label="Close"></button>
+        </div>
+        <form [formGroup]="reportingCategoryForm" (ngSubmit)="saveReportingCategory()">
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label" for="reportingCategoryName">Name *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="reportingCategoryName"
+                formControlName="name"
+                placeholder="e.g., Beverages, Alcohol, Food"
+              />
+              @if (reportingCategoryForm.get('name')?.invalid && reportingCategoryForm.get('name')?.touched) {
+                <small class="text-danger">Name is required (min 2 characters)</small>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="reportingDisplayOrder">Display Order</label>
+              <input
+                type="number"
+                class="form-control"
+                id="reportingDisplayOrder"
+                formControlName="displayOrder"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div class="card-footer d-flex gap-2 justify-content-end">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              (click)="closeReportingForm()"
+              [disabled]="isSavingReporting()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="reportingCategoryForm.invalid || isSavingReporting()"
+            >
+              @if (isSavingReporting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Saving...
+              } @else {
+                {{ editingReportingCategory() ? 'Update' : 'Create' }}
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (deleteTarget(); as target) {
+    <div class="modal-overlay" (click)="onDeleteOverlayClick($event)">
+      <div class="delete-confirm-modal card">
+        <div class="card-header">
+          <h5 class="mb-0">Delete Category</h5>
+        </div>
+        <div class="card-body">
+          <p>Are you sure you want to delete <strong>"{{ target.name }}"</strong>?</p>
+          <p class="text-muted small mb-0">All items in this category will need to be reassigned.</p>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="executeDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Reporting Category Confirmation -->
+  @if (deleteReportingTarget(); as target) {
+    <div class="modal-overlay" (click)="onDeleteReportingOverlayClick($event)">
+      <div class="delete-confirm-modal card">
+        <div class="card-header">
+          <h5 class="mb-0">Delete Reporting Category</h5>
+        </div>
+        <div class="card-body">
+          <p>Are you sure you want to delete <strong>"{{ target.name }}"</strong>?</p>
+          <p class="text-muted small mb-0">Items assigned to this reporting category will become unassigned.</p>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-outline-light" (click)="cancelDeleteReporting()">Cancel</button>
+          <button class="btn btn-danger" (click)="executeDeleteReporting()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+} @else {
+  <div class="auth-required d-flex align-items-center justify-content-center p-5">
+    <div class="text-center">
+      <h3 class="text-warning mb-3">Authentication Required</h3>
+      <p class="text-light">Please log in to manage categories.</p>
+    </div>
+  </div>
+}

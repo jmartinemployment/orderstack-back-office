@@ -1,0 +1,186 @@
+@use 'sass:color';
+
+$bg-dark: #1a1a2e;
+$bg-card: #16213e;
+$accent: #7c5cfc;
+$danger: #e74c3c;
+$warning: #f39c12;
+$text-primary: #e0e0e0;
+$text-muted: #8892b0;
+$border: #2a2a4a;
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1055;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-panel {
+  background: $bg-card;
+  border-radius: 16px;
+  width: 420px;
+  max-width: 95vw;
+  color: $text-primary;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.modal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid $border;
+
+  h5 {
+    margin: 0;
+    font-weight: 600;
+    color: #fff;
+  }
+}
+
+.modal-body-content {
+  padding: 1.5rem;
+}
+
+.modal-footer-bar {
+  display: flex;
+  gap: 12px;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid $border;
+  justify-content: flex-end;
+
+  .btn {
+    border-radius: 10px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+  }
+
+  .btn-danger {
+    background: $danger;
+    border-color: $danger;
+  }
+
+  .btn-warning {
+    background: $warning;
+    border-color: $warning;
+    color: #000;
+  }
+
+  .btn-outline-secondary {
+    border-color: $border;
+    color: $text-muted;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+}
+
+.item-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid $border;
+
+  .item-name {
+    font-weight: 500;
+    color: #fff;
+  }
+
+  .item-price {
+    font-weight: 600;
+    color: $text-muted;
+  }
+}
+
+.form-label {
+  color: $text-muted;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+}
+
+.reason-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.reason-btn {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: $text-muted;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: #4a4a6a;
+  }
+
+  &.active {
+    background: rgba($danger, 0.15);
+    border-color: $danger;
+    color: $danger;
+  }
+}
+
+.comp-note {
+  padding: 0.65rem 1rem;
+  background: rgba($warning, 0.08);
+  border: 1px solid rgba($warning, 0.2);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: $warning;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pin-section {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid $border;
+  border-radius: 10px;
+}
+
+.pin-input {
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 8px;
+  font-weight: 600;
+}
+
+.form-control {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $border;
+  color: $text-primary;
+  border-radius: 8px;
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: $accent;
+    box-shadow: 0 0 0 2px rgba($accent, 0.25);
+    color: $text-primary;
+  }
+}
+
+.alert-danger {
+  background: rgba($danger, 0.15);
+  border-color: rgba($danger, 0.3);
+  color: $danger;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}

@@ -1,0 +1,87 @@
+.panel {
+  background-color: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+
+  .panel-title {
+    color: var(--os-text-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.form-control, .form-select {
+  background-color: var(--os-bg-card);
+  border-color: var(--os-border);
+  color: var(--os-text-primary);
+
+  &:focus {
+    border-color: var(--os-primary);
+    box-shadow: none;
+    background-color: var(--os-bg-card);
+    color: var(--os-text-primary);
+  }
+
+  &::placeholder {
+    color: var(--os-text-muted);
+  }
+}
+
+.form-label {
+  color: var(--os-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.form-check-label {
+  color: var(--os-text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.hours-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hours-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--os-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.hours-day {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.hours-times {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .form-control {
+    width: 130px;
+  }
+}
+
+.hours-sep {
+  color: var(--os-text-muted);
+  font-size: 0.85rem;
+}
+
+.hours-closed-label {
+  color: var(--os-text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}

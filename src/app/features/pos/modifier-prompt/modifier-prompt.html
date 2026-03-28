@@ -1,0 +1,130 @@
+@if (hasGroups() && currentGroup(); as group) {
+  <div class="modifier-overlay" (click)="onCancel()" (keydown.escape)="onCancel()" aria-hidden="true">
+    <div class="modifier-panel" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="modifier-header">
+        <div class="header-top">
+          <h5>{{ menuItem().name }}</h5>
+          <button type="button" class="btn-close" (click)="onCancel()"></button>
+        </div>
+        <!-- Progress bar -->
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" [style.width.%]="progress()"></div>
+        </div>
+        <div class="group-indicator">
+          Step {{ currentGroupIndex() + 1 }} of {{ groups().length }}
+        </div>
+      </div>
+
+      <!-- Current group -->
+      <div class="modifier-body">
+        <div class="group-header">
+          <h6>{{ group.name }}</h6>
+          <span class="group-badge" [class.required]="group.required">
+            {{ group.required ? 'Required' : 'Optional' }}
+            @if (group.minSelections > 0 || group.maxSelections > 0) {
+              <span class="selection-range">
+                ({{ group.minSelections }}{{ group.maxSelections > 0 ? '-' + group.maxSelections : '+' }})
+              </span>
+            }
+          </span>
+        </div>
+
+        <div class="modifier-list">
+          @for (mod of group.modifiers; track mod.id) {
+            @if (mod.isActive) {
+              <button
+                type="button"
+                class="modifier-btn"
+                [class.selected]="isModifierSelected(mod)"
+                (click)="toggleModifier(mod)">
+                <div class="mod-info">
+                  <span class="mod-name">{{ mod.name }}</span>
+                  @if (mod.priceAdjustment > 0) {
+                    <span class="mod-price">+{{ mod.priceAdjustment | currency }}</span>
+                  } @else if (mod.priceAdjustment < 0) {
+                    <span class="mod-price mod-discount">{{ mod.priceAdjustment | currency }}</span>
+                  }
+                </div>
+                <span class="mod-check">
+                  @if (isModifierSelected(mod)) {
+                    <i class="bi bi-check-circle-fill"></i>
+                  } @else {
+                    <i class="bi bi-circle"></i>
+                  }
+                </span>
+              </button>
+            }
+          }
+        </div>
+
+        @if (group.allowTextModifier) {
+          <div class="text-modifier-input">
+            <span class="text-modifier-label">{{ group.textModifierLabel ?? 'Special Instructions' }}</span>
+            <input
+              type="text"
+              class="text-modifier-field"
+              [attr.aria-label]="group.textModifierLabel ?? 'Special instructions'"
+              [placeholder]="group.textModifierLabel ?? 'Enter custom modifier...'"
+              [maxLength]="group.textModifierMaxLength ?? 100"
+              [value]="currentTextValue()"
+              (input)="onTextModifierInput(group.id, $any($event.target).value)">
+          </div>
+        }
+
+        @if (error()) {
+          <div class="modifier-error">{{ error() }}</div>
+        }
+      </div>
+
+      <!-- Quantity / Seat row -->
+      <div class="extras-row">
+        <div class="qty-control">
+          <span>Qty</span>
+          <button type="button" class="qty-btn" (click)="setQuantity(quantity() - 1)">-</button>
+          <span class="qty-value">{{ quantity() }}</span>
+          <button type="button" class="qty-btn" (click)="setQuantity(quantity() + 1)">+</button>
+        </div>
+        <div class="seat-control">
+          <span>Seat</span>
+          <input
+            type="number"
+            class="seat-input"
+            aria-label="Seat number"
+            min="1"
+            max="20"
+            [value]="seatNumber() ?? ''"
+            (input)="setSeatNumber($any($event.target).value ? +$any($event.target).value : undefined)"
+            placeholder="-">
+        </div>
+        <div class="total-display">
+          {{ itemTotal() | currency }}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modifier-footer">
+        @if (currentGroupIndex() > 0) {
+          <button type="button" class="btn btn-outline-secondary" (click)="onBack()">
+            <i class="bi bi-chevron-left"></i> Back
+          </button>
+        }
+        @if (!group.required) {
+          <button type="button" class="btn btn-outline-secondary ms-auto" (click)="onSkip()">
+            Skip
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn-primary"
+          [class.ms-auto]="group.required && currentGroupIndex() === 0"
+          (click)="onNext()">
+          {{ isLastGroup() ? 'Add to Check' : 'Next' }}
+          @if (!isLastGroup()) {
+            <i class="bi bi-chevron-right"></i>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

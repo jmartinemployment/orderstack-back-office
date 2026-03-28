@@ -1,0 +1,137 @@
+<div class="mkt-calc">
+  <!-- Section header -->
+  <div class="mkt-section-header text-center">
+    <span class="os-badge info">{{ header.tag }}</span>
+    <h2 class="mkt-section-title mkt-calc__title">{{ header.title }}</h2>
+    <p class="mkt-section-subtitle mkt-calc__subtitle">{{ header.subtitle }}</p>
+  </div>
+
+  <!-- Inputs -->
+  <div class="mkt-calc__inputs">
+    <!-- Monthly Orders -->
+    <div class="mkt-calc__input-group">
+      <label class="mkt-calc__label" for="calc-orders">{{ inputConfig['monthlyOrders'].label }}</label>
+      <div class="mkt-calc__input-row">
+        <input
+          type="range"
+          id="calc-orders-slider"
+          class="mkt-calc__slider"
+          [min]="inputConfig['monthlyOrders'].min"
+          [max]="inputConfig['monthlyOrders'].max"
+          [step]="inputConfig['monthlyOrders'].step"
+          [value]="monthlyOrders()"
+          (input)="onInputChange('monthlyOrders', $event)"
+          aria-label="Orders per month slider" />
+        <div class="mkt-calc__number-wrap">
+          <input
+            type="number"
+            id="calc-orders"
+            class="mkt-calc__number"
+            [min]="inputConfig['monthlyOrders'].min"
+            [max]="inputConfig['monthlyOrders'].max"
+            [step]="inputConfig['monthlyOrders'].step"
+            [value]="monthlyOrders()"
+            (input)="onInputChange('monthlyOrders', $event)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Average Ticket -->
+    <div class="mkt-calc__input-group">
+      <label class="mkt-calc__label" for="calc-ticket">{{ inputConfig['avgTicket'].label }}</label>
+      <div class="mkt-calc__input-row">
+        <input
+          type="range"
+          id="calc-ticket-slider"
+          class="mkt-calc__slider"
+          [min]="inputConfig['avgTicket'].min"
+          [max]="inputConfig['avgTicket'].max"
+          [step]="inputConfig['avgTicket'].step"
+          [value]="avgTicket()"
+          (input)="onInputChange('avgTicket', $event)"
+          aria-label="Average order value slider" />
+        <div class="mkt-calc__number-wrap">
+          <span class="mkt-calc__prefix">$</span>
+          <input
+            type="number"
+            id="calc-ticket"
+            class="mkt-calc__number mkt-calc__number--prefixed"
+            [min]="inputConfig['avgTicket'].min"
+            [max]="inputConfig['avgTicket'].max"
+            [step]="inputConfig['avgTicket'].step"
+            [value]="avgTicket()"
+            (input)="onInputChange('avgTicket', $event)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery % -->
+    <div class="mkt-calc__input-group">
+      <label class="mkt-calc__label" for="calc-delivery">{{ inputConfig['deliveryPct'].label }}</label>
+      <div class="mkt-calc__input-row">
+        <input
+          type="range"
+          id="calc-delivery-slider"
+          class="mkt-calc__slider"
+          [min]="inputConfig['deliveryPct'].min"
+          [max]="inputConfig['deliveryPct'].max"
+          [step]="inputConfig['deliveryPct'].step"
+          [value]="deliveryPct()"
+          (input)="onInputChange('deliveryPct', $event)"
+          aria-label="Delivery orders percentage slider" />
+        <div class="mkt-calc__number-wrap">
+          <input
+            type="number"
+            id="calc-delivery"
+            class="mkt-calc__number mkt-calc__number--suffixed"
+            [min]="inputConfig['deliveryPct'].min"
+            [max]="inputConfig['deliveryPct'].max"
+            [step]="inputConfig['deliveryPct'].step"
+            [value]="deliveryPct()"
+            (input)="onInputChange('deliveryPct', $event)" />
+          <span class="mkt-calc__suffix">%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results cards -->
+  <div class="mkt-calc__results">
+    @for (r of resultsWithSavings(); track r.name; let i = $index) {
+      <div class="mkt-calc__card" [class.mkt-calc__card--highlight]="i === 0">
+        @if (i === 0) {
+          <span class="mkt-calc__badge">Your Choice</span>
+        }
+        <h3 class="mkt-calc__card-name">{{ r.name }}</h3>
+        <div class="mkt-calc__card-row">
+          <span class="mkt-calc__card-label">Monthly Cost</span>
+          <span class="mkt-calc__card-value">{{ r.monthlyCost | currency:'USD':'symbol':'1.0-0' }}</span>
+        </div>
+        <div class="mkt-calc__card-row">
+          <span class="mkt-calc__card-label">Annual Cost</span>
+          <span class="mkt-calc__card-value">{{ r.annualCost | currency:'USD':'symbol':'1.0-0' }}</span>
+        </div>
+        <div class="mkt-calc__card-divider"></div>
+        @if (i === 0) {
+          <div class="mkt-calc__card-row">
+            <span class="mkt-calc__card-label mkt-calc__card-label--savings">Lowest Cost</span>
+            <span class="mkt-calc__card-savings-icon"><i class="bi bi-check-circle-fill" aria-hidden="true"></i></span>
+          </div>
+        } @else {
+          <div class="mkt-calc__card-row">
+            <span class="mkt-calc__card-label">You Save</span>
+            <span class="mkt-calc__card-savings" #savingsEl>
+              {{ (i === 1 ? animatedSavingsToast() : animatedSavingsSquare()) | currency:'USD':'symbol':'1.0-0' }}/yr
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Summary -->
+  <p class="mkt-calc__summary">{{ summaryText() }}</p>
+
+  <!-- Assumptions -->
+  <p class="mkt-calc__assumptions">{{ assumptions }}</p>
+</div>

@@ -1,0 +1,42 @@
+.connection-status {
+  font-size: 0.875rem;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #6c757d;
+
+  &.connected {
+    background-color: #198754;
+    box-shadow: 0 0 8px #198754;
+  }
+
+  &.polling {
+    background-color: #ffc107;
+    animation: pulse 2s infinite;
+  }
+
+  &.connecting {
+    background-color: #0d6efd;
+    animation: pulse 1s infinite;
+  }
+
+  &.disconnected {
+    background-color: #dc3545;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  color: var(--bs-secondary-color, #6c757d);
+}

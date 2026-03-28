@@ -1,0 +1,225 @@
+<div class="notification-settings">
+  @if (showSaveSuccess()) {
+    <div class="alert alert-success mb-3">
+      Notification settings saved successfully.
+    </div>
+  }
+
+  @if (!isManagerOrAbove()) {
+    <div class="text-muted small mb-3">Only managers and owners can modify notification settings.</div>
+  }
+
+  <!-- SMS Configuration -->
+  <div class="panel mb-3">
+    <div class="panel-title">
+      <i class="bi bi-chat-dots me-2"></i>SMS Notifications
+    </div>
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="smsEnabledToggle"
+        [checked]="smsEnabled()" (change)="onSmsEnabledToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="smsEnabledToggle">Enable SMS notifications</label>
+    </div>
+
+    @if (smsEnabled()) {
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="smsProvider">Provider</label>
+          <select class="form-select" id="smsProvider"
+            [ngModel]="smsProvider()"
+            (ngModelChange)="onSmsProviderChange($event)"
+            [disabled]="!isManagerOrAbove()">
+            <option value="none">None</option>
+            <option value="twilio">Twilio</option>
+          </select>
+        </div>
+      </div>
+
+      @if (smsProvider() !== 'none') {
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label" for="smsAccountSid">Account SID</label>
+            <input type="password" class="form-control" id="smsAccountSid"
+              placeholder="ACxxxxxxxxxx"
+              [value]="smsAccountSid()"
+              (input)="onSmsAccountSidChange($event)"
+              autocomplete="off"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="smsAuthToken">Auth Token</label>
+            <input type="password" class="form-control" id="smsAuthToken"
+              placeholder="xxxxxxxxxxxxxxxx"
+              [value]="smsAuthToken()"
+              (input)="onSmsAuthTokenChange($event)"
+              autocomplete="off"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="smsFromNumber">From Number</label>
+            <input type="tel" class="form-control" id="smsFromNumber"
+              placeholder="+15551234567"
+              [value]="smsFromNumber()"
+              (input)="onSmsFromNumberChange($event)"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+        </div>
+        @if (smsAccountSid() && smsAuthToken() && smsFromNumber()) {
+          <div class="config-status config-status-ready mt-2">
+            <i class="bi bi-check-circle-fill"></i> SMS configured
+          </div>
+        } @else {
+          <div class="config-status config-status-incomplete mt-2">
+            <i class="bi bi-exclamation-circle"></i> Complete all fields to enable SMS
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <!-- Email Configuration -->
+  <div class="panel mb-3">
+    <div class="panel-title">
+      <i class="bi bi-envelope me-2"></i>Email Notifications
+    </div>
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="emailEnabledToggle"
+        [checked]="emailEnabled()" (change)="onEmailEnabledToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="emailEnabledToggle">Enable email notifications</label>
+    </div>
+
+    @if (emailEnabled()) {
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="emailProvider">Provider</label>
+          <select class="form-select" id="emailProvider"
+            [ngModel]="emailProvider()"
+            (ngModelChange)="onEmailProviderChange($event)"
+            [disabled]="!isManagerOrAbove()">
+            <option value="none">None</option>
+            <option value="sendgrid">SendGrid</option>
+          </select>
+        </div>
+      </div>
+
+      @if (emailProvider() !== 'none') {
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label" for="emailApiKey">API Key</label>
+            <input type="password" class="form-control" id="emailApiKey"
+              placeholder="SG.xxxxxxxxxx"
+              [value]="emailApiKey()"
+              (input)="onEmailApiKeyChange($event)"
+              autocomplete="off"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="emailFromAddress">From Address</label>
+            <input type="email" class="form-control" id="emailFromAddress"
+              placeholder="orders@yourrestaurant.com"
+              [value]="emailFromAddress()"
+              (input)="onEmailFromAddressChange($event)"
+              [disabled]="!isManagerOrAbove()">
+          </div>
+        </div>
+        @if (emailApiKey() && emailFromAddress()) {
+          <div class="config-status config-status-ready mt-2">
+            <i class="bi bi-check-circle-fill"></i> Email configured
+          </div>
+        } @else {
+          <div class="config-status config-status-incomplete mt-2">
+            <i class="bi bi-exclamation-circle"></i> Complete all fields to enable email
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <!-- Order Ready Notifications -->
+  <div class="panel mb-3">
+    <div class="panel-title">
+      <i class="bi bi-bell me-2"></i>Order Ready Notifications
+    </div>
+    <p class="text-muted small mb-3">Configure who gets notified when an order is marked as ready in the kitchen.</p>
+
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" id="notifyCustomerToggle"
+        [checked]="orderReadyNotifyCustomer()" (change)="onOrderReadyNotifyCustomerToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="notifyCustomerToggle">Notify customer</label>
+    </div>
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="notifyServerToggle"
+        [checked]="orderReadyNotifyServer()" (change)="onOrderReadyNotifyServerToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="notifyServerToggle">Notify assigned server (in-app)</label>
+    </div>
+
+    <!-- Channels -->
+    <span class="form-label" id="notification-channels-label">Notification Channels</span>
+    <div class="channel-checkboxes mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="channelSms"
+          [checked]="isChannelEnabled('sms')"
+          (change)="onChannelToggle('sms', $event)"
+          [disabled]="!isManagerOrAbove() || !smsEnabled()">
+        <label class="form-check-label" for="channelSms">
+          SMS
+          @if (!smsEnabled()) {
+            <span class="text-muted">(enable SMS above)</span>
+          }
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="channelEmail"
+          [checked]="isChannelEnabled('email')"
+          (change)="onChannelToggle('email', $event)"
+          [disabled]="!isManagerOrAbove() || !emailEnabled()">
+        <label class="form-check-label" for="channelEmail">
+          Email
+          @if (!emailEnabled()) {
+            <span class="text-muted">(enable email above)</span>
+          }
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="channelInApp"
+          [checked]="isChannelEnabled('in_app')"
+          (change)="onChannelToggle('in_app', $event)"
+          [disabled]="!isManagerOrAbove()">
+        <label class="form-check-label" for="channelInApp">In-app push</label>
+      </div>
+    </div>
+
+    <!-- Template -->
+    <label class="form-label" for="orderReadyTemplate">Message Template</label>
+    <textarea class="form-control mb-2" id="orderReadyTemplate" rows="3"
+      [value]="orderReadyTemplate()"
+      (input)="onTemplateChange($event)"
+      [disabled]="!isManagerOrAbove()"
+      placeholder="Hi {name}, your order #{number} is ready!"></textarea>
+    <p class="text-muted small mb-2">
+      Available placeholders: <code>{{ '{' }}name{{ '}' }}</code> — customer name, <code>{{ '{' }}number{{ '}' }}</code> — order number
+    </p>
+    <div class="template-preview">
+      <span class="template-preview-label">Preview:</span>
+      <span class="template-preview-text">{{ templatePreview() }}</span>
+    </div>
+  </div>
+
+  <!-- Save / Discard -->
+  @if (hasUnsavedChanges()) {
+    <div class="save-bar">
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <output class="spinner-border spinner-border-sm me-1"></output>
+        }
+        Save changes
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="discard()" [disabled]="isSaving()">
+        Discard
+      </button>
+    </div>
+  }
+</div>

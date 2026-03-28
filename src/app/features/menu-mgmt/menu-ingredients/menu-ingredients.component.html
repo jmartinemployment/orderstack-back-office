@@ -1,0 +1,109 @@
+<div class="ingredients-page">
+  <div class="page-header">
+    <h1 class="page-title">Recipe Coverage</h1>
+    <p class="text-muted">Track ingredient costs and recipe assignments for catering menu items.</p>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-card__value">{{ cateringItems().length }}</div>
+      <div class="kpi-card__label">Total Catering Items</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__value">{{ itemsWithRecipes().length }}</div>
+      <div class="kpi-card__label">Items with Recipes</div>
+      <div class="kpi-card__sub">{{ recipeCoveragePercent() }}% coverage</div>
+    </div>
+    <div class="kpi-card" [class.kpi-card--alert]="itemsWithoutRecipes().length > 0">
+      <div class="kpi-card__value">{{ itemsWithoutRecipes().length }}</div>
+      <div class="kpi-card__label">Missing Recipes</div>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  } @else {
+
+    <!-- Cost Alerts -->
+    @if (costAlerts().length > 0) {
+      <div class="section">
+        <h2 class="section__title">Cost Alerts</h2>
+        <div class="alert-list">
+          @for (alert of costAlerts(); track alert.item.id) {
+            <div class="alert-item" [class.alert-item--high]="alert.alertType === 'high-cost'">
+              <div class="alert-item__name">{{ alert.item.name }}</div>
+              <div class="alert-item__detail">
+                @if (alert.alertType === 'high-cost') {
+                  <span class="badge bg-danger">High Cost {{ alert.foodCostPct | number:'1.0-0' }}%</span>
+                } @else if (alert.alertType === 'no-cost-data') {
+                  <span class="badge bg-warning text-dark">No Cost Data</span>
+                } @else {
+                  <span class="badge bg-secondary">No Recipe</span>
+                }
+              </div>
+              <a class="btn btn-sm btn-outline-secondary" routerLink="/app/food-cost" [queryParams]="{tab: 'recipes'}">
+                {{ alert.alertType === 'no-recipe' ? 'Add Recipe' : 'Edit Recipe' }}
+              </a>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Search + Item List -->
+    <div class="section">
+      <div class="section__header">
+        <h2 class="section__title">All Catering Items</h2>
+        <input type="search" class="form-control form-control-sm search-input"
+          placeholder="Search items or ingredients..."
+          [value]="searchQuery()"
+          (input)="onSearch($any($event.target).value)"
+          aria-label="Search catering items" />
+      </div>
+
+      @if (cateringItems().length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-egg-fill empty-state__icon"></i>
+          <h3>No catering items yet</h3>
+          <p>Tag menu items with catering pricing tiers in <a routerLink="/app/menu">Menu &rsaquo; Items</a>.</p>
+        </div>
+      } @else {
+        <div class="item-table">
+          <div class="item-table__header">
+            <span>Item</span>
+            <span>Allergens</span>
+            <span>Recipe</span>
+            <span>Cost/Serving</span>
+            <span>Food Cost %</span>
+            <span></span>
+          </div>
+          @for (item of filteredItems(); track item.id) {
+            <div class="item-table__row">
+              <div class="item-name">{{ item.name }}</div>
+              <div class="allergen-badges">
+                @for (a of getCateringAllergens(item); track a) {
+                  <span class="badge bg-secondary badge-sm">{{ a }}</span>
+                }
+              </div>
+              <div>
+                @if (getRecipe(item.id)) {
+                  <span class="badge bg-success">Has Recipe</span>
+                } @else {
+                  <span class="badge bg-light text-muted border">No Recipe</span>
+                }
+              </div>
+              <div>{{ getRecipe(item.id)?.costPerServing != null ? ('$' + (getRecipe(item.id)!.costPerServing! | number:'1.2-2')) : '&mdash;' }}</div>
+              <div>{{ getFoodCostPct(item) != null ? ((getFoodCostPct(item)! | number:'1.0-0') + '%') : '&mdash;' }}</div>
+              <div>
+                <a class="btn btn-sm btn-outline-secondary" routerLink="/app/food-cost" [queryParams]="{tab: 'recipes'}">
+                  {{ getRecipe(item.id) ? 'Edit' : 'Add' }} Recipe
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

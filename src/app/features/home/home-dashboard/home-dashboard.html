@@ -1,0 +1,176 @@
+<div class="home-dashboard px-2">
+  <!-- Header -->
+  <div class="home-header px-2">
+    <div>
+      <h1 class="home-title">{{ pageTitle() }}</h1>
+      <p class="home-date">{{ todayDate() | date:'EEEE, MMMM d, y' }}</p>
+    </div>
+  </div>
+
+  <!-- PWA Install Banner -->
+  @if (pwaInstall.shouldShowInstallPrompt) {
+    <div class="install-banner">
+      <div class="install-banner-content">
+        <i class="bi bi-phone install-banner-icon"></i>
+        <div class="install-banner-text">
+          <strong>Install OrderStack</strong>
+          @if (pwaInstall.isIos) {
+            <span>Tap <i class="bi bi-box-arrow-up"></i> then "Add to Home Screen" for the best experience.</span>
+          } @else {
+            <span>Get the app for a faster, native experience.</span>
+          }
+        </div>
+      </div>
+      <div class="install-banner-actions">
+        @if (pwaInstall.canInstall()) {
+          <button type="button" class="btn-install-banner" (click)="installApp()">Install</button>
+        }
+        <button type="button" class="btn-dismiss-banner" (click)="dismissInstallBanner()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="home-grid">
+    <!-- Main Column -->
+    <div class="home-main">
+
+      <!-- Setup Guide -->
+      @if (!isEssentialComplete()) {
+        <div class="setup-guide-card">
+          <div class="sg-header">
+            <div>
+              <h2 class="sg-title">Let's get growing, {{ businessName() }}</h2>
+              <p class="sg-subtitle">{{ setupSubtitle() }}</p>
+            </div>
+            <div class="sg-progress-ring">
+              <svg viewBox="0 0 48 48" class="sg-ring-svg">
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#e0dfde" stroke-width="3" />
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#006aff" stroke-width="3"
+                  stroke-linecap="round"
+                  [style.stroke-dasharray]="'125.66'"
+                  [style.stroke-dashoffset]="125.66 - (125.66 * essentialProgress() / 100)"
+                  transform="rotate(-90 24 24)" />
+              </svg>
+              <span class="sg-progress-value">{{ essentialProgress() }}%</span>
+            </div>
+          </div>
+
+          <!-- Essential Tasks -->
+          <div class="sg-section-label">Essential</div>
+          <div class="sg-checklist">
+            @for (task of essentialTasks(); track task.id) {
+              <button type="button" class="sg-task" [class.done]="task.done" (click)="navigateAndMark(task)">
+                <div class="sg-task-icon">
+                  @if (task.done) {
+                    <i class="bi bi-check-circle-fill"></i>
+                  } @else {
+                    <i class="bi {{ task.icon }}"></i>
+                  }
+                </div>
+                <div class="sg-task-info">
+                  <span class="sg-task-label">{{ task.label }}</span>
+                  <span class="sg-task-desc">{{ task.description }}</span>
+                </div>
+                <i class="bi bi-chevron-right sg-task-arrow"></i>
+              </button>
+            }
+          </div>
+
+          <!-- Advanced Tasks (collapsible) -->
+          <button type="button" class="sg-advanced-toggle" (click)="toggleAdvancedTasks()">
+            <span>Advanced</span>
+            <i class="bi" [class.bi-chevron-down]="!_showAdvancedTasks()" [class.bi-chevron-up]="_showAdvancedTasks()"></i>
+          </button>
+
+          @if (_showAdvancedTasks()) {
+            <div class="sg-checklist sg-advanced">
+              @for (task of advancedTasks(); track task.id) {
+                <button type="button" class="sg-task" [class.done]="task.done" (click)="navigateAndMark(task)">
+                  <div class="sg-task-icon">
+                    @if (task.done) {
+                      <i class="bi bi-check-circle-fill"></i>
+                    } @else {
+                      <i class="bi {{ task.icon }}"></i>
+                    }
+                  </div>
+                  <div class="sg-task-info">
+                    <span class="sg-task-label">{{ task.label }}</span>
+                    <span class="sg-task-desc">{{ task.description }}</span>
+                  </div>
+                  <i class="bi bi-chevron-right sg-task-arrow"></i>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- At-a-Glance Strip -->
+      @if (atAGlance().length > 0) {
+        <div class="glance-strip">
+          @for (chip of atAGlance(); track chip.label) {
+            @if (chip.route) {
+              <button type="button" class="glance-chip glance-chip--link" (click)="navigateTo(chip.route)">
+                <i class="bi {{ chip.icon }} glance-chip__icon"></i>
+                <span class="glance-chip__value">{{ chip.value }}</span>
+                <span class="glance-chip__label">{{ chip.label }}</span>
+              </button>
+            } @else {
+              <div class="glance-chip">
+                <i class="bi {{ chip.icon }} glance-chip__icon"></i>
+                <span class="glance-chip__value">{{ chip.value }}</span>
+                <span class="glance-chip__label">{{ chip.label }}</span>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Performance Section -->
+      <div class="performance-section">
+        <div class="section-header">
+          <h3>{{ performanceSectionTitle() }}</h3>
+        </div>
+
+        <div class="kpi-grid">
+          @for (kpi of kpiConfig(); track kpi.label) {
+            <div class="kpi-card">
+              <span class="kpi-label">{{ kpi.label }}</span>
+              <span class="kpi-value">
+                @if (kpi.format === 'currency') {
+                  {{ formatCurrency(kpi.value) }}
+                } @else {
+                  {{ kpi.value }}
+                }
+              </span>
+              @if (kpi.changePercent !== undefined && kpi.changePercent !== 0) {
+                <span class="kpi-change" [class.positive]="kpi.changePercent >= 0" [class.negative]="kpi.changePercent < 0">
+                  <i class="bi" [class.bi-arrow-up-short]="kpi.changePercent >= 0" [class.bi-arrow-down-short]="kpi.changePercent < 0"></i>
+                  {{ formatPercent(kpi.changePercent) }} vs yesterday
+                </span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="home-sidebar">
+      <!-- Quick Actions -->
+      <div class="quick-actions-card">
+        <h3 class="qa-title">Quick Actions</h3>
+        <div class="qa-grid">
+          @for (action of quickActions(); track action.label) {
+            <button type="button" class="qa-btn" [class]="'qa-btn qa-' + action.color" (click)="navigateTo(action.route)">
+              <i class="bi {{ action.icon }}"></i>
+              <span>{{ action.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

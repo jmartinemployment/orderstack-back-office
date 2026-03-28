@@ -1,0 +1,146 @@
+.mkt-plans__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 40px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--os-text-muted);
+
+  .active {
+    color: var(--os-text-primary);
+    font-weight: 600;
+  }
+}
+
+.mkt-plans__switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background: var(--os-border);
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  padding: 0;
+
+  &[aria-checked="true"] {
+    background: var(--os-primary);
+  }
+}
+
+.mkt-plans__switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+
+  &--on {
+    transform: translateX(22px);
+  }
+}
+
+.mkt-plans__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: 991.98px) {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+    margin-inline: auto;
+  }
+}
+
+.mkt-plan-card {
+  position: relative;
+  background: var(--os-bg-card);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  padding: 32px 24px;
+
+  &--highlighted {
+    border-color: var(--os-primary);
+    box-shadow: 0 0 0 1px var(--os-primary), var(--os-shadow-lg);
+  }
+}
+
+.mkt-plan-card__badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--os-primary);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.mkt-plan-card__name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--os-text-primary);
+  margin-bottom: 4px;
+}
+
+.mkt-plan-card__desc {
+  font-size: 0.875rem;
+  color: var(--os-text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.mkt-plan-card__price {
+  margin-bottom: 4px;
+}
+
+.mkt-plan-card__amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--os-text-primary);
+  line-height: 1;
+}
+
+.mkt-plan-card__period {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--os-text-muted);
+}
+
+.mkt-plan-card__annual-note {
+  font-size: 0.8125rem;
+  color: var(--os-text-muted);
+  margin-bottom: 24px;
+}
+
+.mkt-plan-card__features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--os-text-secondary);
+    padding: 6px 0;
+    line-height: 1.5;
+
+    i {
+      color: var(--os-success);
+      font-size: 1rem;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+  }
+}

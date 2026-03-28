@@ -1,0 +1,64 @@
+<div class="catering-cal">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Previous month" (click)="prevMonth()">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <h6 class="mb-0 fw-semibold">{{ monthLabel() }}</h6>
+    <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Next month" (click)="nextMonth()">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+
+  <div class="cal-grid">
+    @for (day of weekdays; track day) {
+      <div class="cal-header">{{ day }}</div>
+    }
+
+    @for (day of calendarDays(); track day.date) {
+      <div
+        class="cal-cell"
+        [class.other-month]="!day.isCurrentMonth"
+        [class.is-today]="day.isToday"
+        [class.has-events]="day.events.length > 0"
+        [class.selected]="selectedDay() === day.date"
+        (click)="selectDay(day)"
+        (keydown.enter)="selectDay(day)"
+      >
+        <span class="day-number">{{ day.dayOfMonth }}</span>
+        @for (ev of day.events.slice(0, 2); track ev.id) {
+          <button type="button" class="cal-job-chip" [style.border-left-color]="getStatusColor(ev.status)" (click)="openJob(ev); $event.stopPropagation()">
+            <span class="cal-job-title">{{ ev.title }}</span>
+            <span class="cal-job-guests">{{ ev.headcount }}</span>
+          </button>
+        }
+        @if (day.events.length > 2) {
+          <div class="cal-overflow text-muted">+{{ day.events.length - 2 }} more</div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (selectedDay() && selectedDayEvents().length > 0) {
+    <div class="day-detail mt-3">
+      <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+        Jobs on {{ selectedDay() }}
+      </h6>
+      @for (ev of selectedDayEvents(); track ev.id) {
+        <button type="button" class="day-event-row d-flex justify-content-between align-items-center mb-2" style="cursor: pointer;" (click)="openJob(ev)">
+          <div>
+            <span class="fw-semibold">{{ ev.title }}</span>
+            <span class="badge rounded-pill ms-2" [class]="getStatusBadgeClass(ev.status)">
+              {{ statusConfig[ev.status]?.label ?? ev.status }}
+            </span>
+          </div>
+          <div class="text-end">
+            <span class="text-muted small">{{ ev.headcount }} {{ ev.headcount === 1 ? 'guest' : 'guests' }}</span>
+            @if (ev.totalCents > 0) {
+              <span class="ms-2 small fw-semibold">${{ (ev.totalCents / 100) | number:'1.0-0' }}</span>
+            }
+          </div>
+        </button>
+      }
+    </div>
+  }
+</div>

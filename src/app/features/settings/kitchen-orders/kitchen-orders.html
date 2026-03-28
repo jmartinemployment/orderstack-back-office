@@ -1,0 +1,260 @@
+<div class="kitchen-orders">
+  @if (showSaveSuccess()) {
+    <div class="alert alert-success mb-3">
+      Kitchen & order settings saved successfully.
+    </div>
+  }
+
+  @if (!isManagerOrAbove()) {
+    <div class="text-muted small mb-3">Only managers and owners can modify kitchen settings.</div>
+  }
+
+  <!-- Catering Approval Timeout -->
+  <div class="panel mb-3">
+    <div class="panel-title">Catering Approval Timeout</div>
+    <div class="row g-3 mb-2">
+      <div class="col-md-4">
+        <label class="form-label" for="approvalTimeout">Auto-Reject After</label>
+        <div class="input-group">
+          <input
+            type="number"
+            class="form-control"
+            id="approvalTimeout"
+            [value]="approvalTimeoutHours()"
+            (input)="onApprovalTimeoutChange($event)"
+            min="1"
+            max="168"
+            step="1"
+            [disabled]="!isManagerOrAbove()">
+          <span class="input-group-text">hours</span>
+        </div>
+      </div>
+    </div>
+    <p class="text-muted small mb-0">{{ timeoutDescription() }}</p>
+  </div>
+
+  <!-- Expo Station -->
+  <div class="panel mb-3">
+    <div class="panel-title">Expo Station</div>
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" id="expoStationToggle"
+        [checked]="expoStationEnabled()" (change)="onExpoStationToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="expoStationToggle">Enable Expo Station in KDS</label>
+    </div>
+    @if (expoStationEnabled()) {
+      <p class="text-muted small mb-0">Orders bumped to READY enter an EXPO verification queue before printing and appearing in the READY column.</p>
+    } @else {
+      <p class="text-muted small mb-0">Orders bumped to READY print immediately and appear in the READY column with no expo verification.</p>
+    }
+  </div>
+
+  <!-- Course Pacing Mode -->
+  <div class="panel mb-3">
+    <label class="panel-title" for="coursePacingMode">Course Pacing Mode</label>
+    <select class="form-select"
+      id="coursePacingMode"
+      [ngModel]="coursePacingMode()"
+      (ngModelChange)="onCoursePacingModeChange($event)"
+      [disabled]="!isManagerOrAbove()">
+      @for (opt of pacingModeOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+    <p class="text-muted small mt-2 mb-3">{{ currentModeDescription() }}</p>
+
+    <div class="row g-3 mb-2">
+      <div class="col-md-5">
+        <label class="form-label" for="targetCourseServeGap">Target Course Serve Gap</label>
+        <div class="input-group">
+          <input
+            type="number"
+            class="form-control"
+            id="targetCourseServeGap"
+            [value]="targetCourseServeGapMinutes()"
+            (input)="onTargetCourseServeGapMinutesChange($event)"
+            min="5"
+            max="60"
+            step="1"
+            [disabled]="!isManagerOrAbove()">
+          <span class="input-group-text">minutes</span>
+        </div>
+      </div>
+    </div>
+    <p class="text-muted small mb-3">{{ targetCourseGapDescription() }}</p>
+
+    <!-- Default Course Names -->
+    @if (coursePacingEnabled()) {
+      <div class="course-names-section">
+        <span class="form-label" id="default-courses-label">Default Courses</span>
+        <p class="text-muted small mb-2">These names appear as quick-select options when servers assign items to courses.</p>
+        <div class="course-name-list">
+          @for (name of defaultCourseNames(); track $index; let i = $index) {
+            <div class="course-name-row">
+              <span class="course-name-order">{{ i + 1 }}</span>
+              <span class="course-name-text">{{ name }}</span>
+              <div class="course-name-actions">
+                <button type="button" class="btn-icon" (click)="moveCourseUp(i)" [disabled]="i === 0 || !isManagerOrAbove()" title="Move up">
+                  <i class="bi bi-chevron-up"></i>
+                </button>
+                <button type="button" class="btn-icon" (click)="moveCourseDown(i)" [disabled]="i === defaultCourseNames().length - 1 || !isManagerOrAbove()" title="Move down">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+                <button type="button" class="btn-icon btn-icon-danger" (click)="removeCourseName(i)" [disabled]="!isManagerOrAbove()" title="Remove">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-muted small">No default courses configured.</p>
+          }
+        </div>
+        <div class="course-name-add">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="New course name..."
+            aria-label="New course name"
+            [value]="newCourseName()"
+            (input)="onNewCourseNameInput($event)"
+            (keydown.enter)="addCourseName()"
+            [disabled]="!isManagerOrAbove()">
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addCourseName()" [disabled]="!newCourseName().trim() || !isManagerOrAbove()">
+            <i class="bi bi-plus"></i> Add
+          </button>
+        </div>
+
+        <!-- Auto-fire first course -->
+        <div class="form-check form-switch mt-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="autoFireFirstCourse"
+            [checked]="autoFireFirstCourse()"
+            (change)="onAutoFireFirstCourseToggle($event)"
+            [disabled]="!isManagerOrAbove()">
+          <label class="form-check-label" for="autoFireFirstCourse">Auto-fire first course when order is sent to kitchen</label>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Order Throttling -->
+  <div class="panel mb-3">
+    <div class="panel-title">Order Throttling</div>
+    <div class="form-check form-switch mb-3">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="orderThrottlingToggle"
+        [checked]="orderThrottlingEnabled()"
+        (change)="onOrderThrottlingToggle($event)"
+        [disabled]="!isManagerOrAbove()">
+      <label class="form-check-label" for="orderThrottlingToggle">Enable Kitchen Overload Guardrails</label>
+    </div>
+
+    @if (orderThrottlingEnabled()) {
+      <div class="row g-3 mb-2">
+        <div class="col-md-3">
+          <label class="form-label" for="maxActiveOrders">Hold At Active</label>
+          <input
+            type="number"
+            class="form-control"
+            id="maxActiveOrders"
+            [value]="maxActiveOrders()"
+            (input)="onMaxActiveOrdersChange($event)"
+            min="2"
+            max="120"
+            step="1"
+            [disabled]="!isManagerOrAbove()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="releaseActiveOrders">Release At Active</label>
+          <input
+            type="number"
+            class="form-control"
+            id="releaseActiveOrders"
+            [value]="releaseActiveOrders()"
+            (input)="onReleaseActiveOrdersChange($event)"
+            min="0"
+            [max]="maxActiveOrders() - 1"
+            step="1"
+            [disabled]="!isManagerOrAbove()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="maxOverdueOrders">Hold At Overdue</label>
+          <input
+            type="number"
+            class="form-control"
+            id="maxOverdueOrders"
+            [value]="maxOverdueOrders()"
+            (input)="onMaxOverdueOrdersChange($event)"
+            min="1"
+            max="50"
+            step="1"
+            [disabled]="!isManagerOrAbove()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="releaseOverdueOrders">Release At Overdue</label>
+          <input
+            type="number"
+            class="form-control"
+            id="releaseOverdueOrders"
+            [value]="releaseOverdueOrders()"
+            (input)="onReleaseOverdueOrdersChange($event)"
+            min="0"
+            [max]="maxOverdueOrders() - 1"
+            step="1"
+            [disabled]="!isManagerOrAbove()">
+        </div>
+      </div>
+      <div class="row g-3 mb-2">
+        <div class="col-md-4">
+          <label class="form-label" for="maxHoldMinutes">Max Hold</label>
+          <div class="input-group">
+            <input
+              type="number"
+              class="form-control"
+              id="maxHoldMinutes"
+              [value]="maxHoldMinutes()"
+              (input)="onMaxHoldMinutesChange($event)"
+              min="1"
+              max="180"
+              step="1"
+              [disabled]="!isManagerOrAbove()">
+            <span class="input-group-text">minutes</span>
+          </div>
+        </div>
+        <div class="col-md-8 d-flex align-items-end">
+          <div class="form-check form-switch mb-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="allowRushThrottle"
+              [checked]="allowRushThrottle()"
+              (change)="onAllowRushThrottleToggle($event)"
+              [disabled]="!isManagerOrAbove()">
+            <label class="form-check-label" for="allowRushThrottle">Allow throttling on rush tickets</label>
+          </div>
+        </div>
+      </div>
+      <p class="text-muted small mb-0">{{ throttlingDescription() }}</p>
+    } @else {
+      <p class="text-muted small mb-0">{{ throttlingDescription() }}</p>
+    }
+  </div>
+
+  <!-- Action bar -->
+  @if (hasUnsavedChanges() && isManagerOrAbove()) {
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          Saving...
+        } @else {
+          Save Changes
+        }
+      </button>
+      <button class="btn btn-outline-light" (click)="discard()" [disabled]="isSaving()">Discard</button>
+    </div>
+  }
+</div>

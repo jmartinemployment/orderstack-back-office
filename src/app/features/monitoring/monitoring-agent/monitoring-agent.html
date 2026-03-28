@@ -1,0 +1,239 @@
+@if (isAuthenticated()) {
+<div class="monitoring-agent px-2">
+  <!-- Header -->
+  <div class="agent-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="header-title">
+          <span class="agent-icon" [class.running]="isRunning()">&#9673;</span>
+          AI Monitoring Agent
+        </h2>
+        <div class="header-meta">
+          @if (isRunning()) {
+            <span class="status-badge status-running">Running</span>
+          } @else {
+            <span class="status-badge status-stopped">Stopped</span>
+          }
+          <span class="meta-text">{{ uptimeText() }}</span>
+          @if (lastScanTime()) {
+            <span class="meta-text">Last scan: {{ getTimeAgo(lastScanTime()!) }}</span>
+          }
+        </div>
+      </div>
+      <div class="header-actions d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-light" (click)="runManualScan()" [disabled]="!isRunning()">
+          Scan Now
+        </button>
+        <button type="button" class="btn btn-sm" [class.btn-danger]="isRunning()" [class.btn-success]="!isRunning()" (click)="toggleAgent()">
+          @if (isRunning()) { Stop } @else { Start }
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card kpi-critical">
+        <div class="kpi-value">{{ criticalCount() }}</div>
+        <div class="kpi-label">Critical</div>
+      </div>
+      <div class="kpi-card kpi-warning">
+        <div class="kpi-value">{{ warningCount() }}</div>
+        <div class="kpi-label">Warnings</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ activeAlerts().length }}</div>
+        <div class="kpi-label">Active Alerts</div>
+      </div>
+      @if (latestSnapshot(); as snap) {
+        <div class="kpi-card">
+          <div class="kpi-value">{{ snap.lowStockItems }}</div>
+          <div class="kpi-label">Low Stock</div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="agent-tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'live'" (click)="setTab('live')">
+      Live Feed
+      @if (activeAlerts().length > 0) {
+        <span class="tab-badge">{{ activeAlerts().length }}</span>
+      }
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'alerts'" (click)="setTab('alerts')">
+      Alert History
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'rules'" (click)="setTab('rules')">
+      Rules
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mx-3 mt-2">{{ error() }}</div>
+  }
+
+  <!-- LIVE FEED TAB -->
+  @if (activeTab() === 'live') {
+    <div class="tab-content">
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Severity:</span>
+          <button type="button" class="filter-pill" [class.active]="severityFilter() === 'all'" (click)="setSeverityFilter('all')">All</button>
+          <button type="button" class="filter-pill filter-critical" [class.active]="severityFilter() === 'critical'" (click)="setSeverityFilter('critical')">Critical</button>
+          <button type="button" class="filter-pill filter-warning" [class.active]="severityFilter() === 'warning'" (click)="setSeverityFilter('warning')">Warning</button>
+          <button type="button" class="filter-pill filter-info" [class.active]="severityFilter() === 'info'" (click)="setSeverityFilter('info')">Info</button>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Category:</span>
+          <button type="button" class="filter-pill" [class.active]="categoryFilter() === 'all'" (click)="setCategoryFilter('all')">All</button>
+          <button type="button" class="filter-pill" [class.active]="categoryFilter() === 'revenue'" (click)="setCategoryFilter('revenue')">Revenue</button>
+          <button type="button" class="filter-pill" [class.active]="categoryFilter() === 'inventory'" (click)="setCategoryFilter('inventory')">Inventory</button>
+          <button type="button" class="filter-pill" [class.active]="categoryFilter() === 'kitchen'" (click)="setCategoryFilter('kitchen')">Kitchen</button>
+          <button type="button" class="filter-pill" [class.active]="categoryFilter() === 'orders'" (click)="setCategoryFilter('orders')">Orders</button>
+        </div>
+      </div>
+
+      @if (activeAlerts().length > 0) {
+        <div class="feed-actions px-3 mb-2 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="acknowledgeAll()">Acknowledge All</button>
+        </div>
+      }
+
+      <div class="alert-feed">
+        @for (alert of filteredAlerts(); track alert.id) {
+          <div class="alert-item" [class]="getSeverityClass(alert.severity)">
+            <div class="alert-header">
+              <div class="d-flex align-items-center gap-2">
+                <span class="severity-dot" [class]="getSeverityClass(alert.severity)"></span>
+                <span class="alert-category-badge">{{ alert.category }}</span>
+                <span class="alert-title">{{ alert.title }}</span>
+              </div>
+              <span class="alert-time">{{ getTimeAgo(alert.timestamp) }}</span>
+            </div>
+            <div class="alert-body">
+              <p class="alert-message">{{ alert.message }}</p>
+              @if (alert.metric) {
+                <div class="alert-metric">
+                  <span class="metric-label">Current:</span>
+                  <span class="metric-value">{{ alert.metric }}</span>
+                </div>
+              }
+              @if (alert.suggestedAction) {
+                <div class="alert-action">
+                  <span class="action-label">Suggested:</span> {{ alert.suggestedAction }}
+                </div>
+              }
+            </div>
+            <div class="alert-footer">
+              <button type="button" class="btn btn-sm btn-outline-light" (click)="acknowledgeAlert(alert.id)">
+                Acknowledge
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            @if (isRunning()) {
+              <div class="empty-icon">&#10003;</div>
+              <p>All clear — no active alerts</p>
+              <p class="text-muted small">Agent is monitoring. Next scan in ~1 minute.</p>
+            } @else {
+              <div class="empty-icon">&#9209;</div>
+              <p>Agent is stopped</p>
+              <p class="text-muted small">Start the agent to begin monitoring.</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ALERT HISTORY TAB -->
+  @if (activeTab() === 'alerts') {
+    <div class="tab-content">
+      @if (acknowledgedCount() > 0) {
+        <div class="px-3 pt-3 d-flex justify-content-between align-items-center">
+          <span class="text-muted small">{{ acknowledgedCount() }} acknowledged alert{{ acknowledgedCount() === 1 ? '' : 's' }}</span>
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="clearAcknowledged()">Clear Acknowledged</button>
+        </div>
+      }
+
+      <div class="alert-feed">
+        @for (alert of alerts(); track alert.id) {
+          <div class="alert-item" [class]="getSeverityClass(alert.severity)" [class.acknowledged]="alert.acknowledged">
+            <div class="alert-header">
+              <div class="d-flex align-items-center gap-2">
+                <span class="severity-dot" [class]="getSeverityClass(alert.severity)"></span>
+                <span class="alert-category-badge">{{ alert.category }}</span>
+                <span class="alert-title">{{ alert.title }}</span>
+                @if (alert.acknowledged) {
+                  <span class="ack-badge">Acknowledged</span>
+                }
+              </div>
+              <span class="alert-time">{{ getTimeAgo(alert.timestamp) }}</span>
+            </div>
+            <div class="alert-body">
+              <p class="alert-message">{{ alert.message }}</p>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <p>No alert history yet</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- RULES TAB -->
+  @if (activeTab() === 'rules') {
+    <div class="tab-content px-3 pt-3">
+      <p class="text-muted small mb-3">Configure which anomalies the agent monitors. Disable rules to reduce noise.</p>
+      <div class="rules-list">
+        @for (rule of rules(); track rule.id) {
+          <div class="rule-item" [class.rule-disabled]="!rule.enabled">
+            <div class="rule-info">
+              <div class="d-flex align-items-center gap-2">
+                <span class="severity-dot" [class]="getSeverityClass(rule.severity)"></span>
+                <span class="rule-name">{{ rule.name }}</span>
+                <span class="alert-category-badge">{{ rule.category }}</span>
+              </div>
+              <p class="rule-desc">{{ rule.description }}</p>
+            </div>
+            <div class="rule-toggle">
+              <button type="button" class="toggle-btn" [class.active]="rule.enabled" (click)="toggleRule(rule.id)">
+                @if (rule.enabled) { ON } @else { OFF }
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Snapshot Timeline -->
+  @if (activeTab() === 'live' && snapshots().length > 1) {
+    <div class="snapshot-timeline px-3 pb-3">
+      <h6 class="timeline-title">Recent Snapshots</h6>
+      <div class="timeline-items">
+        @for (snap of snapshots().slice(0, 10); track snap.timestamp) {
+          <div class="timeline-item">
+            <span class="timeline-time">{{ snap.timestamp | date:'shortTime' }}</span>
+            <span class="timeline-stat">${{ snap.revenue.toFixed(0) }} rev</span>
+            <span class="timeline-stat">{{ snap.orderCount }} orders</span>
+            <span class="timeline-stat" [class.text-danger]="snap.criticalAlerts > 0">{{ snap.activeAlerts }} alerts</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+} @else {
+<div class="auth-required d-flex align-items-center justify-content-center p-5">
+  <div class="text-center">
+    <h3 class="text-warning mb-3">Authentication Required</h3>
+    <p class="text-light">Please log in to access the monitoring agent.</p>
+  </div>
+</div>
+}

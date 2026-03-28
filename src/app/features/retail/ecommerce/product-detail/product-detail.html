@@ -1,0 +1,123 @@
+@if (isLoading()) {
+  <os-loading-spinner />
+} @else if (!product()) {
+  <div class="not-found">
+    <i class="bi bi-bag-x"></i>
+    <h2>Product Not Found</h2>
+    <p>This product may no longer be available.</p>
+    <button class="back-btn" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back to Store
+    </button>
+  </div>
+} @else {
+  <!-- Header -->
+  <header class="detail-header">
+    <div class="detail-header-inner">
+      <button class="back-link" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i>
+        {{ storeConfig()?.storeName ?? 'Store' }}
+      </button>
+      <button class="cart-link" (click)="goToCart()">
+        <i class="bi bi-bag"></i>
+        @if (cartItemCount() > 0) {
+          <span class="cart-badge">{{ cartItemCount() }}</span>
+        }
+      </button>
+    </div>
+  </header>
+
+  <main class="product-detail">
+    <div class="detail-grid">
+      <!-- Image Section -->
+      <div class="image-section">
+        <div class="main-image">
+          @if (currentImageUrl()) {
+            <img [src]="currentImageUrl()" [alt]="product()!.name" />
+          } @else {
+            <div class="image-placeholder">
+              <i class="bi bi-image"></i>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="info-section">
+        <h1 class="product-title">{{ product()!.name }}</h1>
+
+        <div class="product-price">
+          {{ currentPrice() | currency }}
+        </div>
+
+        @if (product()!.description) {
+          <p class="product-description">{{ product()!.description }}</p>
+        }
+
+        <!-- Variation Selectors -->
+        @if (hasVariations()) {
+          <div class="variation-section">
+            <p class="variation-label">Options</p>
+            <div class="variation-buttons">
+              @for (variation of activeVariations(); track variation.id) {
+                <button
+                  class="variation-btn"
+                  [class.selected]="selectedVariation()?.id === variation.id"
+                  [class.out-of-stock]="variation.stockQuantity <= 0"
+                  [disabled]="variation.stockQuantity <= 0"
+                  (click)="selectVariation(variation.id)"
+                >
+                  {{ variation.name }}
+                  @if (variation.stockQuantity <= 0) {
+                    <span class="oos-label">Sold out</span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Stock Status -->
+        @if (hasVariations() && selectedVariation()) {
+          <div class="stock-status" [class.in-stock]="isInStock()" [class.out-of-stock]="!isInStock()">
+            @if (isInStock()) {
+              <i class="bi bi-check-circle-fill"></i> In Stock
+              @if (selectedVariation()!.stockQuantity <= 5) {
+                <span class="low-stock">(Only {{ selectedVariation()!.stockQuantity }} left)</span>
+              }
+            } @else {
+              <i class="bi bi-x-circle-fill"></i> Out of Stock
+            }
+          </div>
+        }
+
+        <!-- Quantity + Add to Cart -->
+        <div class="purchase-section">
+          <div class="qty-picker">
+            <button (click)="decrementQuantity()" [disabled]="quantity() <= 1">-</button>
+            <span>{{ quantity() }}</span>
+            <button (click)="incrementQuantity()">+</button>
+          </div>
+
+          <button
+            class="add-to-cart-btn"
+            [disabled]="!isInStock() || (hasVariations() && !selectedVariation())"
+            (click)="addToCart()"
+          >
+            @if (addedToCart()) {
+              <i class="bi bi-check2"></i> Added!
+            } @else {
+              <i class="bi bi-bag-plus"></i> Add to Cart — {{ currentPrice() * quantity() | currency }}
+            }
+          </button>
+        </div>
+
+        <!-- SKU -->
+        @if (selectedVariation()?.sku ?? product()!.sku) {
+          <div class="sku-info">
+            SKU: {{ selectedVariation()?.sku ?? product()!.sku }}
+          </div>
+        }
+      </div>
+    </div>
+  </main>
+}
